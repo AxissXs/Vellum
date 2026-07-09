@@ -1,0 +1,86 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { db } from "@/db";
+import { tasks, activityLogs } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getSession();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const body = await req.json();
+  const { title, description, status, priority, assigneeId, dueDate, position } = body;
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
+  if (status !== undefined) updateData.status = status;
+  if (priority !== undefined) updateData.priority = priority;
+  if (assigneeId !== undefined) updateData.assigneeId = assigneeId;
+  if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+  if (position !== undefined) updateData.position = position;
+
+  const [task] = await db
+    .update(tasks)
+    .set(updateData)
+    .where(eq(tasks.id, id))
+    .returning();
+
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  const statusLabels: Record<string, string> = {
+    backlog: "moved to Backlog",
+    todo: "moved to To Do",
+    in_progress: "moved to In Progress",
+    review: "moved to Review",
+    done: "marked as Done",
+  };
+
+  const actionDetail =
+    status !== undefined && statusLabels[status]
+      ? `${task.title}: ${statusLabels[status]}`
+      : `Updated task: ${task.title}`;
+
+  await db.insert(activityLogs).values({
+    userId: user.id,
+    action: status !== undefined ? "changed_task_status" : "updated_task",
+    entityType: "task",
+    entityId: task.id,
+    details: actionDetail,
+  });
+
+  return NextResponse.json({ task });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getSession();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+
+  const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  await db.delete(tasks).where(eq(tasks.id, id));
+
+  await db.insert(activityLogs).values({
+    userId: user.id,
+    action: "deleted_task",
+    entityType: "task",
+    entityId: id,
+    details: `Deleted task: ${task.title}`,
+  });
+
+  return NextResponse.json({ success: true });
+}

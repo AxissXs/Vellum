@@ -1,0 +1,453 @@
+import { db, pool } from "./index";
+import { users, projects, teams, teamMembers, tasks, comments, activityLogs } from "./schema";
+import { hashSync } from "bcryptjs";
+
+async function seed() {
+  console.log("🌱 Seeding database...");
+
+  // Clean existing data
+  await db.delete(activityLogs);
+  await db.delete(comments);
+  await db.delete(tasks);
+  await db.delete(teamMembers);
+  await db.delete(teams);
+  await db.delete(projects);
+  await db.delete(users);
+
+  // Create users
+  const passwordHash = hashSync("password123", 10);
+  const userIds = await db
+    .insert(users)
+    .values([
+      {
+        name: "Alex Morgan",
+        email: "alex@teamflow.app",
+        passwordHash,
+        role: "superadmin",
+        avatarUrl: "",
+      },
+      {
+        name: "Sarah Chen",
+        email: "sarah@teamflow.app",
+        passwordHash,
+        role: "admin",
+        avatarUrl: "",
+      },
+      {
+        name: "Marcus Johnson",
+        email: "marcus@teamflow.app",
+        passwordHash,
+        role: "member",
+        avatarUrl: "",
+      },
+      {
+        name: "Emily Rodriguez",
+        email: "emily@teamflow.app",
+        passwordHash,
+        role: "member",
+        avatarUrl: "",
+      },
+      {
+        name: "David Kim",
+        email: "david@teamflow.app",
+        passwordHash,
+        role: "member",
+        avatarUrl: "",
+      },
+      {
+        name: "Lisa Thompson",
+        email: "lisa@teamflow.app",
+        passwordHash,
+        role: "admin",
+        avatarUrl: "",
+      },
+      {
+        name: "James Wilson",
+        email: "james@teamflow.app",
+        passwordHash,
+        role: "member",
+        avatarUrl: "",
+      },
+      {
+        name: "Anna Martinez",
+        email: "anna@teamflow.app",
+        passwordHash,
+        role: "member",
+        avatarUrl: "",
+      },
+    ])
+    .returning({ id: users.id, name: users.name });
+
+  const userMap = new Map(userIds.map((u) => [u.name, u.id]));
+  const alexId = userMap.get("Alex Morgan")!;
+  const sarahId = userMap.get("Sarah Chen")!;
+  const marcusId = userMap.get("Marcus Johnson")!;
+  const emilyId = userMap.get("Emily Rodriguez")!;
+  const davidId = userMap.get("David Kim")!;
+  const lisaId = userMap.get("Lisa Thompson")!;
+  const jamesId = userMap.get("James Wilson")!;
+  const annaId = userMap.get("Anna Martinez")!;
+
+  // Create teams
+  const teamIds = await db
+    .insert(teams)
+    .values([
+      {
+        name: "Engineering",
+        description: "Core engineering team building the product",
+      },
+      {
+        name: "Design",
+        description: "UX and visual design team",
+      },
+      {
+        name: "Marketing",
+        description: "Growth and content marketing",
+      },
+      {
+        name: "Product",
+        description: "Product management and strategy",
+      },
+    ])
+    .returning({ id: teams.id, name: teams.name });
+
+  const teamMap = new Map(teamIds.map((t) => [t.name, t.id]));
+  const engTeamId = teamMap.get("Engineering")!;
+  const designTeamId = teamMap.get("Design")!;
+  const marketingTeamId = teamMap.get("Marketing")!;
+  const productTeamId = teamMap.get("Product")!;
+
+  // Create projects
+  const projectIds = await db
+    .insert(projects)
+    .values([
+      {
+        name: "TeamFlow Platform",
+        description: "Core team management application with kanban boards and collaboration features",
+        color: "#6366f1",
+        icon: "layout-dashboard",
+        ownerId: alexId,
+      },
+      {
+        name: "Mobile App Redesign",
+        description: "Complete UI/UX overhaul of the mobile application for iOS and Android",
+        color: "#ec4899",
+        icon: "smartphone",
+        ownerId: sarahId,
+      },
+      {
+        name: "API Gateway",
+        description: "Build a new API gateway service for microservices communication",
+        color: "#10b981",
+        icon: "server",
+        ownerId: davidId,
+      },
+      {
+        name: "Q4 Marketing Campaign",
+        description: "End of year marketing push across all channels",
+        color: "#f59e0b",
+        icon: "megaphone",
+        ownerId: lisaId,
+      },
+      {
+        name: "Developer Docs",
+        description: "Comprehensive documentation portal for external developers",
+        color: "#8b5cf6",
+        icon: "book-open",
+        ownerId: jamesId,
+      },
+    ])
+    .returning({ id: projects.id, name: projects.name });
+
+  const projectMap = new Map(projectIds.map((p) => [p.name, p.id]));
+  const tfProjectId = projectMap.get("TeamFlow Platform")!;
+  const mobileProjectId = projectMap.get("Mobile App Redesign")!;
+  const apiProjectId = projectMap.get("API Gateway")!;
+  const marketingProjectId = projectMap.get("Q4 Marketing Campaign")!;
+  const docsProjectId = projectMap.get("Developer Docs")!;
+
+  // Create team members
+  await db.insert(teamMembers).values([
+    { teamId: engTeamId, userId: alexId, projectId: tfProjectId },
+    { teamId: engTeamId, userId: davidId, projectId: tfProjectId },
+    { teamId: engTeamId, userId: jamesId, projectId: apiProjectId },
+    { teamId: engTeamId, userId: annaId, projectId: tfProjectId },
+    { teamId: designTeamId, userId: sarahId, projectId: mobileProjectId },
+    { teamId: designTeamId, userId: emilyId, projectId: mobileProjectId },
+    { teamId: designTeamId, userId: annaId, projectId: mobileProjectId },
+    { teamId: marketingTeamId, userId: lisaId, projectId: marketingProjectId },
+    { teamId: marketingTeamId, userId: marcusId, projectId: marketingProjectId },
+    { teamId: productTeamId, userId: alexId, projectId: tfProjectId },
+    { teamId: productTeamId, userId: sarahId, projectId: mobileProjectId },
+    { teamId: productTeamId, userId: lisaId, projectId: marketingProjectId },
+  ]);
+
+  // Create tasks
+  const taskData = [
+    // TeamFlow Platform tasks
+    {
+      title: "Set up CI/CD pipeline",
+      description: "Configure GitHub Actions for automated testing and deployment to staging environment.",
+      status: "done" as const,
+      priority: "high" as const,
+      projectId: tfProjectId,
+      assigneeId: davidId,
+      creatorId: alexId,
+      dueDate: new Date("2026-03-15"),
+      position: "0",
+    },
+    {
+      title: "Implement user authentication",
+      description: "Add email/password authentication with session management and role-based access control.",
+      status: "done" as const,
+      priority: "urgent" as const,
+      projectId: tfProjectId,
+      assigneeId: jamesId,
+      creatorId: alexId,
+      dueDate: new Date("2026-03-20"),
+      position: "1",
+    },
+    {
+      title: "Design database schema",
+      description: "Create normalized database schema for users, projects, tasks, teams, and activity logging.",
+      status: "done" as const,
+      priority: "high" as const,
+      projectId: tfProjectId,
+      assigneeId: annaId,
+      creatorId: alexId,
+      dueDate: new Date("2026-03-22"),
+      position: "2",
+    },
+    {
+      title: "Build Kanban board UI",
+      description: "Create drag-and-drop kanban board with smooth animations and task cards showing priority, assignee, and due date.",
+      status: "in_progress" as const,
+      priority: "high" as const,
+      projectId: tfProjectId,
+      assigneeId: annaId,
+      creatorId: alexId,
+      dueDate: new Date("2026-04-05"),
+      position: "0",
+    },
+    {
+      title: "Add real-time notifications",
+      description: "Implement notification system for task assignments, comments, and status changes using WebSockets.",
+      status: "todo" as const,
+      priority: "medium" as const,
+      projectId: tfProjectId,
+      assigneeId: davidId,
+      creatorId: alexId,
+      dueDate: new Date("2026-04-12"),
+      position: "0",
+    },
+    {
+      title: "Create reporting dashboard",
+      description: "Build analytics dashboard showing team velocity, burndown charts, and task completion metrics.",
+      status: "backlog" as const,
+      priority: "medium" as const,
+      projectId: tfProjectId,
+      assigneeId: jamesId,
+      creatorId: alexId,
+      dueDate: new Date("2026-04-25"),
+      position: "0",
+    },
+    {
+      title: "Write API documentation",
+      description: "Document all REST API endpoints with OpenAPI/Swagger specification for external developers.",
+      status: "backlog" as const,
+      priority: "low" as const,
+      projectId: tfProjectId,
+      assigneeId: annaId,
+      creatorId: alexId,
+      dueDate: new Date("2026-05-01"),
+      position: "1",
+    },
+    // Mobile App Redesign tasks
+    {
+      title: "User research interviews",
+      description: "Conduct 10 user interviews to gather feedback on current mobile app pain points.",
+      status: "done" as const,
+      priority: "high" as const,
+      projectId: mobileProjectId,
+      assigneeId: emilyId,
+      creatorId: sarahId,
+      dueDate: new Date("2026-03-18"),
+      position: "0",
+    },
+    {
+      title: "Create wireframes",
+      description: "Design low-fidelity wireframes for all main screens of the redesigned app.",
+      status: "in_progress" as const,
+      priority: "high" as const,
+      projectId: mobileProjectId,
+      assigneeId: sarahId,
+      creatorId: sarahId,
+      dueDate: new Date("2026-04-01"),
+      position: "0",
+    },
+    {
+      title: "Design system update",
+      description: "Update the design system tokens, components, and typography for the new mobile experience.",
+      status: "in_progress" as const,
+      priority: "medium" as const,
+      projectId: mobileProjectId,
+      assigneeId: emilyId,
+      creatorId: sarahId,
+      dueDate: new Date("2026-04-08"),
+      position: "1",
+    },
+    {
+      title: "High-fidelity mockups",
+      description: "Create pixel-perfect mockups for all screens based on approved wireframes.",
+      status: "todo" as const,
+      priority: "high" as const,
+      projectId: mobileProjectId,
+      assigneeId: sarahId,
+      creatorId: sarahId,
+      dueDate: new Date("2026-04-15"),
+      position: "0",
+    },
+    {
+      title: "Prototype interactions",
+      description: "Build interactive prototype in Figma for user testing sessions.",
+      status: "todo" as const,
+      priority: "medium" as const,
+      projectId: mobileProjectId,
+      assigneeId: annaId,
+      creatorId: sarahId,
+      dueDate: new Date("2026-04-20"),
+      position: "1",
+    },
+    // API Gateway tasks
+    {
+      title: "Rate limiting middleware",
+      description: "Implement token bucket rate limiter with Redis backend for all API routes.",
+      status: "in_progress" as const,
+      priority: "urgent" as const,
+      projectId: apiProjectId,
+      assigneeId: davidId,
+      creatorId: davidId,
+      dueDate: new Date("2026-04-02"),
+      position: "0",
+    },
+    {
+      title: "Service discovery",
+      description: "Integrate Consul for automatic service registration and health checking.",
+      status: "todo" as const,
+      priority: "high" as const,
+      projectId: apiProjectId,
+      assigneeId: jamesId,
+      creatorId: davidId,
+      dueDate: new Date("2026-04-10"),
+      position: "0",
+    },
+    {
+      title: "Request logging & tracing",
+      description: "Add distributed tracing with OpenTelemetry and structured JSON logging.",
+      status: "review" as const,
+      priority: "high" as const,
+      projectId: apiProjectId,
+      assigneeId: jamesId,
+      creatorId: davidId,
+      dueDate: new Date("2026-03-30"),
+      position: "0",
+    },
+    // Marketing Campaign tasks
+    {
+      title: "Social media content calendar",
+      description: "Plan and schedule social media posts for Q4 across Twitter, LinkedIn, and Instagram.",
+      status: "in_progress" as const,
+      priority: "medium" as const,
+      projectId: marketingProjectId,
+      assigneeId: marcusId,
+      creatorId: lisaId,
+      dueDate: new Date("2026-04-05"),
+      position: "0",
+    },
+    {
+      title: "Email newsletter series",
+      description: "Design and write 6-part email nurture series for product launch.",
+      status: "todo" as const,
+      priority: "high" as const,
+      projectId: marketingProjectId,
+      assigneeId: lisaId,
+      creatorId: lisaId,
+      dueDate: new Date("2026-04-12"),
+      position: "0",
+    },
+    {
+      title: "Landing page optimization",
+      description: "A/B test new landing page variants to improve conversion rate.",
+      status: "backlog" as const,
+      priority: "medium" as const,
+      projectId: marketingProjectId,
+      assigneeId: marcusId,
+      creatorId: lisaId,
+      dueDate: new Date("2026-04-18"),
+      position: "0",
+    },
+  ];
+
+  await db.insert(tasks).values(taskData);
+
+  // Create a few comments
+  const taskRows = await db.select({ id: tasks.id, title: tasks.title }).from(tasks);
+  const taskIdMap = new Map(taskRows.map((t) => [t.title, t.id]));
+
+  await db.insert(comments).values([
+    {
+      content: "I've set up the pipeline with staging and production environments. Need to add secrets for the deployment keys.",
+      taskId: taskIdMap.get("Set up CI/CD pipeline")!,
+      authorId: davidId,
+    },
+    {
+      content: "Great work! Let me know when secrets are configured and I'll trigger the first deployment.",
+      taskId: taskIdMap.get("Set up CI/CD pipeline")!,
+      authorId: alexId,
+    },
+    {
+      content: "The auth system is working. I've implemented role-based middleware for all API routes.",
+      taskId: taskIdMap.get("Implement user authentication")!,
+      authorId: jamesId,
+    },
+    {
+      content: "Can we add 2FA as a follow-up task? It would be great for enterprise customers.",
+      taskId: taskIdMap.get("Implement user authentication")!,
+      authorId: sarahId,
+    },
+    {
+      content: "Progress update: columns are draggable, working on the task creation modal now.",
+      taskId: taskIdMap.get("Build Kanban board UI")!,
+      authorId: annaId,
+    },
+    {
+      content: "The rate limiter is working well in testing. I'm using a sliding window approach for better accuracy.",
+      taskId: taskIdMap.get("Rate limiting middleware")!,
+      authorId: davidId,
+    },
+  ]);
+
+  // Create activity logs
+  await db.insert(activityLogs).values([
+    { userId: alexId, action: "created_project", entityType: "project", entityId: tfProjectId, details: "Created project: TeamFlow Platform" },
+    { userId: sarahId, action: "created_project", entityType: "project", entityId: mobileProjectId, details: "Created project: Mobile App Redesign" },
+    { userId: davidId, action: "created_project", entityType: "project", entityId: apiProjectId, details: "Created project: API Gateway" },
+    { userId: lisaId, action: "created_project", entityType: "project", entityId: marketingProjectId, details: "Created project: Q4 Marketing Campaign" },
+    { userId: davidId, action: "completed_task", entityType: "task", entityId: taskIdMap.get("Set up CI/CD pipeline")!, details: "Completed: Set up CI/CD pipeline" },
+    { userId: jamesId, action: "completed_task", entityType: "task", entityId: taskIdMap.get("Implement user authentication")!, details: "Completed: Implement user authentication" },
+    { userId: annaId, action: "started_task", entityType: "task", entityId: taskIdMap.get("Build Kanban board UI")!, details: "Started working on: Build Kanban board UI" },
+    { userId: davidId, action: "started_task", entityType: "task", entityId: taskIdMap.get("Rate limiting middleware")!, details: "Started working on: Rate limiting middleware" },
+    { userId: emilyId, action: "completed_task", entityType: "task", entityId: taskIdMap.get("User research interviews")!, details: "Completed: User research interviews" },
+    { userId: sarahId, action: "started_task", entityType: "task", entityId: taskIdMap.get("Create wireframes")!, details: "Started working on: Create wireframes" },
+  ]);
+
+  console.log("✅ Seed completed successfully!");
+  console.log("\n📧 Demo accounts (password: password123):");
+  console.log("  Superadmin: alex@teamflow.app");
+  console.log("  Admin:      sarah@teamflow.app / lisa@teamflow.app");
+  console.log("  Member:     marcus@teamflow.app / emily@teamflow.app / david@teamflow.app / james@teamflow.app / anna@teamflow.app");
+}
+
+seed()
+  .catch(console.error)
+  .finally(() => pool.end());

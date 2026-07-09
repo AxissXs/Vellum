@@ -1,0 +1,117 @@
+import { cookies } from "next/headers";
+import { db } from "@/db";
+import { users, sessions } from "@/db/schema";
+import { eq, gt } from "drizzle-orm";
+import { compareSync } from "bcryptjs";
+
+const SESSION_COOKIE = "tf_session";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "superadmin" | "admin" | "member";
+  avatarUrl: string | null;
+};
+
+export async function getSession(): Promise<AuthUser | null> {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!sessionId) return null;
+
+  // Look up session in database
+  const [session] = await db
+    .select({
+      id: sessions.id,
+      userId: sessions.userId,
+      expiresAt: sessions.expiresAt,
+    })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .limit(1);
+
+  if (!session || session.expiresAt < new Date()) {
+    // Clean up expired session
+    if (session) {
+      await db.delete(sessions).where(eq(sessions.id, sessionId));
+    }
+    return null;
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(eq(users.id, session.userId))
+    .limit(1);
+
+  if (!user) {
+    await db.delete(sessions).where(eq(sessions.id, sessionId));
+    return null;
+  }
+
+  return user as AuthUser;
+}
+
+export async function createSession(userId: string): Promise<string> {
+  const sessionId = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000);
+
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId,
+    expiresAt,
+  });
+
+  return sessionId;
+}
+
+export async function destroySession(sessionId: string) {
+  await db.delete(sessions).where(eq(sessions.id, sessionId));
+}
+
+export async function authenticateUser(
+  email: string,
+  password: string
+): Promise<AuthUser | null> {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email.toLowerCase().trim()))
+    .limit(1);
+
+  if (!user) return null;
+  if (!compareSync(password, user.passwordHash)) return null;
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    avatarUrl: user.avatarUrl,
+  };
+}
+
+export function requireAuth(user: AuthUser | null): asserts user is AuthUser {
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+}
+
+export function requireRole(
+  user: AuthUser | null,
+  roles: Array<"superadmin" | "admin" | "member">
+): asserts user is AuthUser {
+  requireAuth(user);
+  if (!roles.includes(user.role)) {
+    throw new Error("Forbidden");
+  }
+}
+
+export { SESSION_COOKIE, SESSION_MAX_AGE };

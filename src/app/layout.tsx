@@ -1,0 +1,16 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "TeamFlow — Team Management",
+  description: "A modern team management platform with kanban boards, task tracking, and real-time collaboration.",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body className="bg-slate-950 text-slate-100 antialiased">{children}</body>
+    </html>
+  );
+}
