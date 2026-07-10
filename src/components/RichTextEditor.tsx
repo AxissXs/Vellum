@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import {
   Bold,
   Italic,
@@ -12,16 +12,19 @@ import {
   Eye,
   Edit3,
   Link as LinkIcon,
+  AtSign,
 } from "lucide-react";
 import { clsx } from "clsx";
 
+type User = { id: string; name: string; avatarUrl: string | null };
+
 function escapeHtml(value: string) {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll("&", "\u0026amp;")
+    .replaceAll("<", "\u0026lt;")
+    .replaceAll(">", "\u0026gt;")
+    .replaceAll('"', "\u0026quot;")
+    .replaceAll("'", "\u0026#039;");
 }
 
 export function renderMarkdown(value: string) {
@@ -40,7 +43,8 @@ export function renderMarkdown(value: string) {
       .replace(
         /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
         '<a class="text-brand-400 hover:text-brand-300 underline" target="_blank" rel="noreferrer" href="$2">$1</a>'
-      );
+      )
+      .replace(/@(\w+)/g, '<span class="text-brand-400 font-medium">@$1</span>');
 
   const closeLists = () => {
     if (inUl) {
@@ -108,21 +112,36 @@ export function RichTextPreview({ value, empty = "No content yet" }: { value: st
   );
 }
 
+interface RichTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  label?: string;
+  users?: User[];
+  onMentionSelect?: (user: User) => void;
+}
+
 export default function RichTextEditor({
   value,
   onChange,
   placeholder = "Write with markdown-style formatting...",
   rows = 6,
   label,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-  label?: string;
-}) {
+  users = [],
+  onMentionSelect,
+}: RichTextEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
+  const mentionListRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredUsers = useMemo(() => {
+    if (!mentionQuery) return users;
+    return users.filter((u) => u.name.toLowerCase().includes(mentionQuery.toLowerCase()));
+  }, [users, mentionQuery]);
 
   function insert(before: string, after = "", sample = "text") {
     const el = textareaRef.current;
@@ -150,7 +169,95 @@ export default function RichTextEditor({
     window.requestAnimationFrame(() => el.focus());
   }
 
-  const tools = [
+  const handleMentionSelect = useCallback((user: User) => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    // Find the @ position
+    const beforeCursor = value.slice(0, start);
+    const atIndex = beforeCursor.lastIndexOf("@");
+    
+    if (atIndex === -1) return;
+
+    // Replace @query with @username
+    const next = value.slice(0, atIndex) + `@${user.name.split(" ")[0]}` + value.slice(start);
+    onChange(next);
+
+    window.requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(atIndex + 1 + user.name.split(" ")[0].length, atIndex + 1 + user.name.split(" ")[0].length);
+    });
+
+    setShowMentions(false);
+    setMentionQuery("");
+    onMentionSelect?.(user);
+  }, [onChange, onMentionSelect, value]);
+
+  const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+
+    const cursorPos = e.target.selectionStart;
+    const beforeCursor = newValue.slice(0, cursorPos);
+    const afterCursor = newValue.slice(cursorPos);
+
+    // Check if we're typing @ at the beginning or after a space/newline
+    const lastAtIndex = beforeCursor.lastIndexOf("@");
+    const charBeforeAt = lastAtIndex > 0 ? beforeCursor[lastAtIndex - 1] : "";
+    
+    // Check if there's no @ after the current one (we're in a mention)
+    const nextAtIndex = afterCursor.indexOf("@");
+    
+    if (lastAtIndex !== -1 && 
+        (lastAtIndex === 0 || /\s/.test(charBeforeAt)) &&
+        nextAtIndex === -1 &&
+        !beforeCursor.slice(lastAtIndex + 1).includes(" ")) {
+      // We're in a mention
+      const query = beforeCursor.slice(lastAtIndex + 1);
+      setMentionQuery(query);
+      setShowMentions(true);
+      
+      // Calculate position for dropdown
+      const textarea = e.target;
+      const textBeforeCursor = beforeCursor.slice(lastAtIndex + 1);
+      // Approximate position - in reality this would need more precise measurement
+      setMentionPosition({ top: 0, left: 0 }); // Will be positioned relative to textarea
+    } else if (!beforeCursor.slice(lastAtIndex + 1).match(/^\w*$/)) {
+      // Not a valid mention query
+      setShowMentions(false);
+      setMentionQuery("");
+    }
+  }, [onChange]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showMentions && filteredUsers.length > 0) {
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        handleMentionSelect(filteredUsers[0]);
+      } else if (e.key === "Escape") {
+        setShowMentions(false);
+        setMentionQuery("");
+      }
+    }
+  }, [showMentions, filteredUsers, handleMentionSelect]);
+
+  // Click outside to close mentions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mentionListRef.current && !mentionListRef.current.contains(event.target as Node)) {
+        setShowMentions(false);
+        setMentionQuery("");
+      }
+    };
+    
+    if (showMentions) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMentions]);
+
+  const tools = useMemo(() => [
     { icon: Heading2, label: "Heading", action: () => prefix("## ") },
     { icon: Bold, label: "Bold", action: () => insert("**", "**", "bold text") },
     { icon: Italic, label: "Italic", action: () => insert("*", "*", "italic text") },
@@ -159,70 +266,106 @@ export default function RichTextEditor({
     { icon: Quote, label: "Quote", action: () => prefix("> ") },
     { icon: Code, label: "Code", action: () => insert("`", "`", "code") },
     { icon: LinkIcon, label: "Link", action: () => insert("[", "](https://example.com)", "link text") },
-  ];
+  ], [prefix, insert]);
 
   return (
     <div>
       {label && <label className="block text-sm font-medium text-slate-300 mb-1.5">{label}</label>}
-      <div className="overflow-hidden rounded-lg border border-white/10 bg-white/5 focus-within:ring-2 focus-within:ring-brand-500">
-        <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-slate-950/40 px-2 py-1.5">
-          <div className="flex flex-wrap items-center gap-1">
-            {tools.map((tool) => {
-              const Icon = tool.icon;
-              return (
+      <div className="relative">
+        <div className="overflow-hidden rounded-lg border border-white/10 bg-white/5 focus-within:ring-2 focus-within:ring-brand-500">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-slate-950/40 px-2 py-1.5">
+            <div className="flex flex-wrap items-center gap-1">
+              {tools.map((tool) => {
+                const Icon = tool.icon;
+                return (
+                  <button
+                    key={tool.label}
+                    type="button"
+                    onClick={tool.action}
+                    title={tool.label}
+                    className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition"
+                  >
+                    <Icon size={14} />
+                  </button>
+                );
+              })}
+              {users.length > 0 && (
                 <button
-                  key={tool.label}
                   type="button"
-                  onClick={tool.action}
-                  title={tool.label}
+                  onClick={() => {
+                    setShowMentions(true);
+                    setMentionQuery("");
+                    textareaRef.current?.focus();
+                  }}
+                  title="Mention user"
                   className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition"
                 >
-                  <Icon size={14} />
+                  <AtSign size={14} />
                 </button>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-1 rounded-md bg-slate-900 p-0.5">
-            <button
-              type="button"
-              onClick={() => setMode("edit")}
-              className={clsx(
-                "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
-                mode === "edit" ? "bg-brand-500 text-white" : "text-slate-400 hover:text-white"
               )}
-            >
-              <Edit3 size={12} /> Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("preview")}
-              className={clsx(
-                "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
-                mode === "preview" ? "bg-brand-500 text-white" : "text-slate-400 hover:text-white"
-              )}
-            >
-              <Eye size={12} /> Preview
-            </button>
+            </div>
+            <div className="flex items-center gap-1 rounded-md bg-slate-900 p-0.5">
+              <button
+                type="button"
+                onClick={() => setMode("edit")}
+                className={clsx(
+                  "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
+                  mode === "edit" ? "bg-brand-500 text-white" : "text-slate-400 hover:text-white"
+                )}
+              >
+                <Edit3 size={12} /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("preview")}
+                className={clsx(
+                  "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
+                  mode === "preview" ? "bg-brand-500 text-white" : "text-slate-400 hover:text-white"
+                )}
+              >
+                <Eye size={12} /> Preview
+              </button>
+            </div>
           </div>
+
+          {mode === "edit" ? (
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              rows={rows}
+              className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none min-h-[120px]"
+              spellCheck={false}
+            />
+          ) : (
+            <RichTextPreview value={value} />
+          )}
+
+          {/* Mentions dropdown */}
+          {showMentions && filteredUsers.length > 0 && (
+            <div
+              ref={mentionListRef}
+              className="absolute z-50 bottom-full left-4 mb-1 w-56 bg-slate-900 border border-white/10 rounded-lg shadow-xl py-1 animate-slide-in"
+            >
+              {filteredUsers.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => handleMentionSelect(user)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition"
+                >
+                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-400 flex-shrink-0">
+                    {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                  </div>
+                  <span className="truncate">{user.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        {mode === "edit" ? (
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            rows={rows}
-            className="w-full resize-none bg-transparent px-4 py-3 text-sm leading-6 text-white placeholder:text-slate-500 focus:outline-none"
-            placeholder={placeholder}
-          />
-        ) : (
-          <div className="min-h-[120px] px-4 py-3">
-            <RichTextPreview value={value} empty="Nothing to preview yet" />
-          </div>
-        )}
       </div>
-      <p className="mt-1.5 text-[11px] text-slate-600">
-        Supports headings, bold, italic, lists, quotes, inline code, and links.
-      </p>
     </div>
   );
 }

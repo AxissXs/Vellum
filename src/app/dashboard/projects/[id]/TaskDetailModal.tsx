@@ -348,6 +348,7 @@ export default function TaskDetailModal({
                 onChange={setNewComment}
                 rows={3}
                 placeholder="Write an update, decision, blocker, or link..."
+                users={users}
               />
               <div className="flex justify-end">
                 <button

@@ -66,7 +66,10 @@ Required in `.env`:
 1. **Read relevant files** - Understand existing patterns before modifying
 2. **Follow conventions** - Match existing code style, naming, patterns
 3. **Write tests/verify** - Run `bun run lint`, `bun run typecheck`, `bun run build`
-4. **Commit changes** - Use conventional commit format
+4. **Update documentation** - Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
+5. Stage changes: `git add -A`
+6. Commit with conventional message
+7. Push: `git push`
 
 ### Code Conventions
 
@@ -143,14 +146,6 @@ Examples:
 - `feat(kanban): add drag-and-drop task reordering`
 - `fix(auth): handle expired session cleanup`
 - `db: add project_milestones table`
-
-### After Completing a Task
-
-1. Run quality checks: `bun run lint && bun run typecheck && bun run build`
-2. **Update documentation** - Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
-3. Stage changes: `git add -A`
-4. Commit with conventional message
-5. Push: `git push`
 
 ## File Structure Reference
 
