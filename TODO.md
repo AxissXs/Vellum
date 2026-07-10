@@ -2,6 +2,18 @@
 
 ## Priority: High
 
+- [ ] **Optimistic updates everywhere** - Implement optimistic UI updates across all mutations
+  - Task CRUD (create, update, delete, reorder)
+  - Project CRUD
+  - Team CRUD
+  - User management (create, update, delete)
+  - Comments (add, edit, delete)
+  - Milestones (create, update, delete)
+  - Team members (invite, remove, role change)
+  - Use React Query/React Mutation or similar for optimistic updates
+  - Rollback on error with toast notification
+  - Acceptance criteria: All mutations update UI immediately, rollback on error with toast
+
 - [ ] **Real-time updates** - Add WebSocket/SSE for live task updates across clients
   - Use Pusher, Ably, or native WebSockets with `ws` library
   - Update Kanban board in real-time when tasks change
