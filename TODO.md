@@ -41,6 +41,11 @@
   - Role management (lead, contributor, viewer)
   - Team settings page
 
+- [ ] **Bug: Admin user creation not reflected in UI** - Fix missing UI update and loading state
+  - New user not appearing in user list after creation
+  - Add loading animation during user creation
+  - Acceptance criteria: User list refreshes automatically, loading spinner shows during request
+
 - [ ] **Search & filters** - Global search across projects, tasks, users
   - Full-text search (PostgreSQL tsvector or Meilisearch)
   - Advanced filters (date ranges, assignee, priority, etc.)
@@ -120,7 +125,11 @@
 
 ## New Features (Ideas)
 
-- [ ] **Custom fields** - User-defined fields on tasks/projects
+- [ ] **Kanban board as dedicated page/tab** - Improve UX with dedicated Kanban view
+  - Separate page/tab for full-screen Kanban board
+  - Better drag-and-drop UX with more space
+  - Filter and group options in sidebar
+  - Acceptance criteria: Kanban accessible via dedicated route, responsive layout, filters work
 - [ ] **Time tracking** - Log time on tasks, reports
 - [ ] **Recurring tasks** - Cron-style recurring tasks
 - [ ] **Task dependencies** - Blocking/blocked relationships
