@@ -137,7 +137,7 @@
 
 ## New Features (Ideas)
 
-- [ ] **Kanban board as dedicated page/tab** - Improve UX with dedicated Kanban view
+- [x] **Kanban board as dedicated page/tab** - Improve UX with dedicated Kanban view
   - Separate page/tab for full-screen Kanban board
   - Better drag-and-drop UX with more space
   - Filter and group options in sidebar

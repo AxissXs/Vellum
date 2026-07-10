@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Plus,
   Shield,
+  Kanban,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -33,6 +34,7 @@ export default function Sidebar({ user }: { user: User }) {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/kanban", label: "Kanban", icon: Kanban },
     { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
     { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
     { href: "/dashboard/teams", label: "Teams", icon: Users },
