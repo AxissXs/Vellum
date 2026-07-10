@@ -19,7 +19,7 @@ export default function LoginForm({ initialError = "" }: { initialError?: string
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">TeamFlow</h1>
+          <h1 className="text-2xl font-bold text-white">Vellum</h1>
           <p className="text-sm text-slate-400 mt-1">Team management, simplified.</p>
         </div>
 
@@ -97,9 +97,9 @@ export default function LoginForm({ initialError = "" }: { initialError?: string
             <p className="text-xs text-slate-500 mb-3">Demo accounts (password: <code className="text-brand-400">password123</code>)</p>
             <div className="grid grid-cols-1 gap-1.5">
               {[
-                { email: "alex@teamflow.app", role: "Superadmin" },
-                { email: "sarah@teamflow.app", role: "Admin" },
-                { email: "marcus@teamflow.app", role: "Member" },
+                { email: "alex@vellum.app", role: "Superadmin" },
+                { email: "sarah@vellum.app", role: "Admin" },
+                { email: "marcus@vellum.app", role: "Member" },
               ].map((demo) => (
                 <button
                   key={demo.email}

@@ -17,60 +17,60 @@ async function seed() {
   // Create users
   const passwordHash = hashSync("password123", 10);
   const userIds = await db
-    .insert(users)
+.insert(users)
     .values([
       {
         name: "Alex Morgan",
-        email: "alex@teamflow.app",
+        email: "alex@vellum.app",
         passwordHash,
         role: "superadmin",
         avatarUrl: "",
       },
       {
         name: "Sarah Chen",
-        email: "sarah@teamflow.app",
+        email: "sarah@vellum.app",
         passwordHash,
         role: "admin",
         avatarUrl: "",
       },
       {
         name: "Marcus Johnson",
-        email: "marcus@teamflow.app",
+        email: "marcus@vellum.app",
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "Emily Rodriguez",
-        email: "emily@teamflow.app",
+        email: "emily@vellum.app",
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "David Kim",
-        email: "david@teamflow.app",
+        email: "david@vellum.app",
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "Lisa Thompson",
-        email: "lisa@teamflow.app",
+        email: "lisa@vellum.app",
         passwordHash,
         role: "admin",
         avatarUrl: "",
       },
       {
         name: "James Wilson",
-        email: "james@teamflow.app",
+        email: "james@vellum.app",
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "Anna Martinez",
-        email: "anna@teamflow.app",
+        email: "anna@vellum.app",
         passwordHash,
         role: "member",
         avatarUrl: "",
@@ -121,8 +121,8 @@ async function seed() {
   const projectIds = await db
     .insert(projects)
     .values([
-      {
-        name: "TeamFlow Platform",
+{
+        name: "Vellum Platform",
         description: "Core team management application with kanban boards and collaboration features",
         color: "#6366f1",
         icon: "layout-dashboard",
@@ -160,7 +160,7 @@ async function seed() {
     .returning({ id: projects.id, name: projects.name });
 
   const projectMap = new Map(projectIds.map((p) => [p.name, p.id]));
-  const tfProjectId = projectMap.get("TeamFlow Platform")!;
+  const vellumProjectId = projectMap.get("Vellum Platform")!;
   const mobileProjectId = projectMap.get("Mobile App Redesign")!;
   const apiProjectId = projectMap.get("API Gateway")!;
   const marketingProjectId = projectMap.get("Q4 Marketing Campaign")!;
@@ -168,29 +168,29 @@ async function seed() {
 
   // Create team members
   await db.insert(teamMembers).values([
-    { teamId: engTeamId, userId: alexId, projectId: tfProjectId },
-    { teamId: engTeamId, userId: davidId, projectId: tfProjectId },
+    { teamId: engTeamId, userId: alexId, projectId: vellumProjectId },
+    { teamId: engTeamId, userId: davidId, projectId: vellumProjectId },
     { teamId: engTeamId, userId: jamesId, projectId: apiProjectId },
-    { teamId: engTeamId, userId: annaId, projectId: tfProjectId },
+    { teamId: engTeamId, userId: annaId, projectId: vellumProjectId },
     { teamId: designTeamId, userId: sarahId, projectId: mobileProjectId },
     { teamId: designTeamId, userId: emilyId, projectId: mobileProjectId },
     { teamId: designTeamId, userId: annaId, projectId: mobileProjectId },
     { teamId: marketingTeamId, userId: lisaId, projectId: marketingProjectId },
     { teamId: marketingTeamId, userId: marcusId, projectId: marketingProjectId },
-    { teamId: productTeamId, userId: alexId, projectId: tfProjectId },
+    { teamId: productTeamId, userId: alexId, projectId: vellumProjectId },
     { teamId: productTeamId, userId: sarahId, projectId: mobileProjectId },
     { teamId: productTeamId, userId: lisaId, projectId: marketingProjectId },
   ]);
 
   // Create tasks
   const taskData = [
-    // TeamFlow Platform tasks
+    // Vellum Platform tasks
     {
       title: "Set up CI/CD pipeline",
       description: "Configure GitHub Actions for automated testing and deployment to staging environment.",
       status: "done" as const,
       priority: "high" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: davidId,
       creatorId: alexId,
       dueDate: new Date("2026-03-15"),
@@ -201,7 +201,7 @@ async function seed() {
       description: "Add email/password authentication with session management and role-based access control.",
       status: "done" as const,
       priority: "urgent" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: jamesId,
       creatorId: alexId,
       dueDate: new Date("2026-03-20"),
@@ -212,7 +212,7 @@ async function seed() {
       description: "Create normalized database schema for users, projects, tasks, teams, and activity logging.",
       status: "done" as const,
       priority: "high" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: annaId,
       creatorId: alexId,
       dueDate: new Date("2026-03-22"),
@@ -223,7 +223,7 @@ async function seed() {
       description: "Create drag-and-drop kanban board with smooth animations and task cards showing priority, assignee, and due date.",
       status: "in_progress" as const,
       priority: "high" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: annaId,
       creatorId: alexId,
       dueDate: new Date("2026-04-05"),
@@ -234,7 +234,7 @@ async function seed() {
       description: "Implement notification system for task assignments, comments, and status changes using WebSockets.",
       status: "todo" as const,
       priority: "medium" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: davidId,
       creatorId: alexId,
       dueDate: new Date("2026-04-12"),
@@ -245,7 +245,7 @@ async function seed() {
       description: "Build analytics dashboard showing team velocity, burndown charts, and task completion metrics.",
       status: "backlog" as const,
       priority: "medium" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: jamesId,
       creatorId: alexId,
       dueDate: new Date("2026-04-25"),
@@ -256,7 +256,7 @@ async function seed() {
       description: "Document all REST API endpoints with OpenAPI/Swagger specification for external developers.",
       status: "backlog" as const,
       priority: "low" as const,
-      projectId: tfProjectId,
+      projectId: vellumProjectId,
       assigneeId: annaId,
       creatorId: alexId,
       dueDate: new Date("2026-05-01"),
@@ -429,7 +429,7 @@ async function seed() {
 
   // Create activity logs
   await db.insert(activityLogs).values([
-    { userId: alexId, action: "created_project", entityType: "project", entityId: tfProjectId, details: "Created project: TeamFlow Platform" },
+    { userId: alexId, action: "created_project", entityType: "project", entityId: vellumProjectId, details: "Created project: Vellum Platform" },
     { userId: sarahId, action: "created_project", entityType: "project", entityId: mobileProjectId, details: "Created project: Mobile App Redesign" },
     { userId: davidId, action: "created_project", entityType: "project", entityId: apiProjectId, details: "Created project: API Gateway" },
     { userId: lisaId, action: "created_project", entityType: "project", entityId: marketingProjectId, details: "Created project: Q4 Marketing Campaign" },
@@ -443,9 +443,9 @@ async function seed() {
 
   console.log("✅ Seed completed successfully!");
   console.log("\n📧 Demo accounts (password: password123):");
-  console.log("  Superadmin: alex@teamflow.app");
-  console.log("  Admin:      sarah@teamflow.app / lisa@teamflow.app");
-  console.log("  Member:     marcus@teamflow.app / emily@teamflow.app / david@teamflow.app / james@teamflow.app / anna@teamflow.app");
+  console.log("  Superadmin: alex@vellum.app");
+  console.log("  Admin:      sarah@vellum.app / lisa@vellum.app");
+  console.log("  Member:     marcus@vellum.app / emily@vellum.app / david@vellum.app / james@vellum.app / anna@vellum.app");
 }
 
 seed()

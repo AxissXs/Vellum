@@ -32,31 +32,31 @@ async function seedIfEmpty() {
     .values([
       {
         name: "Alex Morgan",
-        email: "alex@teamflow.app",
+        email: "alex@vellum.app",
         passwordHash,
         role: "superadmin",
       },
       {
         name: "Sarah Chen",
-        email: "sarah@teamflow.app",
+        email: "sarah@vellum.app",
         passwordHash,
         role: "admin",
       },
       {
         name: "Marcus Johnson",
-        email: "marcus@teamflow.app",
+        email: "marcus@vellum.app",
         passwordHash,
         role: "member",
       },
       {
         name: "Emily Rodriguez",
-        email: "emily@teamflow.app",
+        email: "emily@vellum.app",
         passwordHash,
         role: "member",
       },
       {
         name: "David Kim",
-        email: "david@teamflow.app",
+        email: "david@vellum.app",
         passwordHash,
         role: "member",
       },
@@ -85,7 +85,7 @@ async function seedIfEmpty() {
     .insert(projects)
     .values([
       {
-        name: "TeamFlow Platform",
+        name: "Vellum Platform",
         description:
           "Core team management platform with kanban boards, activity tracking, and collaboration.",
         color: "#6366f1",
@@ -112,7 +112,7 @@ async function seedIfEmpty() {
     .returning({ id: projects.id, name: projects.name });
 
   const projectMap = new Map(insertedProjects.map((project) => [project.name, project.id]));
-  const platformId = projectMap.get("TeamFlow Platform")!;
+  const platformId = projectMap.get("Vellum Platform")!;
   const mobileId = projectMap.get("Mobile App Redesign")!;
   const launchId = projectMap.get("Q4 Launch Campaign")!;
 
@@ -235,7 +235,7 @@ async function seedIfEmpty() {
       action: "created_project",
       entityType: "project",
       entityId: platformId,
-      details: "Created project: TeamFlow Platform",
+      details: "Created project: Vellum Platform",
     },
     {
       userId: sarahId,

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TeamFlow — Team Management",
+  title: "Vellum — Team Management",
   description: "A modern team management platform with kanban boards, task tracking, and real-time collaboration.",
 };
 
