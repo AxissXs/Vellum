@@ -2,7 +2,7 @@
 
 ## Priority: High
 
-- [ ] **Optimistic updates everywhere** - Implement optimistic UI updates across all mutations
+- [x] **Optimistic updates everywhere** - Implement optimistic UI updates across all mutations
   - Task CRUD (create, update, delete, reorder)
   - Project CRUD
   - Team CRUD
