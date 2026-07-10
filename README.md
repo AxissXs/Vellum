@@ -21,7 +21,7 @@ A modern team management platform with Kanban boards, task tracking, and real-ti
 | Auth            | Custom session-based with bcryptjs           |
 | Styling         | Tailwind CSS 4                               |
 | Language        | TypeScript 5.9                               |
-| Package Manager | npm (bun.lock present)                       |
+| Package Manager | bun (bun.lock present)                       |
 
 ## 🚀 Quick Start
 
@@ -29,7 +29,7 @@ A modern team management platform with Kanban boards, task tracking, and real-ti
 
 - Node.js 20+
 - PostgreSQL database (local or Neon)
-- npm or bun
+- bun
 
 ### Installation
 
@@ -37,19 +37,19 @@ A modern team management platform with Kanban boards, task tracking, and real-ti
 # Clone and install
 git clone <repo-url>
 cd Vellum
-npm install
+bun install
 
 # Configure environment
 cp .env.example .env
 # Edit .env with your DATABASE_URL and DIRECT_DATABASE_URL
 
 # Database setup
-npm run db:generate  # Generate migrations from schema
-npm run db:migrate   # Apply migrations
-npm run db:seed      # Seed demo data (optional)
+bun run db:generate  # Generate migrations from schema
+bun run db:migrate   # Apply migrations
+bun run db:seed      # Seed demo data (optional)
 
 # Development
-npm run dev          # Start dev server at http://localhost:3000
+bun run dev          # Start dev server at http://localhost:3000
 ```
 
 ### Demo Accounts (after seeding)
@@ -117,23 +117,23 @@ See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for:
 
 ```bash
 # Development
-npm run dev              # Start dev server (Turbopack)
+bun run dev              # Start dev server (Turbopack)
 
 # Database
-npm run db:generate      # Generate migrations
-npm run db:migrate       # Apply migrations
-npm run db:push          # Push schema directly (no migration files)
-npm run db:studio        # Open Drizzle Studio
-npm run db:seed          # Seed full demo data
+bun run db:generate      # Generate migrations
+bun run db:migrate       # Apply migrations
+bun run db:push          # Push schema directly (no migration files)
+bun run db:studio        # Open Drizzle Studio
+bun run db:seed          # Seed full demo data
 
 # Quality
-npm run lint             # ESLint
-npm run typecheck        # TypeScript check
-npm run build            # Production build
+bun run lint             # ESLint
+bun run typecheck        # TypeScript check
+bun run build            # Production build
 
 # Deploy
-npm run vercel:build     # Build with migration generation
-npm run vercel:deploy    # Migrate + deploy to Vercel
+bun run vercel:build     # Build with migration generation
+bun run vercel:deploy    # Migrate + deploy to Vercel
 ```
 
 ## 🌐 Deployment (Vercel)

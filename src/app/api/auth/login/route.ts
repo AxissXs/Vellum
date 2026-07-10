@@ -6,6 +6,8 @@ import {
   SESSION_MAX_AGE,
 } from "@/lib/auth";
 import { ensureDemoData } from "@/db/bootstrap";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 
 function isJsonRequest(req: NextRequest) {
   return req.headers.get("content-type")?.includes("application/json");
@@ -14,8 +16,6 @@ function isJsonRequest(req: NextRequest) {
 function setSessionCookie(res: NextResponse, sessionId: string) {
   res.cookies.set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    // Keep this false so auth works reliably in local/proxied preview
-    // environments where TLS may be terminated before the Next.js server.
     secure: false,
     sameSite: "lax",
     maxAge: SESSION_MAX_AGE,
@@ -30,11 +30,29 @@ function relativeRedirect(location: string) {
   });
 }
 
+async function isInitialized() {
+  const existingUsers = await db.select({ count: users.id }).from(users).limit(1);
+  return existingUsers.length > 0;
+}
+
 export async function POST(req: NextRequest) {
   const wantsJson = isJsonRequest(req);
 
   try {
-    await ensureDemoData();
+    if (process.env.NODE_ENV === "development") {
+      await ensureDemoData();
+    } else {
+      const initialized = await isInitialized();
+      if (!initialized) {
+        if (wantsJson) {
+          return NextResponse.json(
+            { error: "Workspace not initialized", redirect: "/setup" },
+            { status: 400 }
+          );
+        }
+        return relativeRedirect("/setup");
+      }
+    }
 
     let email = "";
     let password = "";

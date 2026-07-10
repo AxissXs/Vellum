@@ -1,13 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LogIn, Loader2, Eye, EyeOff } from "lucide-react";
 
-export default function LoginForm({ initialError = "" }: { initialError?: string }) {
+interface LoginFormProps {
+  initialError?: string;
+  isDev?: boolean;
+}
+
+export default function LoginForm({ initialError = "", isDev = false }: LoginFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(initialError);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.redirect) {
+          router.push(data.redirect);
+          router.refresh();
+          return;
+        }
+        setError(data.error || "Login failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-brand-900 to-slate-900 p-4">
@@ -27,18 +68,13 @@ export default function LoginForm({ initialError = "" }: { initialError?: string
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
           <h2 className="text-lg font-semibold text-white mb-6">Sign in to your account</h2>
 
-          {initialError && (
+          {(error || initialError) && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400 mb-6">
-              {initialError}
+              {error || initialError}
             </div>
           )}
 
-          <form
-            action="/api/auth/login"
-            method="post"
-            onSubmit={() => setLoading(true)}
-            className="space-y-5"
-          >
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
                 Email address
@@ -92,32 +128,34 @@ export default function LoginForm({ initialError = "" }: { initialError?: string
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 pt-6 border-t border-white/5">
-            <p className="text-xs text-slate-500 mb-3">Demo accounts (password: <code className="text-brand-400">password123</code>)</p>
-            <div className="grid grid-cols-1 gap-1.5">
-              {[
-                { email: "alex@vellum.app", role: "Superadmin" },
-                { email: "sarah@vellum.app", role: "Admin" },
-                { email: "marcus@vellum.app", role: "Member" },
-              ].map((demo) => (
-                <button
-                  key={demo.email}
-                  type="button"
-                  onClick={() => {
-                    setEmail(demo.email);
-                    setPassword("password123");
-                  }}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-xs hover:bg-white/5 transition text-left group"
-                >
-                  <span className="text-slate-300 group-hover:text-white">{demo.email}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500 bg-white/5 px-2 py-0.5 rounded">
-                    {demo.role}
-                  </span>
-                </button>
-              ))}
+          {/* Demo credentials - only in development */}
+          {isDev && (
+            <div className="mt-6 pt-6 border-t border-white/5">
+              <p className="text-xs text-slate-500 mb-3">Demo accounts (password: <code className="text-brand-400">password123</code>)</p>
+              <div className="grid grid-cols-1 gap-1.5">
+                {[
+                  { email: "alex@vellum.app", role: "Superadmin" },
+                  { email: "sarah@vellum.app", role: "Admin" },
+                  { email: "marcus@vellum.app", role: "Member" },
+                ].map((demo) => (
+                  <button
+                    key={demo.email}
+                    type="button"
+                    onClick={() => {
+                      setEmail(demo.email);
+                      setPassword("password123");
+                    }}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-xs hover:bg-white/5 transition text-left group"
+                  >
+                    <span className="text-slate-300 group-hover:text-white">{demo.email}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-slate-500 bg-white/5 px-2 py-0.5 rounded">
+                      {demo.role}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <p className="text-center text-xs text-slate-600 mt-6">

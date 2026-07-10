@@ -20,30 +20,30 @@ This document provides guidance for AI agents working on the Vellum project.
 - **Auth**: Custom session-based auth with bcryptjs
 - **Styling**: Tailwind CSS 4.1.17
 - **Language**: TypeScript 5.9.3
-- **Package Manager**: npm (with bun.lock)
+- **Package Manager**: bun (with bun.lock)
 
 ## Key Commands
 
 ```bash
 # Development
-npm run dev              # Start dev server (Turbopack)
+bun run dev              # Start dev server (Turbopack)
 
 # Database
-npm run db:generate      # Generate migrations from schema.ts
-npm run db:migrate       # Apply migrations to database
-npm run db:push          # Push schema directly (no migration files)
-npm run db:studio        # Open Drizzle Studio
-npm run db:seed          # Seed database with demo data
+bun run db:generate      # Generate migrations from schema.ts
+bun run db:migrate       # Apply migrations to database
+bun run db:push          # Push schema directly (no migration files)
+bun run db:studio        # Open Drizzle Studio
+bun run db:seed          # Seed database with demo data
 
 # Code Quality
-npm run lint             # ESLint
-npm run typecheck        # TypeScript check
+bun run lint             # ESLint
+bun run typecheck        # TypeScript check
 
 # Build & Deploy
-npm run build            # Production build
-npm run start            # Start production server
-npm run vercel:build     # Build with migration generation
-npm run vercel:deploy    # Migrate + deploy to Vercel
+bun run build            # Production build
+bun run start            # Start production server
+bun run vercel:build     # Build with migration generation
+bun run vercel:deploy    # Migrate + deploy to Vercel
 ```
 
 ## Environment Variables
@@ -65,7 +65,7 @@ Required in `.env`:
 
 1. **Read relevant files** - Understand existing patterns before modifying
 2. **Follow conventions** - Match existing code style, naming, patterns
-3. **Write tests/verify** - Run `npm run lint`, `npm run typecheck`, `npm run build`
+3. **Write tests/verify** - Run `bun run lint`, `bun run typecheck`, `bun run build`
 4. **Commit changes** - Use conventional commit format
 
 ### Code Conventions
@@ -115,13 +115,13 @@ export async function GET() {
 ### Database Changes
 
 1. Modify `src/db/schema.ts`
-2. Run `npm run db:generate` to create migration
-3. Run `npm run db:migrate` to apply
+2. Run `bun run db:generate` to create migration
+3. Run `bun run db:migrate` to apply
 4. Commit both schema and migration files
 
 ### Seeding Data
 
-- `seed.ts` - Full demo data (run manually with `npm run db:seed`)
+- `seed.ts` - Full demo data (run manually with `bun run db:seed`)
 - `bootstrap.ts` - Minimal demo data (auto-runs on first API call via `ensureDemoData()`)
 
 ## Commit Message Format
@@ -146,11 +146,11 @@ Examples:
 
 ### After Completing a Task
 
-1. Run quality checks: `npm run lint && npm run typecheck && npm run build`
-2. Stage changes: `git add -A`
-3. Commit with conventional message
-4. Push: `git push`
-5. Update `TODO.md` - mark task as completed
+1. Run quality checks: `bun run lint && bun run typecheck && bun run build`
+2. **Update documentation** - Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
+3. Stage changes: `git add -A`
+4. Commit with conventional message
+5. Push: `git push`
 
 ## File Structure Reference
 

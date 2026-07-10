@@ -16,8 +16,7 @@ Vellum/
 ├── STRUCTURE.md            # This file
 ├── TODO.md                 # Task tracking
 ├── bun.lock                # Bun lockfile
-├── package.json            # NPM scripts & dependencies
-├── package-lock.json       # NPM lockfile
+├── package.json            # Package scripts & dependencies
 ├── tsconfig.json           # TypeScript config
 ├── next.config.ts          # Next.js config
 ├── eslint.config.mjs       # ESLint config (flat)
@@ -40,6 +39,8 @@ src/
 │   ├── page.tsx            # Home (redirects to login/dashboard)
 │   ├── login/
 │   │   └── page.tsx        # Login page
+│   ├── setup/
+│   │   └── page.tsx        # First-time setup page
 │   ├── dashboard/
 │   │   ├── layout.tsx      # Dashboard layout (auth + sidebar)
 │   │   ├── page.tsx        # Dashboard home
@@ -66,6 +67,8 @@ src/
 │       │   ├── login/route.ts      # POST - Login
 │       │   ├── logout/route.ts     # POST - Logout
 │       │   └── me/route.ts         # GET - Current user
+│       ├── setup/
+│       │   └── route.ts            # GET, POST - Workspace setup
 │       ├── users/
 │       │   ├── route.ts            # GET, POST - List/Create users
 │       │   └── [id]/route.ts       # GET, PATCH, DELETE - User CRUD
@@ -128,6 +131,16 @@ src/
 
 **Purpose**: Login page with form
 **Exports**: `LoginPage()` - Server component
+
+### `src/app/setup/page.tsx`
+
+**Purpose**: First-time workspace setup page
+**Exports**: `SetupPage()` - Client component
+**Features**:
+- Creates initial superadmin user
+- Creates first team
+- Creates "Getting Started" project
+- Redirects to login on success
 
 ### `src/app/dashboard/layout.tsx`
 
@@ -219,6 +232,18 @@ src/
 ---
 
 ### API Routes
+
+#### `src/app/api/setup/route.ts`
+
+**Methods**: `GET`, `POST`
+**Purpose**: First-time workspace setup
+**GET**: Returns `{ initialized: boolean }`
+**POST Request**: `{ name, email, password, teamName }`
+**POST Response**: `{ success: true, userId }` or `{ error: string }`
+**Functions**:
+
+- `GET()` - Checks if workspace is initialized
+- `POST(req)` - Creates superadmin user, team, and initial project
 
 #### `src/app/api/auth/login/route.ts`
 
@@ -515,8 +540,8 @@ src/
 - `db:push` - `dotenv -e .env -- drizzle-kit push`
 - `db:studio` - `dotenv -e .env -- drizzle-kit studio`
 - `db:seed` - `dotenv -e .env -- tsx src/db/seed.ts`
-- `vercel:build` - `npm run db:generate && next build`
-- `vercel:deploy` - `npm run db:migrate && vercel --prod`
+- `vercel:build` - `bun run db:generate && next build`
+- `vercel:deploy` - `bun run db:migrate && vercel --prod`
 
 ### `drizzle.config.ts`
 

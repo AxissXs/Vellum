@@ -46,18 +46,18 @@ git clone https://github.com/your-fork/Vellum.git
 cd Vellum
 
 # Install dependencies
-npm install
+bun install
 
 # Set up environment
 cp .env.example .env
 # Edit .env with your database URLs
 
 # Run migrations and seed
-npm run db:migrate
-npm run db:seed
+bun run db:migrate
+bun run db:seed
 
 # Start dev server
-npm run dev
+bun run dev
 ```
 
 ### 2. Create a Branch
@@ -93,9 +93,9 @@ Follow the conventions in [AGENTS.md](AGENTS.md):
 Run before committing:
 
 ```bash
-npm run lint        # ESLint
-npm run typecheck   # TypeScript
-npm run build       # Production build
+bun run lint        # ESLint
+bun run typecheck   # TypeScript
+bun run build       # Production build
 ```
 
 All checks must pass. CI will run these on PR.
@@ -193,7 +193,7 @@ Open a Pull Request with:
 ### Database (Drizzle)
 
 - Modify `src/db/schema.ts`
-- Run `npm run db:generate` for migrations
+- Run `bun run db:generate` for migrations
 - Commit both schema and migration files
 - Use snake_case for columns, camelCase for TS
 

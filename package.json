@@ -12,8 +12,8 @@
     "db:push": "dotenv -e .env -- drizzle-kit push",
     "db:studio": "dotenv -e .env -- drizzle-kit studio",
     "db:seed": "dotenv -e .env -- tsx src/db/seed.ts",
-    "vercel:build": "npm run db:generate && next build",
-    "vercel:deploy": "npm run db:migrate && vercel --prod"
+    "vercel:build": "bun run db:generate && next build",
+    "vercel:deploy": "bun run db:migrate && vercel --prod"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
