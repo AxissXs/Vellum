@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Trash2, Calendar, User, Send } from "lucide-react";
+import { X, Loader2, Trash2, Calendar, User, Send, Edit2, Check, X as XIcon } from "lucide-react";
 import { clsx } from "clsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/useComments";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
 
 type User = { id: string; name: string; avatarUrl: string | null };
@@ -42,6 +44,11 @@ const priorityBadges: Record<string, string> = {
   low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 };
 
+async function fetchComments(taskId: string) {
+  const data = await api.get<{ comments: Comment[] }>(`/api/comments?taskId=${taskId}`);
+  return data.comments;
+}
+
 export default function TaskDetailModal({
   task: initialTask,
   users,
@@ -60,7 +67,6 @@ export default function TaskDetailModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Edit state
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || "");
   const [editPriority, setEditPriority] = useState(task.priority);
@@ -68,21 +74,23 @@ export default function TaskDetailModal({
   const [editAssignee, setEditAssignee] = useState(task.assigneeId || "");
   const [editDueDate, setEditDueDate] = useState(task.dueDate?.split("T")[0] || "");
 
-  // Comments
-  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [commenting, setCommenting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+
+  const queryClient = useQueryClient();
+  const { data: comments = [], refetch } = useQuery({
+    queryKey: ["comments", task.id],
+    queryFn: () => fetchComments(task.id),
+  });
+
+  const createCommentMutation = useCreateComment();
+  const updateCommentMutation = useUpdateComment();
+  const deleteCommentMutation = useDeleteComment();
 
   useEffect(() => {
-    loadComments();
-  }, [task.id]);
-
-  async function loadComments() {
-    try {
-      const data = await api.get<any>(`/api/comments?taskId=${task.id}`);
-      setComments(data.comments);
-    } catch {}
-  }
+    refetch();
+  }, [task.id, refetch]);
 
   async function handleSave() {
     setSaving(true);
@@ -119,23 +127,34 @@ export default function TaskDetailModal({
     setDeleting(false);
   }
 
-  async function handleAddComment(e: React.FormEvent) {
+  function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment.trim()) return;
-    setCommenting(true);
-
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newComment.trim(), taskId: task.id }),
+    createCommentMutation.mutate({ content: newComment.trim(), taskId: task.id }, {
+      onSuccess: () => setNewComment(""),
     });
+  }
 
-    if (res.ok) {
-      const data = await res.json();
-      setComments((prev) => [...prev, data.comment]);
-      setNewComment("");
-    }
-    setCommenting(false);
+  function startEditComment(comment: Comment) {
+    setEditingCommentId(comment.id);
+    setEditCommentContent(comment.content);
+  }
+
+  function cancelEditComment() {
+    setEditingCommentId(null);
+    setEditCommentContent("");
+  }
+
+  function saveEditComment(comment: Comment) {
+    updateCommentMutation.mutate(
+      { id: comment.id, taskId: comment.taskId, content: editCommentContent.trim() },
+      { onSuccess: () => cancelEditComment() }
+    );
+  }
+
+  function handleDeleteComment(commentId: string) {
+    if (!confirm("Delete this comment?")) return;
+    deleteCommentMutation.mutate(commentId);
   }
 
   function getInitials(name: string | null) {
@@ -330,13 +349,62 @@ export default function TaskDetailModal({
                     {getInitials(c.authorName)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-slate-300">{c.authorName || "Unknown"}</span>
-                      <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
-                    </div>
-                    <div className="mt-0.5">
-                      <RichTextPreview value={c.content} empty="" />
-                    </div>
+                    {editingCommentId === c.id ? (
+                      <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="space-y-2">
+                        <RichTextEditor
+                          value={editCommentContent}
+                          onChange={setEditCommentContent}
+                          rows={3}
+                          placeholder="Edit your comment..."
+                          users={users}
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            type="button"
+                            onClick={cancelEditComment}
+                            className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
+                            className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                          >
+                            {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-slate-300">{c.authorName || "Unknown"}</span>
+                          <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
+                          {c.authorId === currentUserId && (
+                            <div className="flex items-center gap-1 ml-auto">
+                              <button
+                                onClick={() => startEditComment(c)}
+                                className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
+                                title="Edit"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteComment(c.id)}
+                                disabled={deleteCommentMutation.isPending}
+                                className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                title="Delete"
+                              >
+                                {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-0.5">
+                          <RichTextPreview value={c.content} empty="" />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -353,10 +421,10 @@ export default function TaskDetailModal({
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={commenting || !newComment.trim()}
+                  disabled={createCommentMutation.isPending || !newComment.trim()}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition"
                 >
-                  {commenting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  {createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   Add comment
                 </button>
               </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { comments, users } from "@/db/schema";
+import { comments, users, activityLogs, tasks } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
@@ -50,7 +50,16 @@ export async function POST(req: NextRequest) {
     .values({ content, taskId, authorId: user.id })
     .returning();
 
-  // Also fetch author name
+  const [task] = await db.select({ title: tasks.title }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
+
+  await db.insert(activityLogs).values({
+    userId: user.id,
+    action: "created_comment",
+    entityType: "comment",
+    entityId: comment.id,
+    details: `Commented on task: ${task?.title || taskId}`,
+  });
+
   const result = {
     ...comment,
     authorName: user.name,

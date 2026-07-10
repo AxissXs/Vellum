@@ -25,11 +25,13 @@
   - Persist position changes to database
   - Optimistic UI updates
 
-- [ ] **Task comments** - Full comment system on tasks
-  - API routes partially exist (`/api/comments`)
-  - Display in TaskDetailModal
-  - Real-time comment notifications
-  - @mention support
+- [x] **Task comments** - Full comment system on tasks
+  - API routes (`/api/comments` GET/POST, `/api/comments/[id]` PATCH/DELETE)
+  - Display in TaskDetailModal with edit/delete UI
+  - Optimistic updates via React Query hooks
+  - Activity logging for create/update/delete
+  - Real-time comment notifications (future)
+  - @mention support (future)
 
 - [ ] **File attachments** - Allow file uploads on tasks/projects
   - Integrate with S3/R2/Cloudinary
