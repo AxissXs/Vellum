@@ -43,6 +43,30 @@
   - Notification preferences per user
   - Template system for emails
 
+- [ ] **Push notifications** - Send push notifications for events and add user settings
+  - Integrate Web Push API (VAPID) or Push API service (e.g., Web Push, OneSignal)
+  - Support events: task assigned, mentioned, due date approaching, status changed, comments, mentions
+  - User notification preferences page (per event type, per channel: push/email/in-app)
+  - Per-team/project notification preferences
+  - VAPID key management for Web Push
+  - Service worker for receiving push notifications
+  - Acceptance criteria: Users can enable/disable push per event type, receive push notifications, manage preferences in settings page
+
+- [ ] **Actions without notifications** - Add options to perform actions without sending notifications
+  - "Update without notifying" checkbox/toggle on task updates, assignments, status changes
+  - "Comment without notifying" option on comments
+  - "Assign without notifying" option when assigning tasks
+  - "Bulk actions without notifications" for bulk operations
+  - Per-action toggle in modals and forms
+  - Acceptance criteria: Users can choose to skip notifications per action, setting persists per session
+
+- [ ] **Activity log for notification decisions** - Log when users choose not to send notifications
+  - Extend activity log schema to include `notificationSent` boolean and `notificationChannels` array
+  - Log entries for: task updates, assignments, comments, status changes
+  - Include `notificationDecision` field: `sent` | `skipped_by_user` | `skipped_by_preference` | `failed`
+  - Display in activity log details: show notification decision and channels used/skipped
+  - Acceptance criteria: Activity log shows whether notifications were sent/skipped for each action, with reason
+
 - [ ] **Project milestones** - Full milestone tracking UI
   - API routes exist (`/api/projects/[id]/milestones`, `/api/milestones/[id]`)
   - Timeline/Gantt view
@@ -152,6 +176,7 @@
   - Better drag-and-drop UX with more space
   - Filter and group options in sidebar
   - Acceptance criteria: Kanban accessible via dedicated route, responsive layout, filters work
+
 - [ ] **Time tracking** - Log time on tasks, reports
 - [ ] **Recurring tasks** - Cron-style recurring tasks
 - [ ] **Task dependencies** - Blocking/blocked relationships
