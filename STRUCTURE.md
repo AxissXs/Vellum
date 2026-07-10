@@ -86,7 +86,8 @@ src/
 │       │   ├── route.ts            # GET, POST - List/Create tasks
 │       │   └── [id]/route.ts       # GET, PATCH, DELETE - Task CRUD
 │       ├── comments/
-│       │   └── route.ts            # GET, POST - Task comments
+│       │   ├── route.ts            # GET, POST - Task comments
+│       │   └── [id]/route.ts       # PATCH, DELETE - Comment CRUD
 │       ├── activity/
 │       │   └── route.ts            # GET - Activity logs
 │       ├── stats/
@@ -102,6 +103,13 @@ src/
 │   ├── schema.ts           # Database schema (tables, enums, relations)
 │   ├── seed.ts             # Full demo data seeding
 │   └── bootstrap.ts        # Auto-seed on first API call
+├── hooks/                  # React Query Hooks
+│   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
+│   ├── useMilestones.ts    # Milestone mutations with optimistic updates
+│   ├── useProjects.ts      # Project mutations with optimistic updates
+│   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
+│   ├── useTeams.ts         # Team mutations with optimistic updates
+│   └── useUsers.ts         # User mutations with optimistic updates
 └── lib/                    # Utilities
     ├── api.ts              # API client helpers
     └── auth.ts             # Authentication utilities
@@ -493,6 +501,64 @@ src/
 **Exports**: `ensureDemoData()` - Returns Promise
 **Pattern**: Singleton promise - only runs once
 **Data**: 5 users, 3 teams, 3 projects, 8 tasks, comments, activity logs
+
+---
+
+### Hooks (`src/hooks/`)
+
+#### `src/hooks/useComments.ts`
+
+**Purpose**: React Query mutations for comment operations with optimistic updates
+**Exports**:
+- `useCreateComment()` - Create comment with optimistic UI update
+- `useUpdateComment()` - Update comment with optimistic UI update
+- `useDeleteComment()` - Delete comment with optimistic UI update
+
+**Pattern**: All hooks use `useMutation` with `onMutate` for optimistic updates, `onError` for rollback with toast, `onSettled` for cache invalidation
+
+#### `src/hooks/useTasks.ts`
+
+**Purpose**: React Query mutations for task operations with optimistic updates
+**Exports**:
+- `useCreateTask()` - Create task
+- `useUpdateTask()` - Update task
+- `useDeleteTask()` - Delete task
+- `useReorderTasks()` - Reorder tasks within/between columns
+
+#### `src/hooks/useProjects.ts`
+
+**Purpose**: React Query mutations for project operations
+**Exports**:
+- `useCreateProject()` - Create project
+- `useUpdateProject()` - Update project
+- `useDeleteProject()` - Delete project
+
+#### `src/hooks/useTeams.ts`
+
+**Purpose**: React Query mutations for team operations
+**Exports**:
+- `useCreateTeam()` - Create team
+- `useUpdateTeam()` - Update team
+- `useDeleteTeam()` - Delete team
+- `useAddTeamMember()` - Add member to team
+- `useRemoveTeamMember()` - Remove member from team
+- `useUpdateTeamMemberRole()` - Update member role
+
+#### `src/hooks/useUsers.ts`
+
+**Purpose**: React Query mutations for user management
+**Exports**:
+- `useCreateUser()` - Create user (admin)
+- `useUpdateUser()` - Update user
+- `useDeleteUser()` - Delete user
+
+#### `src/hooks/useMilestones.ts`
+
+**Purpose**: React Query mutations for milestone operations
+**Exports**:
+- `useCreateMilestone()` - Create milestone
+- `useUpdateMilestone()` - Update milestone
+- `useDeleteMilestone()` - Delete milestone
 
 ---
 

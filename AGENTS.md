@@ -178,6 +178,74 @@ See `src/db/schema.ts` for:
 | `/api/tasks`                    | GET, POST          | List/create tasks    |
 | `/api/tasks/[id]`               | GET, PATCH, DELETE | Task CRUD            |
 | `/api/comments`                 | GET, POST          | Task comments        |
+| `/api/comments/[id]`            | PATCH, DELETE      | Comment CRUD         |
 | `/api/activity`                 | GET                | Activity logs        |
 | `/api/stats`                    | GET                | Dashboard statistics |
 | `/api/health`                   | GET                | Health check         |
+
+## React Query Optimistic Updates Pattern
+
+All mutations use React Query hooks with optimistic updates. Pattern (see `src/hooks/useComments.ts`):
+
+```ts
+export function useCreateComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input) => {
+      const res = await api.post("/api/comments", input);
+      return res.comment;
+    },
+    onMutate: async (newComment) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["comments", newComment.taskId] });
+
+      // Snapshot previous value
+      const previousComments = queryClient.getQueryData(["comments", newComment.taskId]);
+
+      // Optimistically update
+      queryClient.setQueryData(["comments", newComment.taskId], (old) => [
+        ...(old || []),
+        { ...newComment, id: `temp-${Date.now()}`, authorName: null },
+      ]);
+
+      return { previousComments, taskId: newComment.taskId };
+    },
+    onError: (err, newComment, context) => {
+      // Rollback on error
+      if (context?.previousComments) {
+        queryClient.setQueryData(["comments", context.taskId], context.previousComments);
+      }
+      toast.error("Failed to add comment");
+    },
+    onSuccess: (data, newComment) => {
+      // Replace temp with real
+      queryClient.setQueryData(["comments", newComment.taskId], (old) =>
+        old?.map((c) => (c.id.startsWith("temp-") ? data : c)) || []
+      );
+    },
+    onSettled: (data, error, newComment) => {
+      // Refetch to ensure sync
+      queryClient.invalidateQueries({ queryKey: ["comments", newComment.taskId] });
+    },
+  });
+}
+```
+
+Apply same pattern to `useUpdateComment`, `useDeleteComment`, `useTasks`, `useProjects`, `useUsers`, etc.
+
+## Activity Logging Convention
+
+All mutating API routes must log to `activity_logs` table after successful operation:
+
+```ts
+await db.insert(activityLogs).values({
+  userId: user.id,
+  action: "created_task" | "updated_task" | "deleted_task" | "created_comment" | "updated_comment" | "deleted_comment",
+  entityType: "task" | "comment" | "project" | "user",
+  entityId: entity.id,
+  details: `Created task: ${entity.title}`,
+});
+```
+
+Actions: `created_*`, `updated_*`, `deleted_*`, `changed_*_status`
