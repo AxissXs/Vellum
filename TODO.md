@@ -53,7 +53,7 @@
   - Role management (lead, contributor, viewer)
   - Team settings page
 
-- [ ] **Bug: Admin user creation not reflected in UI** - Fix missing UI update and loading state
+- [x] **Bug: Admin user creation not reflected in UI** - Fix missing UI update and loading state
   - New user not appearing in user list after creation
   - Add loading animation during user creation
   - Acceptance criteria: User list refreshes automatically, loading spinner shows during request
