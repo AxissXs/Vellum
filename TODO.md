@@ -105,6 +105,16 @@
   - Login attempts, permission changes
   - Export for compliance
 
+- [ ] **Super Admin Dashboard** - Comprehensive management and monitoring for super admins
+  - User management table with last login, IP address, status (active/inactive/banned)
+  - Real-time user activity monitoring (logins, actions, failed attempts)
+  - Session management (view/revoke active sessions)
+  - Enhanced audit logs with filtering by user, action, date range, IP
+  - System health metrics (DB connections, API latency, error rates)
+  - Role/permission management matrix
+  - Export user activity reports (CSV/PDF)
+  - Acceptance criteria: Super admin can view all users with last login/IP, monitor activity in real-time, revoke sessions, export audit logs
+
 ## Technical Debt
 
 - [ ] **Add test suite** - Unit + integration tests
