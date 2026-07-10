@@ -121,6 +121,15 @@
   - Touch-friendly Kanban
   - PWA support (manifest, service worker)
 
+- [ ] **Mobile-first limited-feature mode** - Lightweight mobile experience for messages, notifications, stats
+  - Mobile-first responsive layout (collapsible nav, stacked cards, touch targets >=44px)
+  - Dedicated mobile routes/pages: `/mobile/messages`, `/mobile/notifications`, `/mobile/stats`
+  - Limited feature set: read-only messages, notifications list with mark-read, dashboard stats summary
+  - Bottom navigation bar for mobile navigation (Messages, Notifications, Stats, Profile)
+  - Touch-friendly interactions (swipe to dismiss notifications, pull-to-refresh)
+  - PWA manifest + service worker for offline notifications view
+  - Acceptance criteria: Mobile users can read messages, view/clear notifications, see key stats without desktop UI complexity
+
 - [ ] **API rate limiting** - Protect API endpoints
   - Upstash Redis or in-memory
   - Per-user/IP limits
