@@ -67,8 +67,9 @@ Required in `.env`:
 2. **Follow conventions** - Match existing code style, naming, patterns
 3. **Write tests/verify** - Run `bun run lint`, `bun run typecheck`, `bun run build`
 4. **Update documentation** - Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
-5. Stage changes: `git add -A`
-6. Commit with conventional message
+5. **Check for overlap** - Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
+6. Stage changes: `git add -A`
+7. Commit with conventional message
 7. Push: `git push`
 
 ### Code Conventions
