@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, X, Trash2, Shield, User as UserIcon } from "lucide-react";
 import { clsx } from "clsx";
+import { useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/useUsers";
 
 type User = {
   id: string;
@@ -24,9 +25,12 @@ export default function AdminClient({
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const createUser = useCreateUser();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
 
   // Form state
   const [name, setName] = useState("");
@@ -61,43 +65,47 @@ export default function AdminClient({
       setError("Password is required for new users");
       return;
     }
-    setLoading(true);
     setError("");
 
-    const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
-    const method = editingUser ? "PATCH" : "POST";
-    const body: Record<string, unknown> = {
+    const createBody = {
       name: name.trim(),
       email: email.trim(),
       role,
+      password: password.trim(),
     };
-    if (password.trim()) body.password = password.trim();
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const updateBody = {
+      name: name.trim(),
+      email: email.trim(),
+      role,
+      ...(password.trim() && { password: password.trim() }),
+    };
 
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Failed to save user");
-      setLoading(false);
-      return;
+    try {
+      if (editingUser) {
+        await updateUser.mutateAsync({ id: editingUser.id, ...updateBody });
+        setUsers((prev) =>
+          prev.map((u) => (u.id === editingUser.id ? { ...u, ...updateBody } : u))
+        );
+      } else {
+        const newUser = await createUser.mutateAsync(createBody);
+        setUsers((prev) => [...prev, newUser]);
+      }
+      setShowModal(false);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save user";
+      setError(errorMessage);
     }
-
-    setShowModal(false);
-    router.refresh();
-    setLoading(false);
   }
 
   async function handleDelete(userId: string) {
     if (!confirm("Delete this user? This cannot be undone.")) return;
 
-    const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
-    if (res.ok) {
+    try {
+      await deleteUser.mutateAsync(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
-      router.refresh();
+    } catch {
+      setError("Failed to delete user");
     }
   }
 
@@ -116,6 +124,8 @@ export default function AdminClient({
       month: "short", day: "numeric", year: "numeric",
     });
   }
+
+  const isLoading = createUser.isPending || updateUser.isPending || deleteUser.isPending;
 
   return (
     <>
@@ -155,7 +165,8 @@ export default function AdminClient({
                 {currentUserRole === "superadmin" && (
                   <button
                     onClick={() => handleDelete(u.id)}
-                    className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                    disabled={isLoading}
+                    className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -241,11 +252,11 @@ export default function AdminClient({
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
               >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                {loading ? "Saving..." : editingUser ? "Save Changes" : "Create User"}
+                {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                {isLoading ? "Saving..." : editingUser ? "Save Changes" : "Create User"}
               </button>
             </form>
           </div>
