@@ -4,7 +4,6 @@ import {
   useState,
   useCallback,
 } from "react";
-import { useRouter } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -28,7 +27,7 @@ import { Plus, Loader2, X, GripVertical, Calendar, MessageSquare } from "lucide-
 import { clsx } from "clsx";
 import TaskDetailModal from "./TaskDetailModal";
 import RichTextEditor from "@/components/RichTextEditor";
-import { api } from "@/lib/api";
+import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Task = {
@@ -220,10 +219,8 @@ export default function KanbanBoard({
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const router = useRouter();
 
   const [newTaskData, setNewTaskData] = useState<Record<string, { title: string; description: string; priority: string; assigneeId: string; dueDate: string }>>({});
-  const [creating, setCreating] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -235,6 +232,10 @@ export default function KanbanBoard({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const reorderTasks = useReorderTasks();
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;
@@ -293,36 +294,6 @@ export default function KanbanBoard({
     }
   }, [columns]);
 
-  const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
-    try {
-      await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-    } catch (err) {
-      console.error("Failed to update task:", err);
-      router.refresh();
-    }
-  }, [router]);
-
-  const updateTasksPositions = useCallback(async (updates: { id: string; position: string }[]) => {
-    try {
-      await Promise.all(
-        updates.map((u) =>
-          fetch(`/api/tasks/${u.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ position: u.position }),
-          })
-        )
-      );
-    } catch (err) {
-      console.error("Failed to update positions:", err);
-      router.refresh();
-    }
-  }, [router]);
-
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
@@ -331,8 +302,6 @@ export default function KanbanBoard({
     const overId = over.id as string;
 
     const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    const overTask = columns.flatMap((c) => c.tasks).find((t) => t.id === overId);
-
     if (!activeTask) return;
 
     const activeColumn = columns.find((c) => c.tasks.some((t) => t.id === activeId));
@@ -341,47 +310,35 @@ export default function KanbanBoard({
     if (activeColumn && overColumn) {
       if (activeColumn.key !== overColumn.key) {
         const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        await updateTask(activeId, { status: overColumn.key, position: String(overIndex) });
+        await updateTask.mutateAsync({ id: activeId, status: overColumn.key, position: String(overIndex) });
       } else {
         const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
         const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
         const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex);
         const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
-        await updateTasksPositions(updates);
+        await reorderTasks.mutateAsync(updates);
       }
     }
-    router.refresh();
-  }, [columns, router, updateTask, updateTasksPositions]);
+  }, [columns, updateTask, reorderTasks]);
 
   async function handleCreateTask(status: string) {
     const data = newTaskData[status];
     if (!data?.title.trim()) return;
-    setCreating(status);
 
     try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: data.title.trim(),
-          description: data.description.trim() || null,
-          priority: data.priority,
-          status,
-          projectId,
-          assigneeId: data.assigneeId || null,
-          dueDate: data.dueDate || null,
-        }),
+      await createTask.mutateAsync({
+        title: data.title.trim(),
+        description: data.description.trim() || null,
+        priority: data.priority,
+        status,
+        projectId,
+        assigneeId: data.assigneeId || null,
+        dueDate: data.dueDate || null,
       });
-
-      if (res.ok) {
-        setShowNewTask(null);
-        setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "" } }));
-        router.refresh();
-      }
+      setShowNewTask(null);
+      setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "" } }));
     } catch (err) {
       console.error("Failed to create task:", err);
-    } finally {
-      setCreating(null);
     }
   }
 
@@ -477,10 +434,10 @@ export default function KanbanBoard({
                     </button>
                     <button
                       type="submit"
-                      disabled={creating === colConfig.key}
+                      disabled={createTask.isPending}
                       className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
                     >
-                      {creating === colConfig.key ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Create task"}
+                      {createTask.isPending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Create task"}
                     </button>
                   </div>
                 </form>
@@ -496,7 +453,7 @@ export default function KanbanBoard({
           users={users}
           currentUserId={currentUserId}
           onClose={() => setSelectedTask(null)}
-          onChange={() => router.refresh()}
+          onChange={() => {}}
         />
       )}
     </DndContext>
