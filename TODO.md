@@ -7,7 +7,7 @@
   - Update Kanban board in real-time when tasks change
   - Broadcast task moves, status changes, new comments
 
-- [ ] **Drag-and-drop Kanban** - Implement task reordering with @dnd-kit
+- [x] **Drag-and-drop Kanban** - Implement task reordering with @dnd-kit
   - Drag tasks between columns (status changes)
   - Drag tasks within column (position changes)
   - Persist position changes to database
