@@ -19,6 +19,21 @@
   - Update Kanban board in real-time when tasks change
   - Broadcast task moves, status changes, new comments
 
+- [ ] **Kanban Add task button UX fix** - Fix broken Add task button and improve placement
+  - Investigate why the Add task button does not create tasks successfully
+  - Add a Project dropdown field to the new-task form in both Kanban views
+  - Move the Add task button from the bottom of the column to the top (next to the column header)
+  - Acceptance criteria: Clicking Add task actually creates a task; button is at the top of each column
+
+- [ ] **Notifications bell** - Add in-app notification centre
+  - Add a bell icon with unread badge in the top header / sidebar
+  - Dropdown panel showing recent notifications (task assignments, mentions, status changes, comments)
+  - Mark individual / all notifications as read
+  - Store notifications in a new `notifications` table (userId, type, title, content, read, createdAt)
+  - Trigger notifications on task assignment, mention, status change, comment, due date approaching
+  - Acceptable to use Pusher for real-time badge increments or simple polling
+  - Acceptance criteria: Users see a bell with unread count, can open a dropdown, and mark notifications as read
+
 - [x] **Drag-and-drop Kanban** - Implement task reordering with @dnd-kit
   - Drag tasks between columns (status changes)
   - Drag tasks within column (position changes)
