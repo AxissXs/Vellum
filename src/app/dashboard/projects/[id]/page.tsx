@@ -82,6 +82,12 @@ export default async function ProjectDetailPage({
     memberMap.set(key, current);
   }
 
+  const allProjects = await db
+    .select({ id: projects.id, name: projects.name, color: projects.color })
+    .from(projects)
+    .where(eq(projects.archived, false))
+    .orderBy(asc(projects.createdAt));
+
   const columns = statusColumns.map((col) => ({
     ...col,
     tasks: taskRows
@@ -151,6 +157,7 @@ export default async function ProjectDetailPage({
           projectId={project.id}
           initialColumns={columns}
           users={allUsers}
+          allProjects={allProjects}
           currentUserId={user?.id || ""}
         />
       </div>
