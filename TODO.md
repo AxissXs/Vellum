@@ -2,6 +2,14 @@
 
 ## Priority: High
 
+- [ ] **Reorganize AI Agent documentation** - Optimize and restructure project docs for better agent onboarding
+  - Create a dedicated `docs/agents/` directory for all agent-facing docs
+  - Break `AGENTS.md` and `STRUCTURE.md` into focused, digestible pieces (e.g., `docs/agents/getting-started.md`, `docs/agents/architecture.md`, `docs/agents/database.md`, `docs/agents/api-routes.md`, `docs/agents/common-patterns.md`, `docs/agents/conventions.md`)
+  - Avoid duplication — each doc should have a single responsibility
+  - Keep `AGENTS.md` as a lightweight hub that links to all pieces with a clear table of contents
+  - Remove stale or overly verbose content during the move
+  - Acceptance criteria: All docs are in `docs/agents/`, `AGENTS.md` connects them correctly, no duplication, quick to scan
+
 - [x] **Optimistic updates everywhere** - Implement optimistic UI updates across all mutations
   - Task CRUD (create, update, delete, reorder)
   - Project CRUD
