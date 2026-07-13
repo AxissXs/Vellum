@@ -14,8 +14,8 @@
   - Rollback on error with toast notification
   - Acceptance criteria: All mutations update UI immediately, rollback on error with toast
 
-- [ ] **Real-time updates** - Add WebSocket/SSE for live task updates across clients
-  - Use Pusher, Ably, or native WebSockets with `ws` library
+- [x] **Real-time updates** - Add WebSocket/SSE for live task updates across clients
+  - Use Pusher for managed WebSocket/pub-sub
   - Update Kanban board in real-time when tasks change
   - Broadcast task moves, status changes, new comments
 

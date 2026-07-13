@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { comments, users, activityLogs, tasks } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
+import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     .values({ content, taskId, authorId: user.id })
     .returning();
 
-  const [task] = await db.select({ title: tasks.title }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
 
   await db.insert(activityLogs).values({
     userId: user.id,
@@ -65,6 +66,28 @@ export async function POST(req: NextRequest) {
     authorName: user.name,
     authorAvatar: user.avatarUrl,
   };
+
+  // Broadcast real-time event for comments
+  await broadcastCommentEvent(taskId, {
+    type: "created",
+    comment: {
+      ...result,
+      createdAt: comment.createdAt.toISOString(),
+      updatedAt: comment.updatedAt.toISOString(),
+    },
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
+  });
+
+  // Also broadcast a task update so viewers on the project board see activity
+  if (task?.projectId) {
+    await broadcastTaskEvent(task.projectId, {
+      type: "updated",
+      taskId,
+      actorUserId: user.id,
+      actorName: user.name || "Someone",
+    });
+  }
 
   return NextResponse.json({ comment: result }, { status: 201 });
 }

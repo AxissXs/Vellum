@@ -28,6 +28,7 @@ import { clsx } from "clsx";
 import TaskDetailModal from "./TaskDetailModal";
 import RichTextEditor from "@/components/RichTextEditor";
 import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
+import { useRealtime } from "@/hooks/useRealtime";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Task = {
@@ -236,6 +237,9 @@ export default function KanbanBoard({
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const reorderTasks = useReorderTasks();
+
+  // Subscribe to real-time task updates for this project
+  useRealtime(projectId);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;

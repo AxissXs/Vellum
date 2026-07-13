@@ -37,6 +37,7 @@ import {
 import { clsx } from "clsx";
 import TaskDetailModal from "@/app/dashboard/projects/[id]/TaskDetailModal";
 import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
+import { useRealtime } from "@/hooks/useRealtime";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Project = { id: string; name: string; color: string | null };
@@ -258,6 +259,9 @@ export default function KanbanBoardClient({
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const reorderTasks = useReorderTasks();
+
+  // Subscribe to global real-time task updates (cross-project board view)
+  useRealtime();
 
   const filteredColumns = useMemo(() => {
     if (selectedProjectId === "all" && !searchQuery) {

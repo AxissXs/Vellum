@@ -24,7 +24,7 @@ type CommentCreateInput = {
 
 type CommentUpdateInput = { id: string; taskId: string; content?: string };
 
-function getCommentQueryKey(taskId: string) {
+export function getCommentQueryKey(taskId: string) {
   return ["comments", taskId] as QueryKey;
 }
 

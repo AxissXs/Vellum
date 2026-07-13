@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { tasks, activityLogs, users } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -77,6 +78,21 @@ export async function POST(req: NextRequest) {
     entityType: "task",
     entityId: task.id,
     details: `Created task: ${task.title}`,
+  });
+
+  // Broadcast real-time event
+  await broadcastTaskEvent(projectId, {
+    type: "created",
+    task: {
+      ...task,
+      dueDate: task.dueDate?.toISOString() || null,
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString(),
+      assigneeName: user.name,
+      assigneeAvatar: user.avatarUrl,
+    },
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
   });
 
   return NextResponse.json({ task }, { status: 201 });

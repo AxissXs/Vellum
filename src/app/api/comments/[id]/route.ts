@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { comments, users, activityLogs, tasks } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
 export async function PATCH(
   req: NextRequest,
@@ -33,7 +34,7 @@ export async function PATCH(
     .where(eq(comments.id, id))
     .returning();
 
-  const [task] = await db.select({ title: tasks.title }).from(tasks).where(eq(tasks.id, comment.taskId)).limit(1);
+  const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, comment.taskId)).limit(1);
 
   await db.insert(activityLogs).values({
     userId: user.id,
@@ -45,13 +46,34 @@ export async function PATCH(
 
   const [author] = await db.select({ name: users.name, avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, comment.authorId)).limit(1);
 
-  return NextResponse.json({
+  const result = {
+    ...comment,
+    authorName: author?.name,
+    authorAvatar: author?.avatarUrl,
+  };
+
+  await broadcastCommentEvent(comment.taskId, {
+    type: "updated",
     comment: {
-      ...comment,
-      authorName: author?.name,
-      authorAvatar: author?.avatarUrl,
+      ...result,
+      createdAt: comment.createdAt.toISOString(),
+      updatedAt: comment.updatedAt.toISOString(),
     },
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
   });
+
+  // Also notify the project board
+  if (task?.projectId) {
+    await broadcastTaskEvent(task.projectId, {
+      type: "updated",
+      taskId: comment.taskId,
+      actorUserId: user.id,
+      actorName: user.name || "Someone",
+    });
+  }
+
+  return NextResponse.json({ comment: result });
 }
 
 export async function DELETE(
@@ -72,7 +94,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [task] = await db.select({ title: tasks.title }).from(tasks).where(eq(tasks.id, existing.taskId)).limit(1);
+  const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, existing.taskId)).limit(1);
 
   await db.delete(comments).where(eq(comments.id, id));
 
@@ -83,6 +105,22 @@ export async function DELETE(
     entityId: id,
     details: `Deleted comment on task: ${task?.title || existing.taskId}`,
   });
+
+  await broadcastCommentEvent(existing.taskId, {
+    type: "deleted",
+    commentId: id,
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
+  });
+
+  if (task?.projectId) {
+    await broadcastTaskEvent(task.projectId, {
+      type: "updated",
+      taskId: existing.taskId,
+      actorUserId: user.id,
+      actorName: user.name || "Someone",
+    });
+  }
 
   return NextResponse.json({ success: true });
 }

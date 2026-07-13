@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, activityLogs } from "@/db/schema";
+import { tasks, activityLogs, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
 export async function PATCH(
   req: NextRequest,
@@ -55,6 +56,33 @@ export async function PATCH(
     details: actionDetail,
   });
 
+  // Look up assignee info for the broadcast payload
+  let assigneeName: string | null = null;
+  let assigneeAvatar: string | null = null;
+  if (task.assigneeId) {
+    const [assignee] = await db
+      .select({ name: users.name, avatarUrl: users.avatarUrl })
+      .from(users)
+      .where(eq(users.id, task.assigneeId))
+      .limit(1);
+    assigneeName = assignee?.name ?? null;
+    assigneeAvatar = assignee?.avatarUrl ?? null;
+  }
+
+  await broadcastTaskEvent(task.projectId, {
+    type: "updated",
+    task: {
+      ...task,
+      dueDate: task.dueDate?.toISOString() || null,
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString(),
+      assigneeName,
+      assigneeAvatar,
+    },
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
+  });
+
   return NextResponse.json({ task });
 }
 
@@ -72,6 +100,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
+  const projectId = task.projectId;
+
   await db.delete(tasks).where(eq(tasks.id, id));
 
   await db.insert(activityLogs).values({
@@ -80,6 +110,13 @@ export async function DELETE(
     entityType: "task",
     entityId: id,
     details: `Deleted task: ${task.title}`,
+  });
+
+  await broadcastTaskEvent(projectId, {
+    type: "deleted",
+    taskId: id,
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
   });
 
   return NextResponse.json({ success: true });

@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/useComments";
+import { useRealtime } from "@/hooks/useRealtime";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
 
 type User = { id: string; name: string; avatarUrl: string | null };
@@ -87,6 +88,9 @@ export default function TaskDetailModal({
   const createCommentMutation = useCreateComment();
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
+
+  // Subscribe to real-time comment and task updates
+  useRealtime(undefined, task.id);
 
   useEffect(() => {
     refetch();

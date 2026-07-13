@@ -37,7 +37,7 @@ type TaskCreateInput = {
 
 type TaskUpdateInput = Partial<TaskCreateInput> & { id: string; position?: string };
 
-function getTaskQueryKey(projectId?: string) {
+export function getTaskQueryKey(projectId?: string) {
   return ["tasks", projectId ? { projectId } : "all"] as QueryKey;
 }
 
