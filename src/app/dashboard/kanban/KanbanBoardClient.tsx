@@ -183,11 +183,13 @@ function Column({
   users,
   onTaskClick,
   onDragStart,
+  addForm,
 }: {
   column: Column;
   users: User[];
   onTaskClick: (task: Task) => void;
   onDragStart: (task: Task) => void;
+  addForm?: React.ReactNode;
 }) {
   return (
     <SortableContext
@@ -204,6 +206,8 @@ function Column({
             </span>
           </div>
         </div>
+
+        {addForm && <div className="mb-3">{addForm}</div>}
 
         <div
           className="flex-1 min-h-[400px] space-y-2 overflow-y-auto pr-1"
@@ -450,27 +454,21 @@ export default function KanbanBoardClient({
         <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
           {statusColumns.map((colConfig) => {
             const column = filteredColumns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
-            return (
-              <div key={colConfig.key} className="w-72 flex-shrink-0">
-                <Column
-                  column={column}
-                  onTaskClick={setSelectedTask}
-                  onDragStart={() => {}}
-                  users={users}
-                />
+            const isAdding = showNewTask === colConfig.key;
+            const taskForm = (
+              <>
                 <button
-                  onClick={() => setShowNewTask(colConfig.key)}
-                  disabled={showNewTask === colConfig.key}
-                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition disabled:opacity-50"
+                  onClick={() => setShowNewTask(isAdding ? null : colConfig.key)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition"
                 >
                   <Plus size={16} />
-                  Add task
+                  {isAdding ? "Cancel" : "Add task"}
                 </button>
 
-                {showNewTask === colConfig.key && (
+                {isAdding && (
                   <form
                     onSubmit={(e) => { e.preventDefault(); handleCreateTask(colConfig.key); }}
-                    className="mt-3 bg-slate-800/50 border border-white/10 rounded-xl p-3 space-y-3 animate-slide-down"
+                    className="mt-2 bg-slate-800/50 border border-white/10 rounded-xl p-3 space-y-3 animate-slide-down"
                   >
                     <input
                       type="text"
@@ -545,6 +543,17 @@ export default function KanbanBoardClient({
                     </div>
                   </form>
                 )}
+              </>
+            );
+            return (
+              <div key={colConfig.key} className="w-72 flex-shrink-0">
+                <Column
+                  column={column}
+                  onTaskClick={setSelectedTask}
+                  onDragStart={() => {}}
+                  users={users}
+                  addForm={taskForm}
+                />
               </div>
             );
           })}
