@@ -156,14 +156,60 @@
   - Export for compliance
 
 - [ ] **Super Admin Dashboard** - Comprehensive management and monitoring for super admins
-  - User management table with last login, IP address, status (active/inactive/banned)
-  - Real-time user activity monitoring (logins, actions, failed attempts)
-  - Session management (view/revoke active sessions)
-  - Enhanced audit logs with filtering by user, action, date range, IP
-  - System health metrics (DB connections, API latency, error rates)
-  - Role/permission management matrix
-  - Export user activity reports (CSV/PDF)
-  - Acceptance criteria: Super admin can view all users with last login/IP, monitor activity in real-time, revoke sessions, export audit logs
+  > Split into subtasks below. Tick each one as it's completed so the workload can be divided across sessions / agents.
+
+  **Prerequisites** (new DB table + migrations)
+  - [x] Add `user_sessions` table (user login history — IP, userAgent, success/failure)  
+  `fields: id, userId, ipAddress, userAgent, success (bool), failedReason (text), createdAt`
+  - [ ] Add `user_status` enum (`active`, `inactive`, `banned`) to `users` table
+  - [ ] Run `bun run db:generate` + `bun run db:migrate`
+
+  **Part 1 — Super Admin Route & Sidebar Link**
+  - [x] Add `/dashboard/super-admin` route (only accessible to `superadmin` role, redirect others)
+  - [x] Add `SuperAdmin` link in sidebar (visible only to `superadmin`)
+  - [x] Create server layout for super-admin section that checks role
+
+  **Part 2 — Users Management Table**
+  - [ ] Create `SuperAdminUsersPanel` component
+  - [ ] Server action/API: `GET /api/super-admin/users` — list users with `lastLoginAt`, `lastIp`, `status`
+  - [ ] UI: Data table with columns — Name, Email, Role, Status, Last Login, Last IP, Created At
+  - [ ] UI: Inline actions — Change status (Active / Inactive / Banned), Change role
+
+  **Part 3 — Real-time User Activity Monitoring**
+  - [ ] Create `SuperAdminActivityPanel` component
+  - [ ] API: `GET /api/super-admin/activity` — activity logs enriched with IP from `user_sessions`
+  - [ ] UI: Live feed (polling 5s) of logins, failed attempts, user actions
+  - [ ] Show sparklines / mini stats for: logins last 24h, failed attempts, active right now
+
+  **Part 4 — Session Management**
+  - [ ] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
+  - [ ] API: `DELETE /api/super-admin/sessions/[id]` — revoke a session
+  - [ ] UI: Table view of active sessions with Revoke button
+
+  **Part 5 — Enhanced Audit Logs**
+  - [ ] Extend `activity_logs` schema to include `ipAddress` column
+  - [ ] API: `GET /api/super-admin/audit` with filters (user, action, date range, IP)
+  - [ ] UI: Filterable audit log table with date-range picker and user dropdown
+  - [ ] API: `GET /api/super-admin/audit/export?format=csv|pdf` — export filtered results
+
+  **Part 6 — System Health Metrics**
+  - [ ] Create `SuperAdminHealthPanel` component
+  - [ ] API: `GET /api/super-admin/health` — DB connection stats, recent API latency, error rate (last 24h)
+  - [ ] UI: Cards / charts: DB pool size, avg response time, 5xx count, active sessions
+
+  **Part 7 — Role / Permission Matrix**
+  - [ ] Create `SuperAdminRolesPanel` component
+  - [ ] UI: Matrix table (roles × permissions) showing what each role can do
+  - [ ] API: `GET /api/super-admin/permissions` — list predefined permissions per role
+
+  **Acceptance criteria (overall)**
+  - Super admin can view all users with last login/IP and status
+  - Real-time activity monitoring feeds update automatically
+  - Sessions can be viewed and revoked
+  - Audit logs are filterable and exportable
+  - System health is visible at a glance
+  - Role matrix explains who can do what
+  - All panels gated behind `superadmin` role check
 
 ## Technical Debt
 

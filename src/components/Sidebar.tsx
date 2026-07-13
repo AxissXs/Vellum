@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Plus,
   Shield,
+  ShieldAlert,
   Kanban,
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -41,6 +42,9 @@ export default function Sidebar({ user }: { user: User }) {
     { href: "/dashboard/activity", label: "Activity", icon: Activity },
     ...(user.role === "superadmin" || user.role === "admin"
       ? [{ href: "/dashboard/admin", label: "Admin", icon: Shield }]
+      : []),
+    ...(user.role === "superadmin"
+      ? [{ href: "/dashboard/super-admin", label: "Super Admin", icon: ShieldAlert }]
       : []),
   ];
 
