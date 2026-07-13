@@ -267,6 +267,12 @@ See `src/db/schema.ts` for:
 | `/api/projects/[id]/milestones` | GET, POST          | Project milestones   |
 | `/api/tasks`                    | GET, POST          | List/create tasks    |
 | `/api/tasks/[id]`               | GET, PATCH, DELETE | Task CRUD            |
+| `/api/sprints`                  | GET, POST          | List/create sprints  |
+| `/api/sprints/[id]`             | GET, PATCH, DELETE | Sprint CRUD          |
+| `/api/sprints/[id]/burndown`    | GET                | Burndown chart data  |
+| `/api/standups`                 | GET, POST          | List/upsert standups |
+| `/api/retros`                   | GET, POST          | List/create retro items |
+| `/api/retros/[id]`              | PATCH, DELETE      | Retro item CRUD      |
 | `/api/comments`                 | GET, POST          | Task comments        |
 | `/api/comments/[id]`            | PATCH, DELETE      | Comment CRUD         |
 | `/api/activity`                 | GET                | Activity logs        |

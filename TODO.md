@@ -69,6 +69,13 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - Real-time comment notifications (future)
   - @mention support (future)
 
+- [x] **Agile tools (sprints, standup, retro, planning)** - Full-stack agile ceremony support
+  - Schema: `sprints`, `standups`, `retro_items`, `task_status_history`; `tasks.sprintId`, `tasks.estimate`
+  - API: `/api/sprints`, `/api/sprints/[id]`, `/api/sprints/[id]/burndown`, `/api/standups`, `/api/retros`
+  - Hooks: `useSprints`, `useStandups`, `useRetros`; extended `useTasks` for sprintId/estimate
+  - UI: `/dashboard/sprints` list + `/dashboard/sprints/[id]` detail (board, burndown, planning, standup, retro)
+  - Acceptance criteria: Create sprint, assign tasks, burndown chart, daily standup upsert, retro CRUD
+
 - [ ] **File attachments** - Allow file uploads on tasks/projects
   - Integrate with S3/R2/Cloudinary
   - Add `attachments` table to schema

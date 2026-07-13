@@ -17,6 +17,8 @@ type Task = {
   creatorId: string;
   dueDate: string | null;
   position: string;
+  sprintId: string | null;
+  estimate: number | null;
   createdAt: string;
   updatedAt: string;
   assigneeName: string | null;
@@ -33,6 +35,8 @@ type TaskCreateInput = {
   projectId: string;
   assigneeId?: string | null;
   dueDate?: string | null;
+  sprintId?: string | null;
+  estimate?: number | null;
 };
 
 type TaskUpdateInput = Partial<TaskCreateInput> & { id: string; position?: string };
@@ -65,6 +69,8 @@ export function useCreateTask() {
         creatorId: "",
         dueDate: newTask.dueDate || null,
         position: "0",
+        sprintId: newTask.sprintId || null,
+        estimate: newTask.estimate ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         assigneeName: null,

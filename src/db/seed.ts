@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { db, pool } from "./index";
-import { users, projects, teams, teamMembers, tasks, comments, activityLogs } from "./schema";
+import { users, projects, teams, teamMembers, tasks, comments, activityLogs, sprints, standups, retroItems, taskStatusHistory } from "./schema";
+import { eq, inArray } from "drizzle-orm";
 import { hashSync } from "bcryptjs";
 
 async function seed() {
@@ -8,8 +9,12 @@ async function seed() {
 
   // Clean existing data
   await db.delete(activityLogs);
+  await db.delete(retroItems);
+  await db.delete(standups);
+  await db.delete(taskStatusHistory);
   await db.delete(comments);
   await db.delete(tasks);
+  await db.delete(sprints);
   await db.delete(teamMembers);
   await db.delete(teams);
   await db.delete(projects);
@@ -425,6 +430,154 @@ async function seed() {
       content: "The rate limiter is working well in testing. I'm using a sliding window approach for better accuracy.",
       taskId: taskIdMap.get("Rate limiting middleware")!,
       authorId: davidId,
+    },
+  ]);
+
+  // Assign story-point estimates to a subset of tasks
+  await db
+    .update(tasks)
+    .set({ estimate: 5 })
+    .where(eq(tasks.id, taskIdMap.get("Build Kanban board UI")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 3 })
+    .where(eq(tasks.id, taskIdMap.get("Add real-time notifications")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 8 })
+    .where(eq(tasks.id, taskIdMap.get("Create reporting dashboard")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 2 })
+    .where(eq(tasks.id, taskIdMap.get("Write API documentation")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 5 })
+    .where(eq(tasks.id, taskIdMap.get("Design system update")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 3 })
+    .where(eq(tasks.id, taskIdMap.get("High-fidelity mockups")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 5 })
+    .where(eq(tasks.id, taskIdMap.get("Rate limiting middleware")!));
+  await db
+    .update(tasks)
+    .set({ estimate: 3 })
+    .where(eq(tasks.id, taskIdMap.get("Service discovery")!));
+
+  // Create an active sprint for the Vellum Platform project
+  const now = new Date();
+  const sprintStart = new Date(now);
+  sprintStart.setDate(sprintStart.getDate() - 7);
+  const sprintEnd = new Date(now);
+  sprintEnd.setDate(sprintEnd.getDate() + 7);
+
+  const [sprint] = await db
+    .insert(sprints)
+    .values({
+      projectId: vellumProjectId,
+      name: "Sprint 1 — Core Experience",
+      goal: "Ship the kanban board and notifications for the core platform.",
+      startDate: sprintStart,
+      endDate: sprintEnd,
+      status: "active",
+    })
+    .returning({ id: sprints.id });
+
+  const sprintId = sprint.id;
+
+  // Pull a few tasks into the sprint
+  const sprintTaskTitles = [
+    "Build Kanban board UI",
+    "Add real-time notifications",
+    "Create reporting dashboard",
+    "Write API documentation",
+  ];
+  await db
+    .update(tasks)
+    .set({ sprintId })
+    .where(
+      inArray(tasks.id, sprintTaskTitles.map((t) => taskIdMap.get(t)!))
+    );
+
+  // Seed status history for sprinted tasks (so burndown has data)
+  const historyRows: { taskId: string; status: string; daysAgo: number }[] = [
+    { taskId: taskIdMap.get("Build Kanban board UI")!, status: "in_progress", daysAgo: 7 },
+    { taskId: taskIdMap.get("Add real-time notifications")!, status: "todo", daysAgo: 6 },
+    { taskId: taskIdMap.get("Create reporting dashboard")!, status: "backlog", daysAgo: 6 },
+    { taskId: taskIdMap.get("Write API documentation")!, status: "backlog", daysAgo: 5 },
+  ];
+  await db.insert(taskStatusHistory).values(
+    historyRows.map((h) => {
+      const changed = new Date(now);
+      changed.setDate(changed.getDate() - h.daysAgo);
+      return {
+        taskId: h.taskId,
+        sprintId,
+        status: h.status as
+          | "backlog"
+          | "todo"
+          | "in_progress"
+          | "review"
+          | "done",
+        changedAt: changed,
+      };
+    })
+  );
+
+  // Seed some standups for the active sprint
+  await db.insert(standups).values([
+    {
+      userId: annaId,
+      sprintId,
+      date: new Date(now),
+      yesterday: "Finished wiring up column drag events.",
+      today: "Adding the task creation modal and optimistic updates.",
+      blockers: "None",
+    },
+    {
+      userId: davidId,
+      sprintId,
+      date: new Date(now),
+      yesterday: "Hooked up the WebSocket broadcast layer.",
+      today: "Building the notification centre UI.",
+      blockers: "Waiting on design tokens.",
+    },
+  ]);
+
+  // Seed retro items for the (completed) previous sprint
+  const [prevSprint] = await db
+    .insert(sprints)
+    .values({
+      projectId: vellumProjectId,
+      name: "Sprint 0 — Foundations",
+      goal: "Establish the platform foundation.",
+      startDate: new Date(sprintStart.getTime() - 14 * 86400000),
+      endDate: new Date(sprintStart.getTime() - 1),
+      status: "completed",
+    })
+    .returning({ id: sprints.id });
+
+  await db.insert(retroItems).values([
+    {
+      sprintId: prevSprint.id,
+      authorId: alexId,
+      category: "went_well",
+      content: "Strong collaboration between engineering and design.",
+    },
+    {
+      sprintId: prevSprint.id,
+      authorId: sarahId,
+      category: "went_wrong",
+      content: "Stories were under-estimated, causing spillover.",
+    },
+    {
+      sprintId: prevSprint.id,
+      authorId: davidId,
+      category: "action_item",
+      content: "Adopt story points consistently during planning.",
     },
   ]);
 

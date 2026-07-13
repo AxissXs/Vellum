@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, activityLogs, users } from "@/db/schema";
+import { tasks, activityLogs, users, taskStatusHistory } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
@@ -14,7 +14,12 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { title, description, status, priority, assigneeId, dueDate, position } = body;
+  const { title, description, status, priority, assigneeId, dueDate, position, sprintId, estimate } = body;
+
+  const [current] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+  if (!current) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (title !== undefined) updateData.title = title;
@@ -24,6 +29,8 @@ export async function PATCH(
   if (assigneeId !== undefined) updateData.assigneeId = assigneeId;
   if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
   if (position !== undefined) updateData.position = position;
+  if (sprintId !== undefined) updateData.sprintId = sprintId || null;
+  if (estimate !== undefined) updateData.estimate = estimate ?? null;
 
   const [task] = await db
     .update(tasks)
@@ -33,6 +40,16 @@ export async function PATCH(
 
   if (!task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  // Record status history when status actually changed (powers burndown).
+  if (status !== undefined && status !== current.status) {
+    await db.insert(taskStatusHistory).values({
+      taskId: id,
+      sprintId: task.sprintId,
+      status,
+      changedAt: new Date(),
+    });
   }
 
   const statusLabels: Record<string, string> = {

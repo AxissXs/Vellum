@@ -57,6 +57,19 @@ Tracked in [`.cursor/plans/migrate_vellum_bun_→_deno_(package_manager)_+_neon_
 
 ---
 
+## Phase 2.5 — Agile Tools ✅
+
+**Milestone:** In-app sprint management with board, burndown, standup, retro, and planning.
+
+- [x] Sprints CRUD + active sprint per project → TODO.md §"Agile tools (sprints, standup, retro, planning)"
+- [x] Sprint board (tasks filtered by sprintId) → TODO.md §"Agile tools (sprints, standup, retro, planning)"
+- [x] Burndown chart (ideal vs actual from task_status_history) → TODO.md §"Agile tools (sprints, standup, retro, planning)"
+- [x] Sprint planning (pull backlog tasks into sprint) → TODO.md §"Agile tools (sprints, standup, retro, planning)"
+- [x] Daily standup (upsert per user per day) → TODO.md §"Agile tools (sprints, standup, retro, planning)"
+- [x] Sprint retro (went well / went wrong / action items) → TODO.md §"Agile tools (sprints, standup, retro, planning)"
+
+---
+
 ## Phase 2 — Notifications & Collaboration ⬜
 
 **Milestone:** In-app notification centre plus email/push channels and notification-control UX.
@@ -163,6 +176,7 @@ Every `TODO.md` item maps to exactly one phase above:
 | Task comments | 1 |
 | Admin user creation bug | 1 |
 | Kanban dedicated page | 1 |
+| Agile tools (sprints, standup, retro, planning) | 2.5 |
 | Notifications bell | 2 |
 | Email notifications | 2 |
 | Push notifications | 2 |

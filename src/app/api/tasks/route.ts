@@ -13,11 +13,13 @@ export async function GET(req: NextRequest) {
   const projectId = url.searchParams.get("projectId");
   const status = url.searchParams.get("status");
   const assigneeId = url.searchParams.get("assigneeId");
+  const sprintId = url.searchParams.get("sprintId");
 
   let conditions = [];
   if (projectId) conditions.push(eq(tasks.projectId, projectId));
   if (status) conditions.push(eq(tasks.status, status as any));
   if (assigneeId) conditions.push(eq(tasks.assigneeId, assigneeId));
+  if (sprintId) conditions.push(eq(tasks.sprintId, sprintId));
 
   const rows = await db
     .select({
@@ -31,6 +33,8 @@ export async function GET(req: NextRequest) {
       creatorId: tasks.creatorId,
       dueDate: tasks.dueDate,
       position: tasks.position,
+      sprintId: tasks.sprintId,
+      estimate: tasks.estimate,
       createdAt: tasks.createdAt,
       updatedAt: tasks.updatedAt,
       assigneeName: users.name,
@@ -49,7 +53,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { title, description, priority, projectId, assigneeId, dueDate, status } = body;
+  const { title, description, priority, projectId, assigneeId, dueDate, status, sprintId, estimate } = body;
 
   if (!title || !projectId) {
     return NextResponse.json(
@@ -69,6 +73,8 @@ export async function POST(req: NextRequest) {
       assigneeId: assigneeId || null,
       creatorId: user.id,
       dueDate: dueDate ? new Date(dueDate) : null,
+      sprintId: sprintId || null,
+      estimate: estimate ?? null,
     })
     .returning();
 
