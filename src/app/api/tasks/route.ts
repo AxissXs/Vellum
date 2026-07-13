@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { tasks, activityLogs, users } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { sendPushNotification, isPushEnabled } from "@/lib/push";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -94,6 +95,19 @@ export async function POST(req: NextRequest) {
     actorUserId: user.id,
     actorName: user.name || "Someone",
   });
+
+  // Send push notification to assignee if different from creator
+  if (task.assigneeId && task.assigneeId !== user.id) {
+    const enabled = await isPushEnabled(task.assigneeId, "task_assigned");
+    if (enabled) {
+      await sendPushNotification(task.assigneeId, {
+        title: "New Task Assigned",
+        body: `${user.name || "Someone"} assigned you: ${task.title}`,
+        url: `/dashboard/tasks`,
+        tag: `task-${task.id}`,
+      });
+    }
+  }
 
   return NextResponse.json({ task }, { status: 201 });
 }

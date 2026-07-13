@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { tasks, activityLogs, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { sendPushNotification, isPushEnabled } from "@/lib/push";
 
 export async function PATCH(
   req: NextRequest,
@@ -82,6 +83,26 @@ export async function PATCH(
     actorUserId: user.id,
     actorName: user.name || "Someone",
   });
+
+  // Send push notification for status changes
+  if (status !== undefined && task.assigneeId && task.assigneeId !== user.id) {
+    const enabled = await isPushEnabled(task.assigneeId, "status_changed");
+    if (enabled) {
+      const statusLabels: Record<string, string> = {
+        backlog: "moved to Backlog",
+        todo: "moved to To Do",
+        in_progress: "moved to In Progress",
+        review: "moved to Review",
+        done: "marked as Done",
+      };
+      await sendPushNotification(task.assigneeId, {
+        title: "Task Status Changed",
+        body: `${user.name || "Someone"} ${statusLabels[status] || "updated"} "${task.title}"`,
+        url: `/dashboard/tasks`,
+        tag: `task-${task.id}`,
+      });
+    }
+  }
 
   return NextResponse.json({ task });
 }

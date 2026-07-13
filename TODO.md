@@ -60,7 +60,7 @@
   - Notification preferences per user
   - Template system for emails
 
-- [ ] **Push notifications** - Send push notifications for events and add user settings
+- [x] **Push notifications** - Send push notifications for events and add user settings
   - Integrate Web Push API (VAPID) or Push API service (e.g., Web Push, OneSignal)
   - Support events: task assigned, mentioned, due date approaching, status changed, comments, mentions
   - User notification preferences page (per event type, per channel: push/email/in-app)

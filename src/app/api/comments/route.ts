@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { comments, users, activityLogs, tasks } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { sendPushNotification, isPushEnabled } from "@/lib/push";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     .values({ content, taskId, authorId: user.id })
     .returning();
 
-  const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId, assigneeId: tasks.assigneeId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
 
   await db.insert(activityLogs).values({
     userId: user.id,
@@ -87,6 +88,19 @@ export async function POST(req: NextRequest) {
       actorUserId: user.id,
       actorName: user.name || "Someone",
     });
+  }
+
+  // Send push notification to task assignee
+  if (task?.assigneeId && task.assigneeId !== user.id) {
+    const enabled = await isPushEnabled(task.assigneeId, "new_comment");
+    if (enabled) {
+      await sendPushNotification(task.assigneeId, {
+        title: "New Comment",
+        body: `${user.name || "Someone"} commented on "${task.title}"`,
+        url: `/dashboard/projects/${task.projectId}`,
+        tag: `comment-${comment.id}`,
+      });
+    }
   }
 
   return NextResponse.json({ comment: result }, { status: 201 });

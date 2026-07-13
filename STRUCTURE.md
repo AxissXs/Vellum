@@ -21,6 +21,8 @@ Vellum/
 ├── next.config.ts          # Next.js config
 ├── eslint.config.mjs       # ESLint config (flat)
 ├── postcss.config.mjs      # PostCSS config
+├── public/                 # Static assets
+│   └── sw.js               # Service worker for push notifications
 ├── drizzle.config.ts       # Drizzle Kit config (TypeScript)
 └── drizzle/                # Drizzle migrations (committed)
     ├── 0000_faithful_the_twelve.sql
@@ -66,6 +68,8 @@ src/
 │   │   └── teams/
 │   │       ├── page.tsx              # Teams page
 │   │       └── TeamManagementClient.tsx
+│   │   └── settings/
+│   │       └── page.tsx              # Settings page (notifications)
 │   └── api/                # API Routes (REST)
 │       ├── auth/
 │       │   ├── login/route.ts      # POST - Login
@@ -98,10 +102,16 @@ src/
 │       │   └── route.ts            # GET - Dashboard statistics
 │       └── health/
 │           └── route.ts            # GET - Health check
+│       └── push/
+│           ├── subscribe/route.ts    # POST, DELETE - Push subscriptions
+│           └── preferences/route.ts  # GET, PATCH - Notification preferences
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
+│   ├── PushNotificationToggle.tsx  # UI toggle for browser push notifications
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
-│   └── Sidebar.tsx         # Navigation sidebar (client)
+│   ├── Sidebar.tsx         # Navigation sidebar (client)
+│   └── ui/
+│       └── Switch.tsx      # Reusable toggle switch primitive
 ├── db/                     # Database Layer
 │   ├── index.ts            # Drizzle client export
 │   ├── schema.ts           # Database schema (tables, enums, relations)
@@ -111,6 +121,8 @@ src/
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
 │   ├── useProjects.ts      # Project mutations with optimistic updates
+│   ├── usePushNotifications.ts     # Service worker registration & push subscriptions
+│   ├── useNotificationPreferences.ts  # React Query hooks for notification preferences
 │   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
@@ -121,7 +133,8 @@ src/
 │   ├── pusher.ts           # Pusher server instance
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
-│   └── pusher-client.ts    # Pusher client singleton + ref counting
+│   ├── pusher-client.ts    # Pusher client singleton + ref counting
+│   └── push.ts             # Web Push API server utilities (VAPID, send notifications, prefs)
 └── providers/              # React Context Providers
     └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
 ```
@@ -276,6 +289,14 @@ src/
 
 **Purpose**: Client component for team CRUD
 **Exports**: `TeamManagementClient({ teams, users })` - Client component
+
+### `src/app/dashboard/settings/page.tsx`
+
+**Purpose**: Settings page with notification preferences
+**Exports**: `SettingsPage()` - Server component
+**Features**:
+- Renders `PushNotificationToggle` for browser push notification management
+- Displays and manages per-event notification preferences via `useNotificationPreferences`
 
 ---
 
@@ -458,6 +479,24 @@ src/
 
 - `GET()` - Returns `{ status: "ok" }`
 
+#### `src/app/api/push/subscribe/route.ts`
+
+**Methods**: `POST`, `DELETE`
+**Purpose**: Manage push subscriptions (Web Push)
+**Functions**:
+
+- `POST(req)` - Stores a new push subscription (endpoint, keys, user agent)
+- `DELETE(req)` - Removes the current user's push subscription
+
+#### `src/app/api/push/preferences/route.ts`
+
+**Methods**: `GET`, `PATCH`
+**Purpose**: Manage per-user notification preferences
+**Functions**:
+
+- `GET()` - Returns the current user's notification preference settings
+- `PATCH(req)` - Updates specific event-type preferences (enabled/disabled)
+
 ---
 
 ### Components
@@ -487,6 +526,21 @@ src/
 - Role-based Admin link (superadmin/admin only)
 - User avatar with initials, role badge
 - Logout button
+
+#### `src/components/PushNotificationToggle.tsx`
+
+**Purpose**: UI toggle to enable/disable browser push notifications
+**Exports**: `PushNotificationToggle()` - Client component
+**Features**:
+- Uses `usePushNotifications` hook to manage service worker registration
+- Shows browser permission state and subscription status
+- Displays toast feedback for permission errors
+
+#### `src/components/ui/Switch.tsx`
+
+**Purpose**: Reusable toggle switch primitive (Radix UI)
+**Exports**: `Switch({ checked, onCheckedChange, disabled, ... })` - Client component
+**Dependencies**: `@radix-ui/react-switch`
 
 ---
 
@@ -612,6 +666,28 @@ src/
 - `useUpdateMilestone()` - Update milestone
 - `useDeleteMilestone()` - Delete milestone
 
+#### `src/hooks/usePushNotifications.ts`
+
+**Purpose**: Manages service worker registration and push subscriptions
+**Exports**:
+- `usePushNotifications()` - Returns `{ subscription, isSupported, subscribe, unsubscribe, permission }`
+
+**Behavior**:
+- Registers `/sw.js` service worker
+- Handles VAPID key retrieval from server
+- Provides `subscribe()` to create push subscription
+- Provides `unsubscribe()` to remove subscription
+- Tracks browser permission state
+
+#### `src/hooks/useNotificationPreferences.ts`
+
+**Purpose**: React Query hooks for fetching/updating notification preferences
+**Exports**:
+- `useNotificationPreferences()` - Query hook returning user preferences
+- `useUpdateNotificationPreferences()` - Mutation hook for updating preferences
+
+**Pattern**: Standard React Query with cache invalidation on mutation success
+
 ---
 
 ### Providers (`src/providers/`)
@@ -682,6 +758,20 @@ src/
 - `getPusherClient()` - Returns shared Pusher-js instance
 - `subscribeChannel(name)` - Client-side subscribe with ref counting
 - `unsubscribeChannel(name)` - Client-side unsubscribe with ref counting
+
+#### `src/lib/push.ts`
+
+**Purpose**: Web Push API server utilities
+**Exports**:
+- `webPush` - Configured `web-push` instance with VAPID keys
+- `sendPushNotification(subscription, payload)` - Sends push notification to a subscription
+- `getVapidPublicKey()` - Returns VAPID public key for client
+- `getUserPushSubscription(userId)` - Retrieves active subscription for a user
+- `savePushSubscription(userId, subscription)` - Stores subscription in DB
+- `deletePushSubscription(userId)` - Removes subscription from DB
+- `getNotificationPreferences(userId)` - Gets per-event preferences
+- `updateNotificationPreferences(userId, preferences)` - Updates preferences
+- `shouldNotify(userId, eventType)` - Checks if a user should receive a notification for an event
 
 ---
 
