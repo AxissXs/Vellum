@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { clsx } from "clsx";
+import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
 
 const tabs = [
   { id: "users", label: "Users", icon: Users },
@@ -50,15 +51,7 @@ export default function SuperAdminClient() {
 
       {/* Panels */}
       <div className="bg-slate-900 border border-white/5 rounded-xl p-6">
-        {activeTab === "users" && (
-          <div className="text-center py-12">
-            <Users size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-1">Users Management</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Full user directory with last login, IP, status, and inline actions. Coming in Part 2.
-            </p>
-          </div>
-        )}
+        {activeTab === "users" && <SuperAdminUsersPanel />}
 
         {activeTab === "activity" && (
           <div className="text-center py-12">

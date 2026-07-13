@@ -161,8 +161,8 @@
   **Prerequisites** (new DB table + migrations)
   - [x] Add `user_sessions` table (user login history — IP, userAgent, success/failure)  
   `fields: id, userId, ipAddress, userAgent, success (bool), failedReason (text), createdAt`
-  - [ ] Add `user_status` enum (`active`, `inactive`, `banned`) to `users` table
-  - [ ] Run `bun run db:generate` + `bun run db:migrate`
+  - [x] Add `user_status` enum (`active`, `inactive`, `banned`) to `users` table
+  - [x] Run `bun run db:generate` + `bun run db:migrate`
 
   **Part 1 — Super Admin Route & Sidebar Link**
   - [x] Add `/dashboard/super-admin` route (only accessible to `superadmin` role, redirect others)

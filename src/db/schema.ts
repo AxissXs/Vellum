@@ -13,6 +13,12 @@ export const userRoleEnum = pgEnum("user_role", [
   "member",
 ]);
 
+export const userStatusEnum = pgEnum("user_status", [
+  "active",
+  "inactive",
+  "banned",
+]);
+
 export const taskStatusEnum = pgEnum("task_status", [
   "backlog",
   "todo",
@@ -34,6 +40,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").notNull().default("member"),
+  status: userStatusEnum("status").notNull().default("active"),
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
