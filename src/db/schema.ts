@@ -166,6 +166,17 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const userSessions = pgTable("user_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" }),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  success: boolean("success").notNull().default(true),
+  failedReason: text("failed_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const activityLogs = pgTable("activity_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")

@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth";
 import { ensureDemoData } from "@/db/bootstrap";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, userSessions } from "@/db/schema";
 
 function isJsonRequest(req: NextRequest) {
   return req.headers.get("content-type")?.includes("application/json");
@@ -37,6 +37,13 @@ async function isInitialized() {
 
 export async function POST(req: NextRequest) {
   const wantsJson = isJsonRequest(req);
+
+  // Capture request metadata for login auditing
+  const ipAddress =
+    req.headers.get("x-forwarded-for") ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  const userAgent = req.headers.get("user-agent") || "unknown";
 
   try {
     if (process.env.NODE_ENV === "development") {
@@ -68,6 +75,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (!email || !password) {
+      // Track failed login — missing credentials
+      try {
+        await db.insert(userSessions).values({
+          userId: null,
+          ipAddress,
+          userAgent,
+          success: false,
+          failedReason: "missing_credentials",
+        });
+      } catch (e) {
+        console.error("Failed to log session:", e);
+      }
+
       if (wantsJson) {
         return NextResponse.json(
           { error: "Email and password are required" },
@@ -79,6 +99,19 @@ export async function POST(req: NextRequest) {
 
     const user = await authenticateUser(email, password);
     if (!user) {
+      // Track failed login — invalid credentials
+      try {
+        await db.insert(userSessions).values({
+          userId: null,
+          ipAddress,
+          userAgent,
+          success: false,
+          failedReason: "invalid_credentials",
+        });
+      } catch (e) {
+        console.error("Failed to log session:", e);
+      }
+
       if (wantsJson) {
         return NextResponse.json(
           { error: "Invalid email or password" },
@@ -86,6 +119,18 @@ export async function POST(req: NextRequest) {
         );
       }
       return relativeRedirect("/login?error=invalid");
+    }
+
+    // Track successful login
+    try {
+      await db.insert(userSessions).values({
+        userId: user.id,
+        ipAddress,
+        userAgent,
+        success: true,
+      });
+    } catch (e) {
+      console.error("Failed to log session:", e);
     }
 
     const sessionId = await createSession(user.id);

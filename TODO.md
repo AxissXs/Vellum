@@ -170,10 +170,11 @@
   - [x] Create server layout for super-admin section that checks role
 
   **Part 2 — Users Management Table**
-  - [ ] Create `SuperAdminUsersPanel` component
-  - [ ] Server action/API: `GET /api/super-admin/users` — list users with `lastLoginAt`, `lastIp`, `status`
-  - [ ] UI: Data table with columns — Name, Email, Role, Status, Last Login, Last IP, Created At
-  - [ ] UI: Inline actions — Change status (Active / Inactive / Banned), Change role
+  - [x] Create `SuperAdminUsersPanel` component
+  - [x] Server action/API: `GET /api/super-admin/users` — list users with `status`
+  - [x] UI: Data table with columns — Name, Email, Role, Status, Created At
+  - [x] UI: Inline actions — Change status (Active / Inactive / Banned), Change role
+  - [x] Optimistic updates via React Query + rollback on error
 
   **Part 3 — Real-time User Activity Monitoring**
   - [ ] Create `SuperAdminActivityPanel` component
