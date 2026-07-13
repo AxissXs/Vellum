@@ -239,8 +239,8 @@ See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
 
 See `src/db/schema.ts` for:
 
-- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `user_sessions`, `activity_logs`
-- Enums: `user_role`, `user_status`, `task_status`, `task_priority`
+- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `user_sessions`, `activity_logs`, `push_subscriptions`, `notification_preferences`
+- Enums: `user_role`, `user_status`, `task_status`, `task_priority`, `notification_event_type`
 - Relations defined via Drizzle references
 
 **User Status Field** (`users.status`):
@@ -269,6 +269,8 @@ See `src/db/schema.ts` for:
 | `/api/comments/[id]`            | PATCH, DELETE      | Comment CRUD         |
 | `/api/activity`                 | GET                | Activity logs        |
 | `/api/stats`                    | GET                | Dashboard statistics |
+| `/api/push/subscribe`           | POST, DELETE       | Push subscription    |
+| `/api/push/preferences`         | GET, PATCH         | Notification prefs   |
 | `/api/health`                   | GET                | Health check         |
 | `/api/super-admin/users`        | GET                | List users (last login/IP) |
 | `/api/super-admin/users/[id]`   | PATCH              | Update user role/status |
