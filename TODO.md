@@ -233,6 +233,13 @@
   - Role matrix explains who can do what
   - All panels gated behind `superadmin` role check
 
+- [ ] **Update README.md** - Add project context and storytelling sections
+  - Project goal and what problem it solves
+  - Inspiration and why it was built
+  - Roadmap overview (linking to TODO.md)
+  - Name etymology (why "Vellum")
+  - Keep it concise but informative for visitors and new contributors
+
 ## Technical Debt
 
 - [ ] **Add test suite** - Unit + integration tests
