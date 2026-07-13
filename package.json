@@ -38,7 +38,8 @@
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "sonner": "^2.0.7",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "vercel": "^55.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.17",
