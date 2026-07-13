@@ -63,14 +63,15 @@ Required in `.env`:
 
 ### Executing a Task
 
-1. **Read relevant files** - Understand existing patterns before modifying
-2. **Follow conventions** - Match existing code style, naming, patterns
-3. **Write tests/verify** - Run `bun run lint`, `bun run typecheck`, `bun run build`
-4. **Update documentation** - Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
-5. **Check for overlap** - Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
-6. Stage changes: `git add -A`
-7. Commit with conventional message
-8. Push: `git push`
+1. **Create a branch** — Before making any changes, create a feature branch from the latest `master` following the branch naming conventions outlined in the **Branching Strategy** section below.
+2. **Read relevant files** — Understand existing patterns before modifying
+3. **Follow conventions** — Match existing code style, naming, patterns
+4. **Write tests/verify** — Run `bun run lint`, `bun run typecheck`, `bun run build`
+5. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
+6. **Check for overlap** — Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
+7. Stage changes: `git add -A`
+8. Commit with conventional message
+9. Push: `git push`
 
 ### Code Conventions
 
