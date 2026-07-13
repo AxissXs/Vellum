@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession, requireRole } from "@/lib/auth";
 import { db } from "@/db";
 import { sessions, users, userSessions } from "@/db/schema";
-import { gt, sql, desc } from "drizzle-orm";
+import { gt, sql, desc, eq, and, inArray } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +43,12 @@ export async function GET() {
         ipAddress: userSessions.ipAddress,
       })
       .from(userSessions)
-      .where(sql`${userSessions.userId} IN (${userIds.join(",")}) AND ${userSessions.success} = true`)
+      .where(
+        and(
+          inArray(userSessions.userId, userIds as string[]),
+          eq(userSessions.success, true)
+        )
+      )
       .orderBy(desc(userSessions.createdAt));
 
     for (const r of ipRows) {
