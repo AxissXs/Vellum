@@ -31,6 +31,7 @@ import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks"
 import { useRealtime } from "@/hooks/useRealtime";
 
 type User = { id: string; name: string; avatarUrl: string | null };
+type Project = { id: string; name: string; color: string | null };
 type Task = {
   id: string;
   title: string;
@@ -75,6 +76,7 @@ interface KanbanBoardProps {
   projectId: string;
   initialColumns: Column[];
   users: User[];
+  allProjects: Project[];
   currentUserId: string;
 }
 
@@ -164,11 +166,13 @@ function Column({
   users,
   onTaskClick,
   onDragStart,
+  addForm,
 }: {
   column: Column;
   users: User[];
   onTaskClick: (task: Task) => void;
   onDragStart: (task: Task) => void;
+  addForm?: React.ReactNode;
 }) {
   return (
     <SortableContext
@@ -185,6 +189,8 @@ function Column({
             </span>
           </div>
         </div>
+
+        {addForm && <div className="mb-3">{addForm}</div>}
 
         <div
           className="flex-1 min-h-[400px] space-y-2 overflow-y-auto pr-1"
@@ -215,13 +221,14 @@ export default function KanbanBoard({
   projectId,
   initialColumns,
   users,
+  allProjects,
   currentUserId,
 }: KanbanBoardProps) {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const [newTaskData, setNewTaskData] = useState<Record<string, { title: string; description: string; priority: string; assigneeId: string; dueDate: string }>>({});
+  const [newTaskData, setNewTaskData] = useState<Record<string, { title: string; description: string; priority: string; assigneeId: string; dueDate: string; projectId: string }>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -340,7 +347,7 @@ export default function KanbanBoard({
         dueDate: data.dueDate || null,
       });
       setShowNewTask(null);
-      setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "" } }));
+      setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "", projectId: "" } }));
     } catch (err) {
       console.error("Failed to create task:", err);
     }
@@ -362,27 +369,21 @@ export default function KanbanBoard({
       <div className="flex gap-4 overflow-x-auto pb-4">
         {statusColumns.map((colConfig) => {
           const column = columns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
-          return (
-            <div key={colConfig.key} className="w-72 flex-shrink-0">
-              <Column
-                column={column}
-                onTaskClick={setSelectedTask}
-                onDragStart={(task) => {}}
-                users={users}
-              />
+          const isAdding = showNewTask === colConfig.key;
+          const taskForm = (
+            <>
               <button
-                onClick={() => setShowNewTask(colConfig.key)}
-                disabled={showNewTask === colConfig.key}
-                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition disabled:opacity-50"
+                onClick={() => setShowNewTask(isAdding ? null : colConfig.key)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition"
               >
                 <Plus size={16} />
-                Add task
+                {isAdding ? "Cancel" : "Add task"}
               </button>
 
-              {showNewTask === colConfig.key && (
+              {isAdding && (
                 <form
                   onSubmit={(e) => { e.preventDefault(); handleCreateTask(colConfig.key); }}
-                  className="mt-3 bg-slate-800/50 border border-white/10 rounded-xl p-3 space-y-3 animate-slide-down"
+                  className="mt-2 bg-slate-800/50 border border-white/10 rounded-xl p-3 space-y-3 animate-slide-down"
                 >
                   <input
                     type="text"
@@ -422,11 +423,20 @@ export default function KanbanBoard({
                       ))}
                     </select>
                   </div>
+                  <select
+                    value={newTaskData[colConfig.key]?.projectId || projectId}
+                    onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], projectId: e.target.value } }))}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    {allProjects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                   <input
                     type="date"
                     value={newTaskData[colConfig.key]?.dueDate || ""}
                     onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], dueDate: e.target.value } }))}
-                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   <div className="flex gap-2 pt-1">
                     <button
@@ -446,6 +456,17 @@ export default function KanbanBoard({
                   </div>
                 </form>
               )}
+            </>
+          );
+          return (
+            <div key={colConfig.key} className="w-72 flex-shrink-0">
+              <Column
+                column={column}
+                onTaskClick={setSelectedTask}
+                onDragStart={() => {}}
+                users={users}
+                addForm={taskForm}
+              />
             </div>
           );
         })}
