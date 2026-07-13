@@ -166,11 +166,6 @@ src/
 **Purpose**: Dashboard client layout wrapper providing QueryProvider, sidebar, and main content area
 **Exports**: `DashboardLayout({ children, user })` - Client component
 
-### `src/app/dashboard/ClientLayout.tsx`
-
-**Purpose**: Dashboard client layout wrapper providing QueryProvider, sidebar, and main content area
-**Exports**: `DashboardLayout({ children, user })` - Client component
-
 ### `src/app/dashboard/layout.tsx`
 
 **Purpose**: Protected dashboard layout with sidebar
@@ -245,19 +240,22 @@ src/
 ### `src/app/dashboard/projects/[id]/KanbanBoard.tsx`
 
 **Purpose**: Kanban board with columns (Backlog, Todo, In Progress, Review, Done)
-**Exports**: `KanbanBoard({ projectId, tasks, users })` - Client component
+**Exports**: `KanbanBoard({ projectId, initialColumns, users, allProjects, currentUserId })` - Client component
 
-- Drag-and-drop (react-dnd or native)
+- Drag-and-drop (dnd-kit)
 - Task cards with priority, assignee, due date
+- Inline task creation with Project dropdown
 
 ### `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
 **Purpose**: Modal for task details (description, comments, activity)
-**Exports**: `TaskDetailModal({ task, onClose })` - Client component
+**Exports**: `TaskDetailModal({ task, users, currentUserId, onClose, onChange })` - Client component
 
 - Rich text editor for description
-- Comments section
-- Activity timeline
+- Inline task editing (title, status, priority, assignee, due date)
+- Comments section with CRUD
+- Real-time comment updates via `useRealtime()`
+- Task delete confirmation
 
 ### `src/app/dashboard/projects/[id]/ProjectManagementPanel.tsx`
 
@@ -606,6 +604,14 @@ src/
 - Invalidates relevant React Query caches on incoming events
 - Shows toast notifications for updates from other users (skips self)
 
+#### `src/hooks/useMilestones.ts`
+
+**Purpose**: React Query mutations for milestone operations
+**Exports**:
+- `useCreateMilestone()` - Create milestone
+- `useUpdateMilestone()` - Update milestone
+- `useDeleteMilestone()` - Delete milestone
+
 ---
 
 ### Providers (`src/providers/`)
@@ -621,18 +627,6 @@ src/
 - Refetch on window focus: false
 - Includes `<Toaster position="top-right" theme="dark" />`
 - Includes `<ReactQueryDevtools initialIsOpen={false} />`
-**Exports**:
-- `useCreateUser()` - Create user (admin)
-- `useUpdateUser()` - Update user
-- `useDeleteUser()` - Delete user
-
-#### `src/hooks/useMilestones.ts`
-
-**Purpose**: React Query mutations for milestone operations
-**Exports**:
-- `useCreateMilestone()` - Create milestone
-- `useUpdateMilestone()` - Update milestone
-- `useDeleteMilestone()` - Delete milestone
 
 ---
 

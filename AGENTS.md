@@ -67,11 +67,33 @@ Required in `.env`:
 2. **Read relevant files** — Understand existing patterns before modifying
 3. **Follow conventions** — Match existing code style, naming, patterns
 4. **Write tests/verify** — Run `bun run lint`, `bun run typecheck`, `bun run build`
-5. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable
+5. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable (see checklist below)
 6. **Check for overlap** — Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
 7. Stage changes: `git add -A`
 8. Commit with conventional message
 9. Push: `git push`
+
+### Documentation Update Checklist
+
+**Any agent that adds, removes, or renames files must update these docs:**
+
+- [ ] `TODO.md` — Mark completed tasks as done, add new tasks if discovered
+- [ ] `STRUCTURE.md` — Update file listings, exports, descriptions, and purposes
+- [ ] `AGENTS.md` — Update conventions, workflow, or infrastructure instructions if behavior changes
+
+**How to keep STRUCTURE.md accurate:**
+1. Add new files/directories to the tree listing in the "Source Code (`src/`)" section
+2. Add or update the "File Details" section for any new/modified module
+3. Update API route tables when adding/modifying endpoints
+4. Update the Data Flow diagram if auth or request flow changes
+5. Update the Hooks table when adding new React Query hooks
+6. Update the Lib table when adding new utilities
+
+> **Reminders for STRUCTURE.md:**
+> - The tree view must reflect the actual `src/` directory structure
+> - Every exported function/type listed must actually exist in the code
+> - Component props signatures must match the actual component interface
+> - API route method signatures must match the actual route handlers
 
 ### Code Conventions
 
