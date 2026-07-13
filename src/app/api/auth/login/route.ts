@@ -8,6 +8,7 @@ import {
 import { ensureDemoData } from "@/db/bootstrap";
 import { db } from "@/db";
 import { users, userSessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 function isJsonRequest(req: NextRequest) {
   return req.headers.get("content-type")?.includes("application/json");
@@ -97,21 +98,51 @@ export async function POST(req: NextRequest) {
       return relativeRedirect("/login?error=missing");
     }
 
-    const user = await authenticateUser(email, password);
-    if (!user) {
-      // Track failed login — invalid credentials
+    const authResult = await authenticateUser(email, password);
+
+    if (!authResult.ok) {
+      const { reason } = authResult;
+
+      // Track failed login with reason
       try {
+        const userRecord = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.email, email.toLowerCase().trim()))
+          .limit(1);
+
         await db.insert(userSessions).values({
-          userId: null,
+          userId: userRecord[0]?.id ?? null,
           ipAddress,
           userAgent,
           success: false,
-          failedReason: "invalid_credentials",
+          failedReason: reason,
         });
       } catch (e) {
         console.error("Failed to log session:", e);
       }
 
+      if (reason === "inactive") {
+        if (wantsJson) {
+          return NextResponse.json(
+            { error: "Account inactive. Contact your administrator." },
+            { status: 403 }
+          );
+        }
+        return relativeRedirect("/login?error=inactive");
+      }
+
+      if (reason === "banned") {
+        if (wantsJson) {
+          return NextResponse.json(
+            { error: "Account suspended. Contact your administrator." },
+            { status: 403 }
+          );
+        }
+        return relativeRedirect("/login?error=banned");
+      }
+
+      // invalid_credentials
       if (wantsJson) {
         return NextResponse.json(
           { error: "Invalid email or password" },
@@ -120,6 +151,8 @@ export async function POST(req: NextRequest) {
       }
       return relativeRedirect("/login?error=invalid");
     }
+
+    const user = authResult.user;
 
     // Track successful login
     try {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck, Globe } from "lucide-react";
 import { clsx } from "clsx";
 
 export type SuperAdminUser = {
@@ -14,6 +14,8 @@ export type SuperAdminUser = {
   avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  lastLoginAt: string | null;
+  lastIp: string | null;
 };
 
 function getInitials(name: string) {
@@ -49,7 +51,7 @@ export default function SuperAdminUsersPanel() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"name" | "createdAt">("name");
+  const [sortBy, setSortBy] = useState<"name" | "createdAt" | "lastLoginAt">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const queryClient = useQueryClient();
@@ -101,13 +103,26 @@ export default function SuperAdminUsersPanel() {
     },
   });
 
-  function toggleSort(column: "name" | "createdAt") {
+  function toggleSort(column: "name" | "createdAt" | "lastLoginAt") {
     if (sortBy === column) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortBy(column);
       setSortDir("asc");
     }
+  }
+
+  function timeAgo(dateStr: string | null) {
+    if (!dateStr) return "Never";
+    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (seconds < 60) return "just now";
+    const mins = Math.floor(seconds / 60);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    return formatDate(dateStr);
   }
 
   let filtered = users;
@@ -130,6 +145,11 @@ export default function SuperAdminUsersPanel() {
   filtered = [...filtered].sort((a, b) => {
     if (sortBy === "name") {
       return sortDir === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+    }
+    if (sortBy === "lastLoginAt") {
+      const ta = a.lastLoginAt ? new Date(a.lastLoginAt).getTime() : 0;
+      const tb = b.lastLoginAt ? new Date(b.lastLoginAt).getTime() : 0;
+      return sortDir === "asc" ? ta - tb : tb - ta;
     }
     const ta = new Date(a.createdAt).getTime();
     const tb = new Date(b.createdAt).getTime();
@@ -203,6 +223,12 @@ export default function SuperAdminUsersPanel() {
                   >
                     Created {sortBy === "createdAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
                   </th>
+                  <th
+                    className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap cursor-pointer select-none"
+                    onClick={() => toggleSort("lastLoginAt")}
+                  >
+                    Last Login {sortBy === "lastLoginAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
+                  </th>
                   <th className="px-5 py-3 font-medium text-slate-400 text-right">Actions</th>
                 </tr>
               </thead>
@@ -232,6 +258,17 @@ export default function SuperAdminUsersPanel() {
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap text-slate-500">
                       {formatDate(u.createdAt)}
+                    </td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <div className="text-xs text-slate-400">
+                        {timeAgo(u.lastLoginAt)}
+                      </div>
+                      {u.lastIp && (
+                        <div className="flex items-center gap-1 text-[10px] text-slate-600 mt-0.5">
+                          <Globe size={10} />
+                          {u.lastIp}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -270,7 +307,7 @@ export default function SuperAdminUsersPanel() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={6} className="px-5 py-8 text-center text-slate-500 text-sm">
                       No users match your filters.
                     </td>
                   </tr>

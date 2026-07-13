@@ -12,6 +12,7 @@ import {
 import { clsx } from "clsx";
 import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
 import SuperAdminActivityPanel from "./SuperAdminActivityPanel";
+import SuperAdminSessionsPanel from "./SuperAdminSessionsPanel";
 
 const tabs = [
   { id: "users", label: "Users", icon: Users },
@@ -56,15 +57,7 @@ export default function SuperAdminClient() {
 
         {activeTab === "activity" && <SuperAdminActivityPanel />}
 
-        {activeTab === "sessions" && (
-          <div className="text-center py-12">
-            <KeyRound size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-1">Session Management</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              View and revoke active user sessions. Coming in Part 4.
-            </p>
-          </div>
-        )}
+        {activeTab === "sessions" && <SuperAdminSessionsPanel />}
 
         {activeTab === "audit" && (
           <div className="text-center py-12">

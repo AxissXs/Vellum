@@ -239,9 +239,14 @@ See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
 
 See `src/db/schema.ts` for:
 
-- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `activity_logs`
-- Enums: `user_role`, `task_status`, `task_priority`
+- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `user_sessions`, `activity_logs`
+- Enums: `user_role`, `user_status`, `task_status`, `task_priority`
 - Relations defined via Drizzle references
+
+**User Status Field** (`users.status`):
+- `active` — Normal access
+- `inactive` — Cannot log in (user-initiated pause)
+- `banned` — Cannot log in, existing sessions destroyed (admin-enforced)
 
 ## API Routes Reference
 
@@ -265,6 +270,11 @@ See `src/db/schema.ts` for:
 | `/api/activity`                 | GET                | Activity logs        |
 | `/api/stats`                    | GET                | Dashboard statistics |
 | `/api/health`                   | GET                | Health check         |
+| `/api/super-admin/users`        | GET                | List users (last login/IP) |
+| `/api/super-admin/users/[id]`   | PATCH              | Update user role/status |
+| `/api/super-admin/activity`     | GET                | Activity feed + 24h stats |
+| `/api/super-admin/sessions`     | GET                | Active sessions      |
+| `/api/super-admin/sessions/[id]`| DELETE             | Revoke session       |
 
 ## React Query Optimistic Updates Pattern
 
