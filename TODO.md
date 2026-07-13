@@ -182,6 +182,18 @@
   - [x] UI: Live feed (polling 5s) of logins, failed attempts, user actions
   - [x] Show sparklines / mini stats for: logins last 24h, failed attempts, active users 24h
 
+  **Part 2b — Users Table Enhancements**
+  - [ ] Show `lastLoginAt` and `lastIp` in Users table via join to `user_sessions`
+  - [ ] Sort/filter by last login date
+  - [ ] Add "Last seen" relative time column (e.g. "2h ago")
+
+  **Part 2c — Status-based Login Enforcement**
+  - [x] Verify `inactive` and `banned` users are blocked from logging in
+  - [x] Define difference: `inactive` = user-initiated pause (can be re-activated), `banned` = admin-enforced block (requires admin intervention)
+  - [x] Return specific error messages: "Account inactive" / "Account suspended"
+  - [x] Log blocked login attempts in `user_sessions`
+  - [x] Banned users have existing sessions destroyed immediately on `getSession()`
+
   **Part 4 — Session Management**
   - [ ] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
   - [ ] API: `DELETE /api/super-admin/sessions/[id]` — revoke a session

@@ -58,6 +58,12 @@ export async function getSession(): Promise<AuthUser | null> {
     return null;
   }
 
+  // Banned users are immediately kicked out
+  if (user.status === "banned") {
+    await db.delete(sessions).where(eq(sessions.id, sessionId));
+    return null;
+  }
+
   return user as AuthUser;
 }
 
@@ -78,26 +84,42 @@ export async function destroySession(sessionId: string) {
   await db.delete(sessions).where(eq(sessions.id, sessionId));
 }
 
+export type AuthResult =
+  | { ok: true; user: AuthUser }
+  | { ok: false; reason: "invalid_credentials" | "inactive" | "banned" };
+
 export async function authenticateUser(
   email: string,
   password: string
-): Promise<AuthUser | null> {
+): Promise<AuthResult> {
   const [user] = await db
     .select()
     .from(users)
     .where(eq(users.email, email.toLowerCase().trim()))
     .limit(1);
 
-  if (!user) return null;
-  if (!compareSync(password, user.passwordHash)) return null;
+  if (!user || !compareSync(password, user.passwordHash)) {
+    return { ok: false, reason: "invalid_credentials" };
+  }
+
+  if (user.status === "inactive") {
+    return { ok: false, reason: "inactive" };
+  }
+
+  if (user.status === "banned") {
+    return { ok: false, reason: "banned" };
+  }
 
   return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    status: user.status,
-    avatarUrl: user.avatarUrl,
+    ok: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      avatarUrl: user.avatarUrl,
+    },
   };
 }
 
