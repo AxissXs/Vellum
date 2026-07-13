@@ -70,7 +70,7 @@ Required in `.env`:
 5. **Check for overlap** - Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
 6. Stage changes: `git add -A`
 7. Commit with conventional message
-7. Push: `git push`
+8. Push: `git push`
 
 ### Code Conventions
 
@@ -148,6 +148,64 @@ Examples:
 - `fix(auth): handle expired session cleanup`
 - `db: add project_milestones table`
 
+## Branching Strategy (required for all AI agents)
+
+We use a feature-branch workflow to keep `master` stable and make code review easy.
+
+### 1. Create a feature branch
+
+Before starting any task, create a branch from the latest `master`:
+
+```bash
+git checkout master
+git pull origin master
+git checkout -b <branch-name>
+```
+
+**Branch naming convention:**
+
+- `feat/<short-description>` — New features  
+  e.g. `feat/notifications-bell`
+- `fix/<short-description>` — Bug fixes  
+  e.g. `fix/kanban-add-task-button`
+- `refactor/<short-description>` — Code refactoring  
+  e.g. `refactor/auth-middleware`
+- `chore/<short-description>` — Tooling, deps, docs updates  
+  e.g. `chore/update-tailwind`
+- `hotfix/<short-description>` — Urgent production fixes  
+  e.g. `hotfix/login-crash`
+
+### 2. Work on the branch
+
+- Make focused, atomic commits with conventional messages (see above).
+- Run `bun run lint`, `bun run typecheck`, and `bun run build` before pushing.
+- Keep the branch up-to-date with `master` via `git pull origin master` if it drifts.
+
+### 3. Push the branch
+
+```bash
+git push -u origin <branch-name>
+```
+
+### 4. Merge back to master
+
+When the task is done and verified, merge the branch into `master`:
+
+```bash
+git checkout master
+git merge --no-ff <branch-name>
+git push origin master
+```
+
+Then delete the merged branch:
+
+```bash
+git branch -d <branch-name>      # local
+git push origin --delete <branch-name>   # remote
+```
+
+> **Do not push directly to `master`.** All work must go through a feature branch.
+
 ## File Structure Reference
 
 See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
@@ -198,10 +256,15 @@ export function useCreateComment() {
     },
     onMutate: async (newComment) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["comments", newComment.taskId] });
+      await queryClient.cancelQueries({
+        queryKey: ["comments", newComment.taskId],
+      });
 
       // Snapshot previous value
-      const previousComments = queryClient.getQueryData(["comments", newComment.taskId]);
+      const previousComments = queryClient.getQueryData([
+        "comments",
+        newComment.taskId,
+      ]);
 
       // Optimistically update
       queryClient.setQueryData(["comments", newComment.taskId], (old) => [
@@ -214,19 +277,25 @@ export function useCreateComment() {
     onError: (err, newComment, context) => {
       // Rollback on error
       if (context?.previousComments) {
-        queryClient.setQueryData(["comments", context.taskId], context.previousComments);
+        queryClient.setQueryData(
+          ["comments", context.taskId],
+          context.previousComments,
+        );
       }
       toast.error("Failed to add comment");
     },
     onSuccess: (data, newComment) => {
       // Replace temp with real
-      queryClient.setQueryData(["comments", newComment.taskId], (old) =>
-        old?.map((c) => (c.id.startsWith("temp-") ? data : c)) || []
+      queryClient.setQueryData(
+        ["comments", newComment.taskId],
+        (old) => old?.map((c) => (c.id.startsWith("temp-") ? data : c)) || [],
       );
     },
     onSettled: (data, error, newComment) => {
       // Refetch to ensure sync
-      queryClient.invalidateQueries({ queryKey: ["comments", newComment.taskId] });
+      queryClient.invalidateQueries({
+        queryKey: ["comments", newComment.taskId],
+      });
     },
   });
 }
@@ -241,7 +310,13 @@ All mutating API routes must log to `activity_logs` table after successful opera
 ```ts
 await db.insert(activityLogs).values({
   userId: user.id,
-  action: "created_task" | "updated_task" | "deleted_task" | "created_comment" | "updated_comment" | "deleted_comment",
+  action:
+    "created_task" |
+    "updated_task" |
+    "deleted_task" |
+    "created_comment" |
+    "updated_comment" |
+    "deleted_comment",
   entityType: "task" | "comment" | "project" | "user",
   entityId: entity.id,
   details: `Created task: ${entity.title}`,
