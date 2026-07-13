@@ -177,10 +177,10 @@
   - [x] Optimistic updates via React Query + rollback on error
 
   **Part 3 — Real-time User Activity Monitoring**
-  - [ ] Create `SuperAdminActivityPanel` component
-  - [ ] API: `GET /api/super-admin/activity` — activity logs enriched with IP from `user_sessions`
-  - [ ] UI: Live feed (polling 5s) of logins, failed attempts, user actions
-  - [ ] Show sparklines / mini stats for: logins last 24h, failed attempts, active right now
+  - [x] Create `SuperAdminActivityPanel` component
+  - [x] API: `GET /api/super-admin/activity` — activity logs enriched with IP from `user_sessions`
+  - [x] UI: Live feed (polling 5s) of logins, failed attempts, user actions
+  - [x] Show sparklines / mini stats for: logins last 24h, failed attempts, active users 24h
 
   **Part 4 — Session Management**
   - [ ] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
