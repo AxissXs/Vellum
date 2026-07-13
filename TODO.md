@@ -209,10 +209,12 @@
   - [x] Self-protection: superadmin cannot revoke their own session
 
   **Part 5 — Enhanced Audit Logs**
-  - [ ] Extend `activity_logs` schema to include `ipAddress` column
-  - [ ] API: `GET /api/super-admin/audit` with filters (user, action, date range, IP)
-  - [ ] UI: Filterable audit log table with date-range picker and user dropdown
-  - [ ] API: `GET /api/super-admin/audit/export?format=csv|pdf` — export filtered results
+  - [x] Extend `activity_logs` schema to include `ipAddress` column
+  - [x] Run migration `0003_whole_kang.sql`
+  - [x] API: `GET /api/super-admin/audit` with filters (user, action, date range, IP)
+  - [x] API: `GET /api/super-admin/audit/export?format=csv` — CSV export of filtered results
+  - [x] UI: Filterable audit log table with date-range picker + pagination
+  - [x] UI: Export CSV button downloads filtered results
 
   **Part 6 — System Health Metrics**
   - [ ] Create `SuperAdminHealthPanel` component

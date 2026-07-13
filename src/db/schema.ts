@@ -186,6 +186,7 @@ export const activityLogs = pgTable("activity_logs", {
   entityType: text("entity_type").notNull(),
   entityId: text("entity_id"),
   details: text("details"),
+  ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

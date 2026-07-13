@@ -13,6 +13,7 @@ import { clsx } from "clsx";
 import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
 import SuperAdminActivityPanel from "./SuperAdminActivityPanel";
 import SuperAdminSessionsPanel from "./SuperAdminSessionsPanel";
+import SuperAdminAuditPanel from "./SuperAdminAuditPanel";
 
 const tabs = [
   { id: "users", label: "Users", icon: Users },
@@ -59,15 +60,7 @@ export default function SuperAdminClient() {
 
         {activeTab === "sessions" && <SuperAdminSessionsPanel />}
 
-        {activeTab === "audit" && (
-          <div className="text-center py-12">
-            <ClipboardList size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-1">Audit Logs</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Filterable and exportable audit trail with IP addresses. Coming in Part 5.
-            </p>
-          </div>
-        )}
+        {activeTab === "audit" && <SuperAdminAuditPanel />}
 
         {activeTab === "health" && (
           <div className="text-center py-12">

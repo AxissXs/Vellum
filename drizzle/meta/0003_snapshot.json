@@ -1,5 +1,7 @@
 {
-  "id": "aad5339e-40b5-4237-9225-03436df5c891",
+
+  "id": "5f5005db-68d7-4ea5-abe6-2b4932302cc3",
+
   "prevId": "3d5fe7a1-2985-4d96-9ce8-db7db98b4b66",
   "version": "7",
   "dialect": "postgresql",
@@ -45,6 +47,14 @@
           "primaryKey": false,
           "notNull": false
         },
+
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -154,6 +164,7 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+
     "public.notification_preferences": {
       "name": "notification_preferences",
       "schema": "",
@@ -236,6 +247,7 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+
     "public.project_milestones": {
       "name": "project_milestones",
       "schema": "",
@@ -557,6 +569,7 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+
     "public.push_subscriptions": {
       "name": "push_subscriptions",
       "schema": "",
@@ -622,6 +635,7 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+
     "public.sessions": {
       "name": "sessions",
       "schema": "",
@@ -1140,6 +1154,7 @@
     }
   },
   "enums": {
+
     "public.notification_event_type": {
       "name": "notification_event_type",
       "schema": "public",
@@ -1152,6 +1167,7 @@
         "comment_mention"
       ]
     },
+
     "public.task_priority": {
       "name": "task_priority",
       "schema": "public",
