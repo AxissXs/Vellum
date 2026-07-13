@@ -50,6 +50,12 @@ src/
 │   │   ├── admin/
 │   │   │   ├── page.tsx    # Admin page (server)
 │   │   │   └── AdminClient.tsx  # Admin client component
+│   │   ├── super-admin/
+│   │   │   ├── page.tsx              # Super Admin dashboard (server)
+│   │   │   ├── SuperAdminClient.tsx  # Tabbed layout with all panels
+│   │   │   ├── SuperAdminUsersPanel.tsx      # User management table
+│   │   │   ├── SuperAdminActivityPanel.tsx   # Real-time activity feed
+│   │   │   └── SuperAdminSessionsPanel.tsx   # Active sessions table
 │   │   ├── kanban/
 │   │   │   ├── page.tsx              # Global kanban board (server)
 │   │   │   └── KanbanBoardClient.tsx # Kanban board with dnd-kit (client)
@@ -96,8 +102,14 @@ src/
 │       │   └── route.ts            # GET - Activity logs
 │       ├── stats/
 │       │   └── route.ts            # GET - Dashboard statistics
-│       └── health/
-│           └── route.ts            # GET - Health check
+│       ├── health/
+│       │   └── route.ts            # GET - Health check
+│       └── super-admin/
+│           ├── users/route.ts      # GET - List users with last login / IP
+│           ├── users/[id]/route.ts # PATCH - Update user role / status
+│           ├── activity/route.ts   # GET - Activity feed + 24h stats
+│           └── sessions/route.ts   # GET - Active sessions
+│           └── sessions/[id]/route.ts  # DELETE - Revoke session
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
@@ -217,6 +229,49 @@ src/
 
 **Purpose**: Admin client component (user management UI)
 **Exports**: `AdminClient()` - Client component
+
+### `src/app/dashboard/super-admin/page.tsx`
+
+**Purpose**: Super Admin dashboard page (server, superadmin-only)
+**Exports**: `SuperAdminPage()` - Server component
+
+- Redirects non-superadmins to `/dashboard`
+
+### `src/app/dashboard/super-admin/SuperAdminClient.tsx`
+
+**Purpose**: Super Admin tabbed dashboard layout
+**Exports**: `SuperAdminClient()` - Client component
+
+- Tabs: Users, Live Activity, Sessions, Audit Logs, System Health, Role Matrix
+- Renders appropriate panel component per active tab
+
+### `src/app/dashboard/super-admin/SuperAdminUsersPanel.tsx`
+
+**Purpose**: Full user directory with search, filters, inline role/status editing
+**Exports**: `SuperAdminUsersPanel()` - Client component
+
+- Search by name/email, role/status filters
+- Sort by name, createdAt, lastLoginAt
+- Displays last login time and IP per user (from `user_sessions`)
+- Inline role/status dropdowns with optimistic updates
+
+### `src/app/dashboard/super-admin/SuperAdminActivityPanel.tsx`
+
+**Purpose**: Real-time activity monitoring feed
+**Exports**: `SuperAdminActivityPanel()` - Client component
+
+- Polls every 5 seconds for live updates
+- Shows 24h mini stats: logins, failed attempts, active users
+- Unified feed of user actions + login attempts with IP addresses
+
+### `src/app/dashboard/super-admin/SuperAdminSessionsPanel.tsx`
+
+**Purpose**: Active session management
+**Exports**: `SuperAdminSessionsPanel()` - Client component
+
+- Polls every 10 seconds
+- Lists all active sessions with user, role, IP, start time, expiry
+- Revoke button per session (self-protection: cannot revoke own session)
 
 ### `src/app/dashboard/projects/page.tsx`
 
@@ -457,6 +512,49 @@ src/
 **Functions**:
 
 - `GET()` - Returns `{ status: "ok" }`
+
+#### `src/app/api/super-admin/users/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List all users enriched with last login data
+**Functions**:
+
+- `GET()` - Returns `{ users }` with `lastLoginAt` and `lastIp` from `user_sessions`
+- Gated behind `superadmin` role check
+
+#### `src/app/api/super-admin/users/[id]/route.ts`
+
+**Methods**: `PATCH`
+**Purpose**: Update user role/status (superadmin-only)
+**Functions**:
+
+- `PATCH(req, { params })` - Updates name, email, role, status, or password
+- Self-protection: cannot change own role/status
+
+#### `src/app/api/super-admin/activity/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Unified activity feed for super admin dashboard
+**Functions**:
+
+- `GET()` - Returns merged feed of `activityLogs` + `userSessions` + 24h stats
+
+#### `src/app/api/super-admin/sessions/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List all active (non-expired) sessions
+**Functions**:
+
+- `GET()` - Returns `{ sessions }` with user info and IP addresses
+
+#### `src/app/api/super-admin/sessions/[id]/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Revoke a session
+**Functions**:
+
+- `DELETE(req, { params })` - Deletes session by ID
+- Self-protection: cannot delete own session
 
 ---
 

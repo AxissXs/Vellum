@@ -183,9 +183,9 @@
   - [x] Show sparklines / mini stats for: logins last 24h, failed attempts, active users 24h
 
   **Part 2b — Users Table Enhancements**
-  - [ ] Show `lastLoginAt` and `lastIp` in Users table via join to `user_sessions`
-  - [ ] Sort/filter by last login date
-  - [ ] Add "Last seen" relative time column (e.g. "2h ago")
+  - [x] Show `lastLoginAt` and `lastIp` in Users table via join to `user_sessions`
+  - [x] Sort/filter by last login date
+  - [x] Add "Last seen" relative time column (e.g. "2h ago")
 
   **Part 2c — Status-based Login Enforcement**
   - [x] Verify `inactive` and `banned` users are blocked from logging in
@@ -195,9 +195,10 @@
   - [x] Banned users have existing sessions destroyed immediately on `getSession()`
 
   **Part 4 — Session Management**
-  - [ ] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
-  - [ ] API: `DELETE /api/super-admin/sessions/[id]` — revoke a session
-  - [ ] UI: Table view of active sessions with Revoke button
+  - [x] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
+  - [x] API: `DELETE /api/super-admin/sessions/[id]` — revoke a session
+  - [x] UI: Table view of active sessions with Revoke button
+  - [x] Self-protection: superadmin cannot revoke their own session
 
   **Part 5 — Enhanced Audit Logs**
   - [ ] Extend `activity_logs` schema to include `ipAddress` column
