@@ -16,42 +16,49 @@ This document provides guidance for AI agents working on the Vellum project.
 ## Tech Stack
 
 - **Framework**: Next.js 16.2.6 (App Router, React 19, Turbopack)
-- **Database**: PostgreSQL (Neon) with Drizzle ORM 0.45.2
+- **Database**: PostgreSQL (local) with Drizzle ORM 0.45.2
 - **Auth**: Custom session-based auth with bcryptjs
 - **Styling**: Tailwind CSS 4.1.17
 - **Language**: TypeScript 5.9.3
-- **Package Manager**: bun (with bun.lock)
+- **Package Manager**: deno (tasks in `deno.json`, deps in `package.json`)
 
 ## Key Commands
 
+All commands run via `deno task <name>`. Deno invokes the Node binaries in `node_modules` (Node remains the runtime for Next.js/Drizzle).
+
 ```bash
+# Setup
+deno install             # Install deps from package.json, generate deno.lock
+
 # Development
-bun run dev              # Start dev server (Turbopack)
+deno task dev            # Start dev server (Turbopack)
 
 # Database
-bun run db:generate      # Generate migrations from schema.ts
-bun run db:migrate       # Apply migrations to database
-bun run db:push          # Push schema directly (no migration files)
-bun run db:studio        # Open Drizzle Studio
-bun run db:seed          # Seed database with demo data
+deno task db:generate    # Generate migrations from schema.ts
+deno task db:push        # Push schema directly (no migration files) - use for fresh local DB
+deno task db:migrate     # Apply migrations to database
+deno task db:studio      # Open Drizzle Studio
+deno task db:seed        # Seed database with demo data
 
 # Code Quality
-bun run lint             # ESLint
-bun run typecheck        # TypeScript check
+deno task lint           # ESLint
+deno task typecheck      # TypeScript check
 
 # Build & Deploy
-bun run build            # Production build
-bun run start            # Start production server
-bun run vercel:build     # Build with migration generation
-bun run vercel:deploy    # Migrate + deploy to Vercel
+deno task build          # Production build
+deno task start          # Start production server
+deno task vercel:build   # Build with migration generation
+deno task vercel:deploy  # Migrate + deploy to Vercel
 ```
 
 ## Environment Variables
 
 Required in `.env`:
 
-- `DATABASE_URL` - Pooled connection (for app runtime)
-- `DIRECT_DATABASE_URL` - Direct connection (for migrations)
+- `DATABASE_URL` - Local PostgreSQL connection string (e.g. `postgresql://postgres:postgres@localhost:5555/vellum`)
+
+> **Local Postgres < 13**: `gen_random_uuid()` is not built-in. Enable the extension once per database:
+> `CREATE EXTENSION IF NOT EXISTS pgcrypto;` (the schema uses `gen_random_uuid()` for IDs).
 
 ## Agent Workflow
 
@@ -68,7 +75,7 @@ Required in `.env`:
 3. **Create a branch** — Create a feature branch from the latest `master` following the branch naming conventions outlined in the **Branching Strategy** section below.
 4. **Read relevant files** — Understand existing patterns before modifying. **Always read `STRUCTURE.md` first** as your map of what's already built, then explore the actual source files (src/) to understand implementation details.
 5. **Follow conventions** — Match existing code style, naming, patterns
-6. **Write tests/verify** — Run `bun run lint`, `bun run typecheck`, `bun run build`
+6. **Write tests/verify** — Run `deno task lint`, `deno task typecheck`, `deno task build`
 7. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable (see checklist below)
 8. **Check for overlap** — Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
 9. Stage changes: `git add -A`
@@ -144,13 +151,13 @@ export async function GET() {
 ### Database Changes
 
 1. Modify `src/db/schema.ts`
-2. Run `bun run db:generate` to create migration
-3. Run `bun run db:migrate` to apply
+2. Run `deno task db:generate` to create migration
+3. Run `deno task db:push` (fresh local DB) or `deno task db:migrate` to apply
 4. Commit both schema and migration files
 
 ### Seeding Data
 
-- `seed.ts` - Full demo data (run manually with `bun run db:seed`)
+- `seed.ts` - Full demo data (run manually with `deno task db:seed`)
 - `bootstrap.ts` - Minimal demo data (auto-runs on first API call via `ensureDemoData()`)
 
 ## Commit Message Format
@@ -203,7 +210,7 @@ git checkout -b <branch-name>
 ### 2. Work on the branch
 
 - Make focused, atomic commits with conventional messages (see above).
-- Run `bun run lint`, `bun run typecheck`, and `bun run build` before pushing.
+- Run `deno task lint`, `deno task typecheck`, and `deno task build` before pushing.
 - Keep the branch up-to-date with `master` via `git pull origin master` if it drifts.
 
 ### 3. Push the branch

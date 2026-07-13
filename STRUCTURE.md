@@ -15,8 +15,9 @@ Vellum/
 ├── README.md               # Project overview
 ├── STRUCTURE.md            # This file
 ├── TODO.md                 # Task tracking
-├── bun.lock                # Bun lockfile
-├── package.json            # Package scripts & dependencies
+├── deno.json               # Deno task definitions (replaces npm/bun scripts)
+├── deno.lock               # Deno lockfile (generated)
+├── package.json            # Package dependencies (no scripts - see deno.json)
 ├── tsconfig.json           # TypeScript config
 ├── next.config.ts          # Next.js config
 ├── eslint.config.mjs       # ESLint config (flat)
@@ -689,20 +690,24 @@ src/
 
 ### `package.json`
 
-**Key Scripts**:
+Holds `dependencies`/`devDependencies` only (Deno reads these for `deno install`). No `scripts` block — execution is defined in `deno.json` tasks, which invoke the Node binaries in `node_modules` (Node stays the runtime).
 
-- `dev` - `next dev` (Turbopack)
-- `build` - `next build`
-- `start` - `next start`
-- `lint` - `eslint .`
-- `typecheck` - `tsc --noEmit`
-- `db:generate` - `dotenv -e .env -- drizzle-kit generate`
-- `db:migrate` - `dotenv -e .env -- drizzle-kit migrate`
-- `db:push` - `dotenv -e .env -- drizzle-kit push`
-- `db:studio` - `dotenv -e .env -- drizzle-kit studio`
-- `db:seed` - `dotenv -e .env -- tsx src/db/seed.ts`
-- `vercel:build` - `bun run db:generate && next build`
-- `vercel:deploy` - `bun run db:migrate && vercel --prod`
+**`deno.json` Tasks** (run via `deno task <name>`):
+
+- `dev` - `node ./node_modules/next/dist/bin/next dev` (Turbopack)
+- `build` - `node ./node_modules/next/dist/bin/next build`
+- `start` - `node ./node_modules/next/dist/bin/next start`
+- `lint` - `node ./node_modules/eslint/bin/eslint.js .`
+- `typecheck` - `node ./node_modules/typescript/bin/tsc --noEmit`
+- `db:generate` - `node ./node_modules/drizzle-kit/bin.cjs generate`
+- `db:migrate` - `node ./node_modules/drizzle-kit/bin.cjs migrate`
+- `db:push` - `node ./node_modules/drizzle-kit/bin.cjs push`
+- `db:studio` - `node ./node_modules/drizzle-kit/bin.cjs studio`
+- `db:seed` - `node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts` (loads `.env` itself via `dotenv/config`)
+- `vercel:build` - generate migrations then `next build`
+- `vercel:deploy` - migrate then `vercel --prod`
+
+> Note: `drizzle.config.ts` already loads `.env` via `dotenv`, and `seed.ts` imports `dotenv/config` — so no `dotenv -e` prefix is needed in the task commands.
 
 ### `drizzle.config.ts`
 
@@ -712,7 +717,7 @@ src/
 - `dialect: "postgresql"`
 - `schema: "./src/db/schema.ts"`
 - `out: "./drizzle"`
-- `dbCredentials.url` - From `DIRECT_DATABASE_URL` env var
+- `dbCredentials.url` - From `DATABASE_URL` env var (local PostgreSQL)
 
 ### `tsconfig.json`
 
@@ -769,7 +774,7 @@ Next.js App Router (Server Component)
     │     │
     │     ├── getSession() ──► Auth check
     │     │
-    │     ├── db.query() ──────► PostgreSQL (Neon)
+    │     ├── db.query() ──────► PostgreSQL (local)
     │     │
     │     └── Returns JSON
     │

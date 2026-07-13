@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { db, pool } from "./index";
 import { users, projects, teams, teamMembers, tasks, comments, activityLogs } from "./schema";
 import { hashSync } from "bcryptjs";

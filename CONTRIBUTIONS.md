@@ -46,18 +46,18 @@ git clone https://github.com/your-fork/Vellum.git
 cd Vellum
 
 # Install dependencies
-bun install
+deno install
 
 # Set up environment
 cp .env.example .env
-# Edit .env with your database URLs
+# Edit .env with your local DATABASE_URL
 
 # Run migrations and seed
-bun run db:migrate
-bun run db:seed
+deno task db:push      # fresh local DB (or db:migrate)
+deno task db:seed
 
 # Start dev server
-bun run dev
+deno task dev
 ```
 
 ### 2. Create a Branch
@@ -93,9 +93,9 @@ Follow the conventions in [AGENTS.md](AGENTS.md):
 Run before committing:
 
 ```bash
-bun run lint        # ESLint
-bun run typecheck   # TypeScript
-bun run build       # Production build
+deno task lint        # ESLint
+deno task typecheck   # TypeScript
+deno task build       # Production build
 ```
 
 All checks must pass. CI will run these on PR.
@@ -193,7 +193,7 @@ Open a Pull Request with:
 ### Database (Drizzle)
 
 - Modify `src/db/schema.ts`
-- Run `bun run db:generate` for migrations
+- Run `deno task db:generate` for migrations
 - Commit both schema and migration files
 - Use snake_case for columns, camelCase for TS
 

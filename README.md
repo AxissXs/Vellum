@@ -17,19 +17,19 @@ A modern team management platform with Kanban boards, task tracking, and real-ti
 | Category        | Technology                                   |
 | --------------- | -------------------------------------------- |
 | Framework       | Next.js 16 (App Router, React 19, Turbopack) |
-| Database        | PostgreSQL (Neon) with Drizzle ORM 0.45      |
+| Database        | PostgreSQL (local) with Drizzle ORM 0.45     |
 | Auth            | Custom session-based with bcryptjs           |
 | Styling         | Tailwind CSS 4                               |
 | Language        | TypeScript 5.9                               |
-| Package Manager | bun (bun.lock present)                       |
+| Package Manager | deno (deno.json tasks; deps in package.json) |
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 20+
-- PostgreSQL database (local or Neon)
-- bun
+- Deno 2+
+- Node.js 20+ (runtime for Next.js/Drizzle)
+- Local PostgreSQL (v13+; `gen_random_uuid()` needs PG 13+ or the `pgcrypto` extension)
 
 ### Installation
 
@@ -37,19 +37,19 @@ A modern team management platform with Kanban boards, task tracking, and real-ti
 # Clone and install
 git clone <repo-url>
 cd Vellum
-bun install
+deno install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your DATABASE_URL and DIRECT_DATABASE_URL
+# Edit .env with your local DATABASE_URL
 
 # Database setup
-bun run db:generate  # Generate migrations from schema
-bun run db:migrate   # Apply migrations
-bun run db:seed      # Seed demo data (optional)
+deno task db:generate  # Generate migrations from schema
+deno task db:push      # Push schema to fresh local DB (or db:migrate)
+deno task db:seed      # Seed demo data (optional)
 
 # Development
-bun run dev          # Start dev server at http://localhost:3000
+deno task dev          # Start dev server at http://localhost:3000
 ```
 
 ### Demo Accounts (after seeding)
@@ -115,25 +115,27 @@ See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for:
 
 ## 📝 Available Scripts
 
+All commands run via `deno task <name>` (Deno invokes the Node binaries in `node_modules`; Node is still the runtime).
+
 ```bash
 # Development
-bun run dev              # Start dev server (Turbopack)
+deno task dev              # Start dev server (Turbopack)
 
 # Database
-bun run db:generate      # Generate migrations
-bun run db:migrate       # Apply migrations
-bun run db:push          # Push schema directly (no migration files)
-bun run db:studio        # Open Drizzle Studio
-bun run db:seed          # Seed full demo data
+deno task db:generate      # Generate migrations
+deno task db:migrate       # Apply migrations
+deno task db:push          # Push schema directly (no migration files)
+deno task db:studio        # Open Drizzle Studio
+deno task db:seed          # Seed full demo data
 
 # Quality
-bun run lint             # ESLint
-bun run typecheck        # TypeScript check
-bun run build            # Production build
+deno task lint             # ESLint
+deno task typecheck        # TypeScript check
+deno task build            # Production build
 
 # Deploy
-bun run vercel:build     # Build with migration generation
-bun run vercel:deploy    # Migrate + deploy to Vercel
+deno task vercel:build     # Build with migration generation
+deno task vercel:deploy    # Migrate + deploy to Vercel
 ```
 
 ## 🌐 Deployment (Vercel)
@@ -141,9 +143,8 @@ bun run vercel:deploy    # Migrate + deploy to Vercel
 1. Push to GitHub
 2. Import in Vercel
 3. Add environment variables:
-   - `DATABASE_URL` - Pooled connection string
-   - `DIRECT_DATABASE_URL` - Direct connection string
-4. Deploy (uses `vercel:build` script)
+   - `DATABASE_URL` - Local/Neon PostgreSQL connection string
+4. Deploy (uses `vercel:build` task)
 
 Migrations run automatically during build via `vercel:build`.
 

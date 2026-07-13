@@ -162,7 +162,7 @@
   - [x] Add `user_sessions` table (user login history — IP, userAgent, success/failure)  
   `fields: id, userId, ipAddress, userAgent, success (bool), failedReason (text), createdAt`
   - [x] Add `user_status` enum (`active`, `inactive`, `banned`) to `users` table
-  - [x] Run `bun run db:generate` + `bun run db:migrate`
+  - [x] Run `deno task db:generate` + `deno task db:push`
 
   **Part 1 — Super Admin Route & Sidebar Link**
   - [x] Add `/dashboard/super-admin` route (only accessible to `superadmin` role, redirect others)
