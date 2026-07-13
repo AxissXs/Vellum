@@ -19,7 +19,7 @@
   - Update Kanban board in real-time when tasks change
   - Broadcast task moves, status changes, new comments
 
-- [ ] **Kanban Add task button UX fix** - Fix broken Add task button and improve placement
+- [x] **Kanban Add task button UX fix** - Fix broken Add task button and improve placement
   - Investigate why the Add task button does not create tasks successfully
   - Add a Project dropdown field to the new-task form in both Kanban views
   - Move the Add task button from the bottom of the column to the top (next to the column header)
