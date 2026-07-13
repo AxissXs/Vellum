@@ -8,6 +8,20 @@
       "when": 1783639843897,
       "tag": "0000_faithful_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783908349970,
+      "tag": "0001_swift_lucky_pierre",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783908836051,
+      "tag": "0002_faulty_groot",
+      "breakpoints": true
     }
   ]
 }

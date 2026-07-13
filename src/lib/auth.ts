@@ -12,6 +12,7 @@ export type AuthUser = {
   name: string;
   email: string;
   role: "superadmin" | "admin" | "member";
+  status: "active" | "inactive" | "banned";
   avatarUrl: string | null;
 };
 
@@ -45,6 +46,7 @@ export async function getSession(): Promise<AuthUser | null> {
       name: users.name,
       email: users.email,
       role: users.role,
+      status: users.status,
       avatarUrl: users.avatarUrl,
     })
     .from(users)
@@ -94,6 +96,7 @@ export async function authenticateUser(
     name: user.name,
     email: user.email,
     role: user.role,
+    status: user.status,
     avatarUrl: user.avatarUrl,
   };
 }
