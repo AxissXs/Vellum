@@ -55,7 +55,8 @@ src/
 │   │   │   ├── SuperAdminClient.tsx  # Tabbed layout with all panels
 │   │   │   ├── SuperAdminUsersPanel.tsx      # User management table
 │   │   │   ├── SuperAdminActivityPanel.tsx   # Real-time activity feed
-│   │   │   └── SuperAdminSessionsPanel.tsx   # Active sessions table
+│   │   │   ├── SuperAdminSessionsPanel.tsx   # Active sessions table
+│   │   │   └── SuperAdminAuditPanel.tsx      # Filterable audit log table
 │   │   ├── kanban/
 │   │   │   ├── page.tsx              # Global kanban board (server)
 │   │   │   └── KanbanBoardClient.tsx # Kanban board with dnd-kit (client)
@@ -108,8 +109,10 @@ src/
 │           ├── users/route.ts      # GET - List users with last login / IP
 │           ├── users/[id]/route.ts # PATCH - Update user role / status
 │           ├── activity/route.ts   # GET - Activity feed + 24h stats
-│           └── sessions/route.ts   # GET - Active sessions
-│           └── sessions/[id]/route.ts  # DELETE - Revoke session
+│           ├── sessions/route.ts   # GET - Active sessions
+│           ├── sessions/[id]/route.ts  # DELETE - Revoke session
+│           ├── audit/route.ts      # GET - Filtered audit logs with pagination
+│           └── audit/export/route.ts  # GET - CSV export of audit logs
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
@@ -272,6 +275,15 @@ src/
 - Polls every 10 seconds
 - Lists all active sessions with user, role, IP, start time, expiry
 - Revoke button per session (self-protection: cannot revoke own session)
+
+### `src/app/dashboard/super-admin/SuperAdminAuditPanel.tsx`
+
+**Purpose**: Filterable audit log viewer with CSV export
+**Exports**: `SuperAdminAuditPanel()` - Client component
+
+- Filters: user ID, action, IP, date range
+- Paginated table (25 per page)
+- Export CSV button that downloads filtered results
 
 ### `src/app/dashboard/projects/page.tsx`
 
@@ -556,6 +568,24 @@ src/
 - `DELETE(req, { params })` - Deletes session by ID
 - Self-protection: cannot delete own session
 
+#### `src/app/api/super-admin/audit/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Filterable audit logs with pagination
+**Functions**:
+
+- `GET(req)` - Returns `{ logs, page, pageSize, total, totalPages }`
+- Query params: `userId`, `action`, `ip`, `from`, `to`, `page`, `pageSize`
+
+#### `src/app/api/super-admin/audit/export/route.ts`
+
+**Methods**: `GET`
+**Purpose**: CSV export of filtered audit logs
+**Functions**:
+
+- `GET(req)` - Returns CSV download with headers and all matching rows
+- Query params: `userId`, `action`, `ip`, `from`, `to`
+
 ---
 
 ### Components
@@ -739,7 +769,7 @@ src/
 - `getSession(): Promise<AuthUser | null>` - Get current session
 - `createSession(userId): Promise<string>` - Create new session
 - `destroySession(sessionId)` - Delete session
-- `authenticateUser(email, password): Promise<AuthUser | null>` - Verify credentials
+- `authenticateUser(email, password): Promise<AuthResult>` - Verify credentials, returns `{ ok, user }` or `{ ok: false, reason }` with reasons: `invalid_credentials`, `inactive`, `banned`
 - `requireAuth(user)` - Assert user exists (throws)
 - `requireRole(user, roles)` - Assert user has role (throws)
 - `SESSION_COOKIE` - Cookie name constant
@@ -753,6 +783,13 @@ src/
 - `apiFetch(input, init?)` - Wrapper around fetch with auth
 - `getJSON(url)` - GET with JSON parsing
 - `postJSON(url, data)` - POST with JSON
+
+#### `src/lib/audit.ts`
+
+**Purpose**: Request metadata extraction for audit logging
+**Exports**:
+
+- `getClientIP(req: NextRequest): string` - Extracts IP from `x-forwarded-for`, `x-real-ip`, or returns `"unknown"`
 
 #### `src/lib/pusher.ts`
 

@@ -275,6 +275,8 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/activity`     | GET                | Activity feed + 24h stats |
 | `/api/super-admin/sessions`     | GET                | Active sessions      |
 | `/api/super-admin/sessions/[id]`| DELETE             | Revoke session       |
+| `/api/super-admin/audit`        | GET                | Filtered audit logs (paginated) |
+| `/api/super-admin/audit/export` | GET                | CSV export of audit logs |
 
 ## React Query Optimistic Updates Pattern
 
@@ -343,6 +345,8 @@ Apply same pattern to `useUpdateComment`, `useDeleteComment`, `useTasks`, `usePr
 All mutating API routes must log to `activity_logs` table after successful operation:
 
 ```ts
+import { getClientIP } from "@/lib/audit";
+
 await db.insert(activityLogs).values({
   userId: user.id,
   action:
@@ -355,6 +359,7 @@ await db.insert(activityLogs).values({
   entityType: "task" | "comment" | "project" | "user",
   entityId: entity.id,
   details: `Created task: ${entity.title}`,
+  ipAddress: getClientIP(req), // Optional but recommended
 });
 ```
 
