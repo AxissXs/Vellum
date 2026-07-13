@@ -39,6 +39,7 @@ export default function Sidebar({ user }: { user: User }) {
     { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
     { href: "/dashboard/teams", label: "Teams", icon: Users },
     { href: "/dashboard/activity", label: "Activity", icon: Activity },
+    { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ...(user.role === "superadmin" || user.role === "admin"
       ? [{ href: "/dashboard/admin", label: "Admin", icon: Shield }]
       : []),

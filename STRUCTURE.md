@@ -61,18 +61,23 @@ src/
 │   │   │       ├── KanbanBoard.tsx         # Kanban board client
 │   │   │       ├── TaskDetailModal.tsx     # Task modal client
 │   │   │       └── ProjectManagementPanel.tsx
-│   │   ├── tasks/
-│   │   │   └── page.tsx    # Tasks page
-│   │   └── teams/
-│   │       ├── page.tsx              # Teams page
-│   │       └── TeamManagementClient.tsx
-│   └── api/                # API Routes (REST)
-│       ├── auth/
-│       │   ├── login/route.ts      # POST - Login
-│       │   ├── logout/route.ts     # POST - Logout
-│       │   └── me/route.ts         # GET - Current user
-│       ├── setup/
-│       │   └── route.ts            # GET, POST - Workspace setup
+    │   │   ├── settings/
+    │   │   │   └── page.tsx    # Settings page (notification preferences)
+    │   │   ├── tasks/
+    │   │   │   └── page.tsx    # Tasks page
+    │   │   └── teams/
+    │   │       ├── page.tsx              # Teams page
+    │   │       └── TeamManagementClient.tsx
+    │   └── api/                # API Routes (REST)
+    │       ├── auth/
+    │       │   ├── login/route.ts      # POST - Login
+    │       │   ├── logout/route.ts     # POST - Logout
+    │       │   └── me/route.ts         # GET - Current user
+    │       ├── push/
+    │       │   ├── preferences/route.ts  # GET, PATCH - Notification preferences
+    │       │   └── subscribe/route.ts    # POST, DELETE - Push subscription management
+    │       ├── setup/
+    │       │   └── route.ts            # GET, POST - Workspace setup
 │       ├── users/
 │       │   ├── route.ts            # GET, POST - List/Create users
 │       │   └── [id]/route.ts       # GET, PATCH, DELETE - User CRUD
@@ -100,8 +105,11 @@ src/
 │           └── route.ts            # GET - Health check
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
+│   ├── PushNotificationToggle.tsx # Push notification enable/disable toggle
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
-│   └── Sidebar.tsx         # Navigation sidebar (client)
+│   ├── Sidebar.tsx         # Navigation sidebar (client)
+│   └── ui/                 # UI primitives
+│       └── Switch.tsx      # Toggle switch component
 ├── db/                     # Database Layer
 │   ├── index.ts            # Drizzle client export
 │   ├── schema.ts           # Database schema (tables, enums, relations)
@@ -110,7 +118,9 @@ src/
 ├── hooks/                  # React Query Hooks
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
+│   ├── useNotificationPreferences.ts # Notification preference queries & mutations
 │   ├── useProjects.ts      # Project mutations with optimistic updates
+│   ├── usePushNotifications.ts # Push notification registration hook
 │   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
@@ -118,6 +128,7 @@ src/
 ├── lib/                    # Utilities
 │   ├── api.ts              # API client helpers
 │   ├── auth.ts             # Authentication utilities
+│   ├── push.ts             # Web Push utilities (VAPID, send, preferences)
 │   ├── pusher.ts           # Pusher server instance
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
@@ -458,6 +469,24 @@ src/
 
 - `GET()` - Returns `{ status: "ok" }`
 
+#### `src/app/api/push/subscribe/route.ts`
+
+**Methods**: `POST`, `DELETE`
+**Purpose**: Manage Web Push subscriptions
+**Functions**:
+
+- `POST(req)` - Saves a push subscription (endpoint, p256dh, auth keys)
+- `DELETE(req)` - Removes a push subscription by endpoint
+
+#### `src/app/api/push/preferences/route.ts`
+
+**Methods**: `GET`, `PATCH`
+**Purpose**: Manage per-user notification preferences
+**Functions**:
+
+- `GET()` - Returns all notification preferences for the current user (auto-seeds defaults if none exist)
+- `PATCH(req)` - Updates a single preference (eventType + channel toggles)
+
 ---
 
 ### Components
@@ -483,10 +512,24 @@ src/
 **Features**:
 
 - Collapsible (icon-only mode)
-- Navigation links (Dashboard, Projects, Tasks, Teams, Activity, Admin)
+- Navigation links (Dashboard, Projects, Tasks, Teams, Activity, Settings, Admin)
 - Role-based Admin link (superadmin/admin only)
 - User avatar with initials, role badge
 - Logout button
+
+#### `src/components/PushNotificationToggle.tsx`
+
+**Purpose**: UI toggle to enable/disable browser push notifications
+**Exports**: `PushNotificationToggle()` - Client component
+**Features**:
+- Opens a modal with subscription status
+- Calls `subscribe()` / `unsubscribe()` from `usePushNotifications`
+- Shows bell icon with color indicating status
+
+#### `src/components/ui/Switch.tsx`
+
+**Purpose**: Reusable toggle switch UI primitive
+**Exports**: `Switch({ checked, onCheckedChange, disabled })` - Client component
 
 ---
 
@@ -604,6 +647,24 @@ src/
 - Invalidates relevant React Query caches on incoming events
 - Shows toast notifications for updates from other users (skips self)
 
+#### `src/hooks/usePushNotifications.ts`
+
+**Purpose**: Web Push subscription management hook
+**Exports**: `usePushNotifications()` - Returns `{ isSupported, isSubscribed, isLoading, subscribe, unsubscribe }`
+
+**Behavior**:
+- Detects browser support via `'serviceWorker' in navigator && 'PushManager' in window`
+- Registers `/sw.js` service worker and subscribes/unsubscribes via PushManager
+- Persists subscriptions to `/api/push/subscribe`
+- Uses `NEXT_PUBLIC_VAPID_PUBLIC_KEY` for `applicationServerKey`
+
+#### `src/hooks/useNotificationPreferences.ts`
+
+**Purpose**: React Query hooks for notification preferences
+**Exports**:
+- `useNotificationPreferences()` - Fetch preferences (auto-seeds defaults if none)
+- `useUpdateNotificationPreference()` - Update a preference with optimistic updates
+
 #### `src/hooks/useMilestones.ts`
 
 **Purpose**: React Query mutations for milestone operations
@@ -682,6 +743,22 @@ src/
 - `getPusherClient()` - Returns shared Pusher-js instance
 - `subscribeChannel(name)` - Client-side subscribe with ref counting
 - `unsubscribeChannel(name)` - Client-side unsubscribe with ref counting
+
+#### `src/lib/push.ts`
+
+**Purpose**: Web Push API server utilities
+**Exports**:
+- `webPush` - Configured `web-push` instance with VAPID details
+- `vapidPublicKey` - Public VAPID key
+- `sendPushNotification(userId, payload)` - Sends a push notification to all subscriptions for a user
+- `getNotificationPreferences(userId)` - Fetch preferences from DB
+- `ensureNotificationPreferences(userId)` - Auto-create default preferences if none exist
+- `updateNotificationPreference(userId, eventType, channels)` - Update a single preference
+- `isPushEnabled(userId, eventType)` - Check if push is enabled for a given event
+
+**Behavior**:
+- Cleans up expired subscriptions (404/410) automatically from the database
+- Defaults to `pushEnabled: true`, `inAppEnabled: true`, `emailEnabled: false`
 
 ---
 
