@@ -42,6 +42,7 @@ src/
 │   ├── setup/
 │   │   └── page.tsx        # First-time setup page
 │   ├── dashboard/
+│   │   ├── ClientLayout.tsx   # Dashboard client layout wrapper (QueryProvider + Sidebar)
 │   │   ├── layout.tsx      # Dashboard layout (auth + sidebar)
 │   │   ├── page.tsx        # Dashboard home
 │   │   ├── activity/
@@ -49,6 +50,9 @@ src/
 │   │   ├── admin/
 │   │   │   ├── page.tsx    # Admin page (server)
 │   │   │   └── AdminClient.tsx  # Admin client component
+│   │   ├── kanban/
+│   │   │   ├── page.tsx              # Global kanban board (server)
+│   │   │   └── KanbanBoardClient.tsx # Kanban board with dnd-kit (client)
 │   │   ├── projects/
 │   │   │   ├── page.tsx                    # Projects list
 │   │   │   ├── ProjectListClient.tsx       # Client wrapper
@@ -107,12 +111,19 @@ src/
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
 │   ├── useProjects.ts      # Project mutations with optimistic updates
+│   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
 │   └── useUsers.ts         # User mutations with optimistic updates
-└── lib/                    # Utilities
-    ├── api.ts              # API client helpers
-    └── auth.ts             # Authentication utilities
+├── lib/                    # Utilities
+│   ├── api.ts              # API client helpers
+│   ├── auth.ts             # Authentication utilities
+│   ├── pusher.ts           # Pusher server instance
+│   ├── pusher-broadcast.ts # Broadcast task/comment events
+│   ├── pusher-channels.ts  # Server-side channel ref counting
+│   └── pusher-client.ts    # Pusher client singleton + ref counting
+└── providers/              # React Context Providers
+    └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
 ```
 
 ## File Details
@@ -150,6 +161,16 @@ src/
 - Creates "Getting Started" project
 - Redirects to login on success
 
+### `src/app/dashboard/ClientLayout.tsx`
+
+**Purpose**: Dashboard client layout wrapper providing QueryProvider, sidebar, and main content area
+**Exports**: `DashboardLayout({ children, user })` - Client component
+
+### `src/app/dashboard/ClientLayout.tsx`
+
+**Purpose**: Dashboard client layout wrapper providing QueryProvider, sidebar, and main content area
+**Exports**: `DashboardLayout({ children, user })` - Client component
+
 ### `src/app/dashboard/layout.tsx`
 
 **Purpose**: Protected dashboard layout with sidebar
@@ -163,6 +184,27 @@ src/
 
 **Purpose**: Dashboard home page
 **Exports**: `DashboardPage()` - Server component
+
+### `src/app/dashboard/kanban/page.tsx`
+
+**Purpose**: Global Kanban board page (cross-project)
+**Exports**: `KanbanPage()` - Server component
+
+- Fetches all non-archived projects, all tasks with assignee/project joins, and all users
+- Passes serialized data to `KanbanBoardClient`
+
+### `src/app/dashboard/kanban/KanbanBoardClient.tsx`
+
+**Purpose**: Global Kanban board with drag-and-drop (dnd-kit), filtering, and inline task creation
+**Exports**: `KanbanBoardClient({ initialColumns, projects, users, currentUserId })` - Client component
+
+**Features**:
+- Drag-and-drop task reordering within/between columns (dnd-kit)
+- Project filter dropdown
+- Search filter
+- Inline task creation per column
+- Real-time updates via `useRealtime()`
+- Opens `TaskDetailModal` on task click
 
 ### `src/app/dashboard/activity/page.tsx`
 
@@ -552,6 +594,38 @@ src/
 - `useUpdateUser()` - Update user
 - `useDeleteUser()` - Delete user
 
+#### `src/hooks/useRealtime.ts`
+
+**Purpose**: Real-time task and comment updates via Pusher
+**Exports**:
+- `useRealtime(projectId?, taskId?)` - Subscribe to live updates
+
+**Behavior**:
+- Subscribes to `project-${projectId}` and `task-updates` channels for task events
+- Subscribes to `task-${taskId}` channel for comment events
+- Invalidates relevant React Query caches on incoming events
+- Shows toast notifications for updates from other users (skips self)
+
+---
+
+### Providers (`src/providers/`)
+
+#### `src/providers/QueryProvider.tsx`
+
+**Purpose**: React Query client provider with Sonner and Devtools
+**Exports**: `QueryProvider({ children })` - Client component
+
+**Config**:
+- Default stale time: 5 minutes
+- Retry: 1 for queries, 0 for mutations
+- Refetch on window focus: false
+- Includes `<Toaster position="top-right" theme="dark" />`
+- Includes `<ReactQueryDevtools initialIsOpen={false} />`
+**Exports**:
+- `useCreateUser()` - Create user (admin)
+- `useUpdateUser()` - Update user
+- `useDeleteUser()` - Delete user
+
 #### `src/hooks/useMilestones.ts`
 
 **Purpose**: React Query mutations for milestone operations
@@ -587,6 +661,33 @@ src/
 - `apiFetch(input, init?)` - Wrapper around fetch with auth
 - `getJSON(url)` - GET with JSON parsing
 - `postJSON(url, data)` - POST with JSON
+
+#### `src/lib/pusher.ts`
+
+**Purpose**: Pusher server-side instance
+**Exports**: `pusher` - Configured Pusher server instance
+
+#### `src/lib/pusher-broadcast.ts`
+
+**Purpose**: Broadcast task and comment events to Pusher channels
+**Exports**:
+- `broadcastTaskEvent(projectId, payload)` - Broadcast task changes to `project-${projectId}` and `task-updates`
+- `broadcastCommentEvent(taskId, payload)` - Broadcast comment changes to `task-${taskId}`
+
+#### `src/lib/pusher-channels.ts`
+
+**Purpose**: Server-side channel subscription reference counting (side-effects module)
+**Exports**:
+- `subscribeChannel(name)` - Increment ref count and subscribe
+- `unsubscribeChannel(name)` - Decrement ref count and unsubscribe when 0
+
+#### `src/lib/pusher-client.ts`
+
+**Purpose**: Pusher client singleton and channel ref counting for browser
+**Exports**:
+- `getPusherClient()` - Returns shared Pusher-js instance
+- `subscribeChannel(name)` - Client-side subscribe with ref counting
+- `unsubscribeChannel(name)` - Client-side unsubscribe with ref counting
 
 ---
 
