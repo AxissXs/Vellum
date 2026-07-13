@@ -63,15 +63,17 @@ Required in `.env`:
 
 ### Executing a Task
 
-1. **Create a branch** — Before making any changes, create a feature branch from the latest `master` following the branch naming conventions outlined in the **Branching Strategy** section below.
-2. **Read relevant files** — Understand existing patterns before modifying
-3. **Follow conventions** — Match existing code style, naming, patterns
-4. **Write tests/verify** — Run `bun run lint`, `bun run typecheck`, `bun run build`
-5. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable (see checklist below)
-6. **Check for overlap** — Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
-7. Stage changes: `git add -A`
-8. Commit with conventional message
-9. Push: `git push`
+1. **Pull latest updates** — Before doing anything, run `git checkout master && git pull origin master` to ensure you have the most recent codebase. This prevents working on stale files and reduces merge conflicts.
+2. **Re-read project docs** — After pulling, re-read `AGENTS.md` and `STRUCTURE.md` to check for new conventions, updated patterns, or recently added features. This prevents reinventing the wheel or missing important workflow changes.
+3. **Create a branch** — Create a feature branch from the latest `master` following the branch naming conventions outlined in the **Branching Strategy** section below.
+4. **Read relevant files** — Understand existing patterns before modifying. **Always read `STRUCTURE.md` first** as your map of what's already built, then explore the actual source files (src/) to understand implementation details.
+5. **Follow conventions** — Match existing code style, naming, patterns
+6. **Write tests/verify** — Run `bun run lint`, `bun run typecheck`, `bun run build`
+7. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable (see checklist below)
+8. **Check for overlap** — Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
+9. Stage changes: `git add -A`
+10. Commit with conventional message
+11. Push: `git push`
 
 ### Documentation Update Checklist
 
