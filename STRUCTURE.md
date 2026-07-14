@@ -864,8 +864,8 @@ Holds `dependencies`/`devDependencies` only (Deno reads these for `deno install`
 - `db:push` - `node ./node_modules/drizzle-kit/bin.cjs push`
 - `db:studio` - `node ./node_modules/drizzle-kit/bin.cjs studio`
 - `db:seed` - `node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts` (loads `.env` itself via `dotenv/config`)
-- `vercel:build` - generate migrations then `next build`
-- `vercel:deploy` - migrate then `vercel --prod`
+- `db:deploy` - `deno run -A --env-file=.env ./migrate.ts` (local); Deno Deploy pre-deploy: `deno run -A public/deploy/migrate.ts` (from `deno.json` deploy config)
+- `deploy` - `deployctl deploy --include=.next --include=public jsr:@deno/nextjs-start/v16`
 
 > Note: `drizzle.config.ts` already loads `.env` via `dotenv`, and `seed.ts` imports `dotenv/config` — so no `dotenv -e` prefix is needed in the task commands.
 

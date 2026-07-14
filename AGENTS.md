@@ -45,17 +45,31 @@ deno task lint           # ESLint
 deno task typecheck      # TypeScript check
 
 # Build & Deploy
-deno task build          # Production build
+deno task build          # Production build (standalone output for Deno Deploy)
 deno task start          # Start production server
-deno task vercel:build   # Build with migration generation
-deno task vercel:deploy  # Migrate + deploy to Vercel
+deno task db:deploy      # Run migrations against DATABASE_URL (used as pre-deploy on Deno Deploy)
+deno task deploy         # CLI deploy via deployctl (GitHub integration is preferred)
 ```
+
+## Deploying to Deno Deploy (Production)
+
+Vellum deploys to **Deno Deploy** with a managed **Prisma Postgres** database.
+
+1. Create a Deno Deploy project and link the GitHub repo (Next.js is auto-detected).
+2. Provision Prisma Postgres: `deno deploy database provision vellum-pg --kind prisma --region <region>`, then assign to the app.
+3. Deno Deploy auto-injects `DATABASE_URL` (plus `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`) per environment — do NOT set `DATABASE_URL` in prod.
+4. App config lives in [`deno.json`](deno.json) `deploy` key (overrides dashboard). Build copies `migrate.ts` + `drizzle/` into `public/deploy/` — `public/` is always in the deploy artifact.
+5. **Pre-Deploy command** (in `deno.json`): `deno run -A public/deploy/migrate.ts`. If configuring in dashboard instead, use `deno run -A /app/public/deploy/migrate.ts`.
+6. Add non-injected env vars: `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`, `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`.
+7. Deno Deploy serves the app via `jsr:@deno/nextjs-start/v16` (`next start` on the Node runtime). Do NOT set `runtime = "edge"` on routes — `pg` needs the Node runtime.
+
+Note: `drizzle.config.ts` skips loading `.env` in production so the injected `DATABASE_URL` is used. Demo seeding (`ensureDemoData`) is disabled in production. If pre-deploy migrations fail, `src/instrumentation.ts` runs migrations again on server start from `public/deploy/drizzle/`.
 
 ## Environment Variables
 
 Required in `.env`:
 
-- `DATABASE_URL` - Local PostgreSQL connection string (e.g. `postgresql://postgres:postgres@localhost:5555/vellum`)
+- `DATABASE_URL` - Local PostgreSQL connection string (e.g. `postgresql://postgres:postgres@localhost:5555/vellum`). On Deno Deploy this is injected automatically by the Prisma Postgres integration.
 
 > **Local Postgres < 13**: `gen_random_uuid()` is not built-in. Enable the extension once per database:
 > `CREATE EXTENSION IF NOT EXISTS pgcrypto;` (the schema uses `gen_random_uuid()` for IDs).

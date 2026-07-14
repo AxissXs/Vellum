@@ -17,6 +17,8 @@ import {
 let bootstrapPromise: Promise<void> | null = null;
 
 export function ensureDemoData() {
+  // Demo data is for local development only — never seed in production.
+  if (process.env.NODE_ENV === "production") return Promise.resolve();
   bootstrapPromise ??= seedIfEmpty();
   return bootstrapPromise;
 }

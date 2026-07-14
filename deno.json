@@ -1,7 +1,7 @@
 {
   "tasks": {
     "dev": "node ./node_modules/next/dist/bin/next dev",
-    "build": "node ./node_modules/next/dist/bin/next build",
+    "build": "node ./node_modules/next/dist/bin/next build && mkdir -p public/deploy && cp migrate.ts public/deploy/migrate.ts && cp -r drizzle public/deploy/drizzle",
     "start": "node ./node_modules/next/dist/bin/next start",
     "lint": "node ./node_modules/eslint/bin/eslint.js .",
     "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit",
@@ -10,8 +10,8 @@
     "db:push": "node ./node_modules/drizzle-kit/bin.cjs push",
     "db:studio": "node ./node_modules/drizzle-kit/bin.cjs studio",
     "db:seed": "node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts",
-    "vercel:build": "node ./node_modules/drizzle-kit/bin.cjs generate && node ./node_modules/next/dist/bin/next build",
-    "vercel:deploy": "node ./node_modules/drizzle-kit/bin.cjs migrate && node ./node_modules/vercel/dist/index.js --prod"
+    "db:deploy": "deno run -A --env-file=.env ./migrate.ts",
+    "deploy": "deployctl deploy --include=.next --include=public jsr:@deno/nextjs-start/v16"
   },
   "fmt": {
     "exclude": ["**/*"]
@@ -19,5 +19,12 @@
   "lint": {
     "exclude": ["**/*"]
   },
-  "allowScripts": ["npm:sharp", "npm:unrs-resolver"]
+  "allowScripts": ["npm:sharp", "npm:unrs-resolver"],
+  "deploy": {
+    "org": "sofehaus",
+    "app": "vellum"
+  }
 }
+
+
+
