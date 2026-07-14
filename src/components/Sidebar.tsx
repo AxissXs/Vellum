@@ -17,6 +17,7 @@ import {
   Shield,
   ShieldAlert,
   Kanban,
+  Timer,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -39,6 +40,7 @@ export default function Sidebar({ user }: { user: User }) {
     { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
     { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
     { href: "/dashboard/teams", label: "Teams", icon: Users },
+    { href: "/dashboard/sprints", label: "Sprints", icon: Timer },
     { href: "/dashboard/activity", label: "Activity", icon: Activity },
     ...(user.role === "superadmin" || user.role === "admin"
       ? [{ href: "/dashboard/admin", label: "Admin", icon: Shield }]

@@ -1,0 +1,255 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Plus, Loader2, X, Calendar, Flag, Trash2, CheckCircle2 } from "lucide-react";
+import { clsx } from "clsx";
+import { useCreateSprint, useUpdateSprint, useDeleteSprint } from "@/hooks/useSprints";
+import type { Sprint } from "@/hooks/useSprints";
+
+type Project = { id: string; name: string; color: string | null };
+
+const statusStyles: Record<string, string> = {
+  planned: "bg-slate-500/10 text-slate-300 border-slate-500/20",
+  active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  completed: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+};
+
+export default function SprintsClient({
+  projects,
+  currentUserId,
+}: {
+  projects: Project[];
+  currentUserId: string;
+}) {
+  const [projectId, setProjectId] = useState(projects[0]?.id || "");
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [name, setName] = useState("");
+  const [goal, setGoal] = useState("");
+  const router = useRouter();
+
+  const createSprint = useCreateSprint();
+  const updateSprint = useUpdateSprint();
+  const deleteSprint = useDeleteSprint();
+
+  async function loadSprints(pid: string) {
+    if (!pid) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/sprints?projectId=${pid}`);
+      const data = await res.json();
+      setSprints(data.sprints || []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadSprints(projectId);
+  }, [projectId]);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !projectId) return;
+    await createSprint.mutateAsync({
+      projectId,
+      name: name.trim(),
+      goal: goal.trim() || null,
+      status: "planned",
+    });
+    setName("");
+    setGoal("");
+    setShowModal(false);
+    loadSprints(projectId);
+  }
+
+  async function handleSetActive(sprint: Sprint) {
+    await updateSprint.mutateAsync({
+      id: sprint.id,
+      projectId: sprint.projectId,
+      status: "active",
+    });
+    loadSprints(projectId);
+  }
+
+  async function handleDelete(sprint: Sprint) {
+    if (!confirm(`Delete sprint "${sprint.name}"?`)) return;
+    await deleteSprint.mutateAsync({ id: sprint.id, projectId: sprint.projectId });
+    loadSprints(projectId);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <select
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={() => setShowModal(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition"
+        >
+          <Plus size={16} />
+          New Sprint
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-slate-500">
+          <Loader2 size={20} className="animate-spin" />
+        </div>
+      ) : sprints.length === 0 ? (
+        <div className="border-2 border-dashed border-white/5 rounded-2xl py-16 text-center">
+          <p className="text-slate-400">No sprints yet for this project.</p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="mt-3 text-sm text-brand-400 hover:underline"
+          >
+            Create the first sprint
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sprints.map((sprint) => (
+            <div
+              key={sprint.id}
+              className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 flex flex-col"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <Link
+                  href={`/dashboard/sprints/${sprint.id}`}
+                  className="text-base font-semibold text-white hover:text-brand-400 transition"
+                >
+                  {sprint.name}
+                </Link>
+                <span
+                  className={clsx(
+                    "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                    statusStyles[sprint.status] || statusStyles.planned
+                  )}
+                >
+                  {sprint.status}
+                </span>
+              </div>
+
+              {sprint.goal && (
+                <p className="mt-2 text-sm text-slate-400 line-clamp-2">{sprint.goal}</p>
+              )}
+
+              <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
+                <Calendar size={12} />
+                {sprint.startDate
+                  ? new Date(sprint.startDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "—"}
+                <span>→</span>
+                {sprint.endDate
+                  ? new Date(sprint.endDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "—"}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 pt-3 border-t border-white/5">
+                {sprint.status !== "active" && (
+                  <button
+                    onClick={() => handleSetActive(sprint)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/20 transition"
+                  >
+                    <CheckCircle2 size={13} />
+                    Set active
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(sprint)}
+                  className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                  title="Delete sprint"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          />
+          <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-white">New Sprint</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1 text-slate-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="Sprint 1 — Core Experience"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Goal (optional)
+                </label>
+                <textarea
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                  placeholder="What should this sprint achieve?"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={createSprint.isPending}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
+              >
+                {createSprint.isPending ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Flag size={16} />
+                )}
+                {createSprint.isPending ? "Creating..." : "Create Sprint"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

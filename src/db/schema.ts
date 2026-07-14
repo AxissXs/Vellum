@@ -4,6 +4,7 @@ import {
   timestamp,
   uuid,
   boolean,
+  integer,
   pgEnum,
 } from "drizzle-orm/pg-core";
 
@@ -140,8 +141,66 @@ export const tasks = pgTable("tasks", {
     .notNull(),
   dueDate: timestamp("due_date"),
   position: text("position").default("0").notNull(),
+  sprintId: uuid("sprint_id").references(() => sprints.id, {
+    onDelete: "set null",
+  }),
+  estimate: integer("estimate"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const sprints = pgTable("sprints", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id")
+    .references(() => projects.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(),
+  goal: text("goal"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: text("status").default("planned").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const standups = pgTable("standups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  sprintId: uuid("sprint_id").references(() => sprints.id, {
+    onDelete: "set null",
+  }),
+  date: timestamp("date").defaultNow().notNull(),
+  yesterday: text("yesterday"),
+  today: text("today"),
+  blockers: text("blockers"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const retroItems = pgTable("retro_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sprintId: uuid("sprint_id")
+    .references(() => sprints.id, { onDelete: "cascade" })
+    .notNull(),
+  authorId: uuid("author_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  category: text("category").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const taskStatusHistory = pgTable("task_status_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  taskId: uuid("task_id")
+    .references(() => tasks.id, { onDelete: "cascade" })
+    .notNull(),
+  sprintId: uuid("sprint_id").references(() => sprints.id, {
+    onDelete: "set null",
+  }),
+  status: taskStatusEnum("status").notNull(),
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
 });
 
 export const comments = pgTable("comments", {

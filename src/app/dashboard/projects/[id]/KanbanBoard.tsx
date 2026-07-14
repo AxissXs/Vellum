@@ -3,17 +3,23 @@
 import {
   useState,
   useCallback,
+  useRef,
+  useEffect,
 } from "react";
 import {
   DndContext,
-  closestCenter,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  pointerWithin,
+  rectIntersection,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  type CollisionDetection,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -72,12 +78,147 @@ const priorityBadges: Record<string, string> = {
   low: "bg-emerald-500/10 text-emerald-400",
 };
 
+function columnDroppableId(columnKey: string) {
+  return `column-${columnKey}`;
+}
+
+function isColumnDroppableId(id: string) {
+  return id.startsWith("column-");
+}
+
+function findColumnForTask(columns: Column[], taskId: string) {
+  return columns.find((column) => column.tasks.some((task) => task.id === taskId));
+}
+
+function resolveOverColumn(columns: Column[], overId: string) {
+  if (isColumnDroppableId(overId)) {
+    const columnKey = overId.slice("column-".length);
+    return columns.find((column) => column.key === columnKey);
+  }
+  return findColumnForTask(columns, overId);
+}
+
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) {
+    const taskCollision = pointerCollisions.find(
+      (collision) => !isColumnDroppableId(String(collision.id))
+    );
+    if (taskCollision) return [taskCollision];
+    return pointerCollisions;
+  }
+  return rectIntersection(args);
+};
+
 interface KanbanBoardProps {
   projectId: string;
   initialColumns: Column[];
   users: User[];
   allProjects: Project[];
   currentUserId: string;
+  sprintId?: string;
+}
+
+function TaskCardBody({ task }: { task: Task }) {
+  return (
+    <>
+      {task.description && (
+        <p className="mt-2 text-xs text-slate-400 line-clamp-2">{task.description}</p>
+      )}
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
+            {task.priority}
+          </span>
+          {task.assigneeName && (
+            <div className="flex -space-x-1.5">
+              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400">
+                {task.assigneeName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {task.dueDate && (
+          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+            <Calendar size={10} />
+            <span>{new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function StaticTaskCard({
+  task,
+  onClick,
+}: {
+  task: Task;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={clsx(
+        "bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
+        priorityColors[task.priority]
+      )}
+    >
+      <h4 className="text-sm font-medium text-white truncate pr-2">{task.title}</h4>
+      <TaskCardBody task={task} />
+    </div>
+  );
+}
+
+function StaticKanbanBoard({
+  columns,
+  onTaskClick,
+}: {
+  columns: Column[];
+  onTaskClick: (task: Task) => void;
+}) {
+  return (
+    <div className="flex gap-4 overflow-x-auto overscroll-x-contain pb-4">
+      {statusColumns.map((colConfig) => {
+        const column = columns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
+        return (
+          <div key={colConfig.key} className="w-72 flex-shrink-0">
+            <div className="flex flex-col h-full min-h-[500px]">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${column.color}`} />
+                  <h3 className="text-sm font-semibold text-white capitalize">{column.label}</h3>
+                  <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+                    {column.tasks.length}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="flex-1 min-h-[400px] space-y-2 overflow-y-auto pr-1 rounded-xl"
+                role="list"
+                aria-label={`${column.label} tasks`}
+              >
+                {column.tasks.length === 0 && (
+                  <div className="h-24 border-2 border-dashed border-white/5 rounded-xl flex items-center justify-center">
+                    <span className="text-slate-600 text-xs">Drop tasks here</span>
+                  </div>
+                )}
+                {column.tasks.map((task) => (
+                  <StaticTaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => onTaskClick(task)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function TaskCard({
@@ -132,31 +273,7 @@ function TaskCard({
         </button>
       </div>
 
-      {task.description && (
-        <p className="mt-2 text-xs text-slate-400 line-clamp-2">{task.description}</p>
-      )}
-
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
-            {task.priority}
-          </span>
-          {task.assigneeName && (
-            <div className="flex -space-x-1.5">
-              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400">
-                {task.assigneeName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {task.dueDate && (
-          <div className="flex items-center gap-1 text-[10px] text-slate-500">
-            <Calendar size={10} />
-            <span>{new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-          </div>
-        )}
-      </div>
+      <TaskCardBody task={task} />
     </div>
   );
 }
@@ -174,6 +291,11 @@ function Column({
   onDragStart: (task: Task) => void;
   addForm?: React.ReactNode;
 }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: columnDroppableId(column.key),
+    data: { type: "column", columnKey: column.key },
+  });
+
   return (
     <SortableContext
       items={column.tasks.map((t) => t.id)}
@@ -193,7 +315,11 @@ function Column({
         {addForm && <div className="mb-3">{addForm}</div>}
 
         <div
-          className="flex-1 min-h-[400px] space-y-2 overflow-y-auto pr-1"
+          ref={setNodeRef}
+          className={clsx(
+            "flex-1 min-h-[400px] space-y-2 overflow-y-auto pr-1 rounded-xl transition-colors",
+            isOver && "bg-brand-500/5 ring-2 ring-brand-500/20"
+          )}
           role="list"
           aria-label={`${column.label} tasks`}
         >
@@ -223,10 +349,18 @@ export default function KanbanBoard({
   users,
   allProjects,
   currentUserId,
+  sprintId,
 }: KanbanBoardProps) {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
+  const [dndReady, setDndReady] = useState(false);
+  const boardScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDndReady(true);
+  }, []);
 
   const [newTaskData, setNewTaskData] = useState<Record<string, { title: string; description: string; priority: string; assigneeId: string; dueDate: string; projectId: string }>>({});
 
@@ -253,6 +387,7 @@ export default function KanbanBoard({
     const task = columns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
     if (task) {
       event.active.data.current = { task };
+      setActiveDragTask(task);
     }
   }, [columns]);
 
@@ -266,71 +401,95 @@ export default function KanbanBoard({
     if (activeId === overId) return;
 
     const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    const overTask = columns.flatMap((c) => c.tasks).find((t) => t.id === overId);
+    if (!activeTask) return;
 
-    if (activeTask && overTask) {
-      const activeColumn = columns.find((c) => c.tasks.some((t) => t.id === activeId));
-      const overColumn = columns.find((c) => c.tasks.some((t) => t.id === overId));
+    const activeColumn = findColumnForTask(columns, activeId);
+    const overColumn = resolveOverColumn(columns, overId);
+    if (!activeColumn || !overColumn) return;
 
-      if (activeColumn && overColumn && activeColumn.key !== overColumn.key) {
-        setColumns((prev) =>
-          prev.map((col) => {
-            if (col.key === activeColumn.key) {
-              return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
-            }
-            if (col.key === overColumn.key) {
-              const overIndex = col.tasks.findIndex((t) => t.id === overId);
-              const newTasks = [...col.tasks];
-              newTasks.splice(overIndex, 0, { ...activeTask, status: overColumn.key, position: String(overIndex) });
-              return { ...col, tasks: newTasks };
-            }
-            return col;
-          })
-        );
-      } else if (activeColumn && overColumn && activeColumn.key === overColumn.key) {
-        const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        setColumns((prev) =>
-          prev.map((col) => {
-            if (col.key === activeColumn.key) {
-              const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
-                t.id === activeId || t.id === overId ? { ...t, position: String(i) } : t
-              );
-              return { ...col, tasks: newTasks };
-            }
-            return col;
-          })
-        );
-      }
+    if (activeColumn.key !== overColumn.key) {
+      setColumns((prev) =>
+        prev.map((col) => {
+          if (col.key === activeColumn.key) {
+            return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
+          }
+          if (col.key === overColumn.key) {
+            const overIndex = isColumnDroppableId(overId)
+              ? col.tasks.length
+              : col.tasks.findIndex((t) => t.id === overId);
+            const insertIndex = overIndex >= 0 ? overIndex : col.tasks.length;
+            const newTasks = [...col.tasks];
+            newTasks.splice(insertIndex, 0, {
+              ...activeTask,
+              status: overColumn.key,
+              position: String(insertIndex),
+            });
+            return { ...col, tasks: newTasks };
+          }
+          return col;
+        })
+      );
+      return;
+    }
+
+    if (!isColumnDroppableId(overId)) {
+      const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
+      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
+
+      setColumns((prev) =>
+        prev.map((col) => {
+          if (col.key === activeColumn.key) {
+            const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
+              t.id === activeId ? { ...t, position: String(i) } : t
+            );
+            return { ...col, tasks: newTasks };
+          }
+          return col;
+        })
+      );
     }
   }, [columns]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveDragTask(null);
     if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    if (!activeTask) return;
+    const activeColumn = findColumnForTask(columns, activeId);
+    const overColumn = resolveOverColumn(columns, overId);
+    if (!activeColumn || !overColumn) return;
 
-    const activeColumn = columns.find((c) => c.tasks.some((t) => t.id === activeId));
-    const overColumn = columns.find((c) => c.tasks.some((t) => t.id === overId));
-
-    if (activeColumn && overColumn) {
-      if (activeColumn.key !== overColumn.key) {
-        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        await updateTask.mutateAsync({ id: activeId, status: overColumn.key, position: String(overIndex) });
-      } else {
-        const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex);
-        const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
-        await reorderTasks.mutateAsync(updates);
-      }
+    if (activeColumn.key !== overColumn.key) {
+      const overIndex = isColumnDroppableId(overId)
+        ? Math.max(overColumn.tasks.findIndex((t) => t.id === activeId), 0)
+        : overColumn.tasks.findIndex((t) => t.id === overId);
+      await updateTask.mutateAsync({
+        id: activeId,
+        projectId,
+        status: overColumn.key,
+        position: String(Math.max(overIndex, 0)),
+      });
+      return;
     }
-  }, [columns, updateTask, reorderTasks]);
+
+    if (!isColumnDroppableId(overId)) {
+      const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
+      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
+
+      const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex);
+      const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
+      await reorderTasks.mutateAsync(updates);
+    }
+  }, [columns, projectId, updateTask, reorderTasks]);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveDragTask(null);
+  }, []);
 
   async function handleCreateTask(status: string) {
     const data = newTaskData[status];
@@ -345,6 +504,7 @@ export default function KanbanBoard({
         projectId,
         assigneeId: data.assigneeId || null,
         dueDate: data.dueDate || null,
+        sprintId: sprintId || null,
       });
       setShowNewTask(null);
       setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "", projectId: "" } }));
@@ -358,15 +518,43 @@ export default function KanbanBoard({
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   }
 
+  const taskDetailModal = selectedTask ? (
+    <TaskDetailModal
+      task={selectedTask}
+      users={users}
+      currentUserId={currentUserId}
+      onClose={() => setSelectedTask(null)}
+      onChange={() => {}}
+    />
+  ) : null;
+
+  if (!dndReady) {
+    return (
+      <>
+        <StaticKanbanBoard columns={columns} onTaskClick={setSelectedTask} />
+        {taskDetailModal}
+      </>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
+      autoScroll={{
+        threshold: { x: 0.12, y: 0.2 },
+        acceleration: 12,
+        layoutShiftCompensation: { x: true, y: true },
+      }}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div
+        ref={boardScrollRef}
+        className="flex gap-4 overflow-x-auto overscroll-x-contain pb-4"
+      >
         {statusColumns.map((colConfig) => {
           const column = columns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
           const isAdding = showNewTask === colConfig.key;
@@ -423,15 +611,17 @@ export default function KanbanBoard({
                       ))}
                     </select>
                   </div>
-                  <select
-                    value={newTaskData[colConfig.key]?.projectId || projectId}
-                    onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], projectId: e.target.value } }))}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    {allProjects.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
+                  {!sprintId && (
+                    <select
+                      value={newTaskData[colConfig.key]?.projectId || projectId}
+                      onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], projectId: e.target.value } }))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      {allProjects.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  )}
                   <input
                     type="date"
                     value={newTaskData[colConfig.key]?.dueDate || ""}
@@ -472,15 +662,20 @@ export default function KanbanBoard({
         })}
       </div>
 
-      {selectedTask && (
-        <TaskDetailModal
-          task={selectedTask}
-          users={users}
-          currentUserId={currentUserId}
-          onClose={() => setSelectedTask(null)}
-          onChange={() => {}}
-        />
-      )}
+      <DragOverlay dropAnimation={null}>
+        {activeDragTask ? (
+          <div
+            className={clsx(
+              "bg-slate-800 border border-brand-500/40 rounded-xl p-3 shadow-2xl cursor-grabbing w-72",
+              priorityColors[activeDragTask.priority]
+            )}
+          >
+            <h4 className="text-sm font-medium text-white truncate">{activeDragTask.title}</h4>
+          </div>
+        ) : null}
+      </DragOverlay>
+
+      {taskDetailModal}
     </DndContext>
   );
 }

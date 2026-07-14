@@ -22,6 +22,13 @@
       "when": 1783908836051,
       "tag": "0002_faulty_groot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783917200455,
+      "tag": "0003_large_leper_queen",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { hashSync } from "bcryptjs";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   activityLogs,
@@ -9,11 +9,16 @@ import {
   teamMembers,
   teams,
   users,
+  sprints,
+  standups,
+  retroItems,
 } from "@/db/schema";
 
 let bootstrapPromise: Promise<void> | null = null;
 
 export function ensureDemoData() {
+  // Demo data is for local development only — never seed in production.
+  if (process.env.NODE_ENV === "production") return Promise.resolve();
   bootstrapPromise ??= seedIfEmpty();
   return bootstrapPromise;
 }
@@ -226,6 +231,59 @@ async function seedIfEmpty() {
       content: "Kanban status changes are optimistically updated and persisted through the API.",
       taskId: taskMap.get("Build kanban task interactions")!,
       authorId: davidId,
+    },
+  ]);
+
+  const now = new Date();
+  const sprintStart = new Date(now);
+  sprintStart.setDate(sprintStart.getDate() - 7);
+  const sprintEnd = new Date(now);
+  sprintEnd.setDate(sprintEnd.getDate() + 7);
+
+  const [sprint] = await db
+    .insert(sprints)
+    .values({
+      projectId: platformId,
+      name: "Sprint 1 — Core Experience",
+      goal: "Ship kanban interactions and reporting widgets.",
+      startDate: sprintStart,
+      endDate: sprintEnd,
+      status: "active",
+    })
+    .returning({ id: sprints.id });
+
+  await db
+    .update(tasks)
+    .set({ sprintId: sprint.id, estimate: 5 })
+    .where(eq(tasks.id, taskMap.get("Build kanban task interactions")!));
+  await db
+    .update(tasks)
+    .set({ sprintId: sprint.id, estimate: 3 })
+    .where(eq(tasks.id, taskMap.get("Add reporting widgets")!));
+
+  await db.insert(standups).values([
+    {
+      userId: davidId,
+      sprintId: sprint.id,
+      date: now,
+      yesterday: "Wired up drag-and-drop reordering.",
+      today: "Adding optimistic persistence to the board.",
+      blockers: "None",
+    },
+  ]);
+
+  await db.insert(retroItems).values([
+    {
+      sprintId: sprint.id,
+      authorId: alexId,
+      category: "went_well",
+      content: "Faster iteration with the new kanban board.",
+    },
+    {
+      sprintId: sprint.id,
+      authorId: davidId,
+      category: "action_item",
+      content: "Capture estimates during planning for better burndown.",
     },
   ]);
 

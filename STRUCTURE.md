@@ -59,11 +59,21 @@ src/
 │   │   │   ├── ProjectListClient.tsx       # Client wrapper
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx                # Project detail (server)
+│   │   │       ├── ProjectNav.tsx          # Board / Backlog tabs
 │   │   │       ├── KanbanBoard.tsx         # Kanban board client
 │   │   │       ├── TaskDetailModal.tsx     # Task modal client
-│   │   │       └── ProjectManagementPanel.tsx
+│   │   │       ├── ProjectManagementPanel.tsx
+│   │   │       └── backlog/
+│   │   │           ├── page.tsx            # Project backlog (server)
+│   │   │           └── ProjectBacklogClient.tsx  # Backlog list + assign to sprint
 │   │   ├── tasks/
 │   │   │   └── page.tsx    # Tasks page
+│   │   ├── sprints/
+│   │   │   ├── page.tsx                    # Sprints list (server)
+│   │   │   ├── SprintsClient.tsx           # Sprint list + create (client)
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx                # Sprint detail (server)
+│   │   │       └── SprintDetailClient.tsx  # Tabs: KanbanBoard (shared), burndown, planning, standup, retro
 │   │   └── teams/
 │   │       ├── page.tsx              # Teams page
 │   │       └── TeamManagementClient.tsx
@@ -90,6 +100,16 @@ src/
 │       ├── tasks/
 │       │   ├── route.ts            # GET, POST - List/Create tasks
 │       │   └── [id]/route.ts       # GET, PATCH, DELETE - Task CRUD
+│       ├── sprints/
+│       │   ├── route.ts            # GET, POST - List/Create sprints
+│       │   └── [id]/
+│       │       ├── route.ts        # GET, PATCH, DELETE - Sprint CRUD
+│       │       └── burndown/route.ts  # GET - Burndown chart data
+│       ├── standups/
+│       │   └── route.ts            # GET, POST - List/Upsert standups
+│       ├── retros/
+│       │   ├── route.ts            # GET, POST - List/Create retro items
+│       │   └── [id]/route.ts       # PATCH, DELETE - Retro item CRUD
 │       ├── comments/
 │       │   ├── route.ts            # GET, POST - Task comments
 │       │   └── [id]/route.ts       # PATCH, DELETE - Comment CRUD
@@ -113,6 +133,9 @@ src/
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
 │   ├── useProjects.ts      # Project mutations with optimistic updates
 │   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
+│   ├── useRetros.ts        # Retro item mutations with optimistic updates
+│   ├── useSprints.ts       # Sprint mutations with optimistic updates
+│   ├── useStandups.ts      # Standup queries and upsert mutations
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
 │   └── useUsers.ts         # User mutations with optimistic updates
@@ -240,12 +263,19 @@ src/
 
 ### `src/app/dashboard/projects/[id]/KanbanBoard.tsx`
 
-**Purpose**: Kanban board with columns (Backlog, Todo, In Progress, Review, Done)
-**Exports**: `KanbanBoard({ projectId, initialColumns, users, allProjects, currentUserId })` - Client component
+**Purpose**: Shared Kanban board with columns (Backlog, Todo, In Progress, Review, Done). Used on project board and sprint Board tab.
+**Exports**: `KanbanBoard({ projectId, initialColumns, users, allProjects, currentUserId, sprintId? })` - Client component
 
-- Drag-and-drop (dnd-kit)
+**Features**:
+- Drag-and-drop reordering within/between columns (dnd-kit)
 - Task cards with priority, assignee, due date
-- Inline task creation with Project dropdown
+- Inline task creation per column
+- Opens `TaskDetailModal` on task click
+- Optional `sprintId`: new tasks auto-linked to sprint; project picker hidden in sprint context
+
+**Used by**:
+- `src/app/dashboard/projects/[id]/page.tsx` — full project board
+- `src/app/dashboard/sprints/[id]/SprintDetailClient.tsx` — sprint Board tab (sprint-scoped tasks only)
 
 ### `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
@@ -262,6 +292,55 @@ src/
 
 **Purpose**: Project settings panel (edit, archive, delete, members)
 **Exports**: `ProjectManagementPanel({ project })` - Client component
+
+### `src/app/dashboard/projects/[id]/ProjectNav.tsx`
+
+**Purpose**: Sub-navigation tabs on project pages
+**Exports**: `ProjectNav({ projectId })` - Client component
+**Features**: Board | Backlog tab links
+
+### `src/app/dashboard/projects/[id]/backlog/page.tsx`
+
+**Purpose**: Project backlog page (server)
+**Exports**: `ProjectBacklogPage({ params })` - Server component
+**Features**: Fetches tasks where `sprintId IS NULL` for the project
+
+### `src/app/dashboard/projects/[id]/backlog/ProjectBacklogClient.tsx`
+
+**Purpose**: Backlog list UI with sprint assignment
+**Exports**: `ProjectBacklogClient({ projectId, initialTasks, sprints })` - Client component
+**Features**:
+- List unassigned backlog tasks (`sprintId = null`)
+- Create new backlog tasks
+- Assign tasks to a sprint via Planning-style dropdown
+
+### `src/app/dashboard/sprints/page.tsx`
+
+**Purpose**: Sprints list page (server)
+**Exports**: `SprintsPage()` - Server component
+
+### `src/app/dashboard/sprints/SprintsClient.tsx`
+
+**Purpose**: Sprint list with create modal
+**Exports**: `SprintsClient({ projects, currentUserId })` - Client component
+
+### `src/app/dashboard/sprints/[id]/page.tsx`
+
+**Purpose**: Sprint detail page (server)
+**Exports**: `SprintDetailPage({ params })` - Server component
+**Features**: Fetches sprint, sprint tasks, project backlog tasks, users, and projects for `KanbanBoard`
+
+### `src/app/dashboard/sprints/[id]/SprintDetailClient.tsx`
+
+**Purpose**: Sprint workspace with tabbed agile tools
+**Exports**: `SprintDetailClient({ sprint, project, tasks, backlogTasks, users, allProjects, currentUserId })` - Client component
+**Tabs**:
+- **Board** — reuses `KanbanBoard` from project module (`sprintId` prop); same drag-and-drop, task modal, inline create as project board
+- **Burndown** — recharts line chart from `/api/sprints/[id]/burndown`
+- **Planning** — pull backlog tasks into sprint or remove back to backlog
+- **Standup** — daily standup form/list
+- **Retro** — went well / improve / action items
+**Features**: Complete Sprint button (rolls unfinished tasks to backlog via API)
 
 ### `src/app/dashboard/tasks/page.tsx`
 
@@ -407,23 +486,77 @@ src/
 - `PATCH(req, { params })` - Update milestone
 - `DELETE(req, { params })` - Delete milestone
 
+#### `src/app/api/sprints/route.ts`
+
+**Methods**: `GET`, `POST`
+**Purpose**: List/Create sprints (filter by `?projectId`)
+**Functions**:
+
+- `GET(req)` - List sprints for a project
+- `POST(req)` - Create sprint
+
+#### `src/app/api/sprints/[id]/route.ts`
+
+**Methods**: `GET`, `PATCH`, `DELETE`
+**Purpose**: Sprint CRUD; activating a sprint deactivates others in the project; completing a sprint rolls unfinished tasks to backlog
+**Functions**:
+
+- `GET(req, { params })` - Get sprint
+- `PATCH(req, { params })` - Update sprint; when `status` → `completed`, sets `sprintId = null` on tasks where `status !== "done"`
+- `DELETE(req, { params })` - Delete sprint
+
+#### `src/app/api/sprints/[id]/burndown/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Burndown chart data (ideal vs actual remaining story points)
+**Functions**:
+
+- `GET(req, { params })` - Returns `{ totalPoints, ideal, actual }` per day
+
+#### `src/app/api/standups/route.ts`
+
+**Methods**: `GET`, `POST`
+**Purpose**: List standups (filter by `?userId`, `?sprintId`, `?date`) / upsert daily standup
+**Functions**:
+
+- `GET(req)` - List standups
+- `POST(req)` - Create or update today's standup for user
+
+#### `src/app/api/retros/route.ts`
+
+**Methods**: `GET`, `POST`
+**Purpose**: List/Create retro items (filter by `?sprintId`)
+**Functions**:
+
+- `GET(req)` - List retro items
+- `POST(req)` - Create retro item
+
+#### `src/app/api/retros/[id]/route.ts`
+
+**Methods**: `PATCH`, `DELETE`
+**Purpose**: Retro item CRUD
+**Functions**:
+
+- `PATCH(req, { params })` - Update retro item
+- `DELETE(req, { params })` - Delete retro item
+
 #### `src/app/api/tasks/route.ts`
 
 **Methods**: `GET`, `POST`
 **Purpose**: List/Create tasks
 **Functions**:
 
-- `GET(req)` - List tasks (filters: `projectId`, `status`, `assigneeId`)
-- `POST(req)` - Create task
+- `GET(req)` - List tasks (filters: `projectId`, `status`, `assigneeId`, `sprintId`)
+- `POST(req)` - Create task (optional `sprintId`, `estimate`)
 
 #### `src/app/api/tasks/[id]/route.ts`
 
 **Methods**: `GET`, `PATCH`, `DELETE`
-**Purpose**: Task CRUD
+**Purpose**: Task CRUD; records status history for burndown when status changes
 **Functions**:
 
 - `GET(req, { params })` - Get task
-- `PATCH(req, { params })` - Update task
+- `PATCH(req, { params })` - Update task (including `sprintId`, `estimate`)
 - `DELETE(req, { params })` - Delete task
 
 #### `src/app/api/comments/route.ts`
@@ -484,7 +617,7 @@ src/
 **Features**:
 
 - Collapsible (icon-only mode)
-- Navigation links (Dashboard, Projects, Tasks, Teams, Activity, Admin)
+- Navigation links (Dashboard, Projects, Tasks, Teams, Sprints, Activity, Admin)
 - Role-based Admin link (superadmin/admin only)
 - User avatar with initials, role badge
 - Logout button
@@ -513,7 +646,11 @@ src/
 - `projects` - Projects
 - `projectMilestones` - Project milestones
 - `projectNotes` - Project notes
-- `tasks` - Kanban tasks
+- `tasks` - Kanban tasks (includes `sprintId`, `estimate`)
+- `sprints` - Time-boxed sprints per project
+- `standups` - Daily standup entries per user
+- `retroItems` - Sprint retrospective items
+- `taskStatusHistory` - Task status change history (burndown)
 - `comments` - Task comments
 - `sessions` - Auth sessions
 - `activityLogs` - Activity audit trail
@@ -613,6 +750,29 @@ src/
 - `useUpdateMilestone()` - Update milestone
 - `useDeleteMilestone()` - Delete milestone
 
+#### `src/hooks/useSprints.ts`
+
+**Purpose**: React Query mutations for sprint operations with optimistic updates
+**Exports**:
+- `useCreateSprint()` - Create sprint
+- `useUpdateSprint()` - Update sprint (including set active)
+- `useDeleteSprint()` - Delete sprint
+
+#### `src/hooks/useStandups.ts`
+
+**Purpose**: React Query queries and mutations for daily standups
+**Exports**:
+- `useStandups(params)` - Fetch standups by user/sprint/date
+- `useCreateStandup()` - Upsert daily standup
+
+#### `src/hooks/useRetros.ts`
+
+**Purpose**: React Query queries and mutations for sprint retro items
+**Exports**:
+- `useRetros(sprintId)` - Fetch retro items for a sprint
+- `useCreateRetroItem()` - Add retro item
+- `useDeleteRetroItem()` - Delete retro item
+
 ---
 
 ### Providers (`src/providers/`)
@@ -704,8 +864,8 @@ Holds `dependencies`/`devDependencies` only (Deno reads these for `deno install`
 - `db:push` - `node ./node_modules/drizzle-kit/bin.cjs push`
 - `db:studio` - `node ./node_modules/drizzle-kit/bin.cjs studio`
 - `db:seed` - `node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts` (loads `.env` itself via `dotenv/config`)
-- `vercel:build` - generate migrations then `next build`
-- `vercel:deploy` - migrate then `vercel --prod`
+- `db:deploy` - `deno run -A --env-file=.env ./migrate.ts` (local); Deno Deploy pre-deploy: `deno run -A public/deploy/migrate.ts` (from `deno.json` deploy config)
+- `deploy` - `deployctl deploy --include=.next --include=public jsr:@deno/nextjs-start/v16`
 
 > Note: `drizzle.config.ts` already loads `.env` via `dotenv`, and `seed.ts` imports `dotenv/config` — so no `dotenv -e` prefix is needed in the task commands.
 

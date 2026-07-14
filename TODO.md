@@ -1,5 +1,26 @@
 # TODO - Vellum Project Tasks
 
+## Agile Workflow
+
+Agile cadence layered on top of the priority buckets below. **Cadence is customizable per project** — the values here are templates, not fixed rules. Set the active window in `SPRINT_CURRENT` (see [Sprints](#sprints)).
+
+### Cadence (customizable)
+- **Sprint length:** default 2 weeks; adjust per project (1-week, 3-week, or milestone-based all valid).
+- **Grooming day:** backlog refinement before each sprint starts.
+- **Retro day:** last day of each sprint.
+- Define these per project — do not hardcode across the repo.
+
+### Ceremonies
+- **Backlog grooming** — refine/prioritize items; promote `New Features (Ideas)` → priority buckets when committed.
+- **Sprint planning** — pull top-priority `[ ]` items into the current sprint; mark them `status: in_progress`.
+- **Daily standup** — three questions (done / yesterday / blockers). Status sync only; no doc churn.
+- **Sprint retro** — append to `retro/` log: what went well / what went wrong / action items. See [Sprints](#sprints) for the retro file convention.
+
+### Task lifecycle
+Maps onto the existing status tags:
+`pending` → `in_progress` → `review` (PR open) → `done` (merged).
+Use the status tags defined in [Status Tags](#status-tags) on every task line.
+
 ## Priority: High
 
 - [x] **Optimistic updates everywhere** - Implement optimistic UI updates across all mutations
@@ -47,6 +68,13 @@
   - Activity logging for create/update/delete
   - Real-time comment notifications (future)
   - @mention support (future)
+
+- [x] **Agile tools (sprints, standup, retro, planning)** - Full-stack agile ceremony support
+  - Schema: `sprints`, `standups`, `retro_items`, `task_status_history`; `tasks.sprintId`, `tasks.estimate`
+  - API: `/api/sprints`, `/api/sprints/[id]`, `/api/sprints/[id]/burndown`, `/api/standups`, `/api/retros`
+  - Hooks: `useSprints`, `useStandups`, `useRetros`; extended `useTasks` for sprintId/estimate
+  - UI: `/dashboard/sprints` list + `/dashboard/sprints/[id]` detail (board, burndown, planning, standup, retro)
+  - Acceptance criteria: Create sprint, assign tasks, burndown chart, daily standup upsert, retro CRUD
 
 - [ ] **File attachments** - Allow file uploads on tasks/projects
   - Integrate with S3/R2/Cloudinary
@@ -259,6 +287,43 @@
 - [ ] **Export/Import** - JSON/CSV backup and restore
 - [ ] **Multi-language (i18n)** - Translation system
 - [ ] **Public project views** - Shareable read-only links
+
+---
+
+## Sprints
+
+> `SPRINT_CURRENT`: <set to current sprint label, e.g. `Sprint 1`>
+
+Sprint execution log. Each sprint pulls from the priority buckets above. Retros live in `retro/`.
+
+- **Sprint 1 (YYYY-MM-DD → YYYY-MM-DD)** — goal: <one line>
+  - [ ] TODO.md §"Item" (status: in_progress)
+  - [x] TODO.md §"Item" (status: done)
+  - Retro: [retro/sprint-1.md](retro/sprint-1.md)
+
+- **Sprint 2 (YYYY-MM-DD → YYYY-MM-DD)** — goal: <one line>
+  - [ ] TODO.md §"Item" (status: in_progress)
+  - Retro: [retro/sprint-2.md](retro/sprint-2.md)
+
+### Retro log convention
+- Folder: `retro/` (one markdown file per sprint, e.g. `retro/sprint-1.md`).
+- Cadence: written at end of each sprint (customizable).
+- Template:
+  ```markdown
+  # Sprint N Retro (YYYY-MM-DD → YYYY-MM-DD)
+
+  ## Goal
+  <sprint goal>
+
+  ## What went well
+  -
+
+  ## What went wrong
+  -
+
+  ## Action items
+  - [ ] <action> → owner
+  ```
 
 ---
 

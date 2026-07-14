@@ -5,6 +5,7 @@ import { eq, asc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
+import ProjectNav from "./ProjectNav";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +148,8 @@ export default async function ProjectDetailPage({
         members={Array.from(memberMap.values())}
         completionRate={completionRate}
       />
+
+      <ProjectNav projectId={project.id} />
 
       <div>
         <div className="mb-4">
