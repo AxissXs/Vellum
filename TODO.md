@@ -72,6 +72,18 @@
   - Self-protection: prevent revoking the current session (show disabled state)
   - Acceptance criteria: Users can see all their active sessions, revoke individual or all others, UI updates optimistically
 
+- [ ] **Telegram bot integration** - Platform-wide Telegram bot for notifications
+  - Superadmin configures a single Telegram bot API token in platform settings (`telegram_bot_token` in a `platform_settings` table or env var)
+  - Bot connects to a Telegram supergroup with topics: map notification types (task assignments, status changes, comments, mentions, due dates) to specific forum topics
+  - Bot connects to Telegram channels for broadcast notifications (release announcements, platform updates)
+  - Users bind their Telegram account via a single-use pairing code: `/start <code>` in the bot DMs links their Telegram to their Vellum account
+  - Generate random 6-character codes stored in `telegram_pairing_codes` table (code, userId, used, expiresAt)
+  - On successful pairing, store `telegram_chat_id` and `telegram_username` in `users` table
+  - Users choose Telegram as a notification channel in notification preferences (alongside push, email, in-app)
+  - Send notifications via Telegram Bot API (`sendMessage`) using the user's `chat_id` or the mapped supergroup topic
+  - Superadmin can test bot connectivity and see paired user count in super admin panel
+  - Acceptance criteria: Superadmin can configure bot token, users can pair via code, notifications arrive in Telegram per user preferences, supergroup topics receive typed notifications
+
 - [ ] **Email notifications** - Send emails for assignments, mentions, due dates
   - Integrate Resend or SendGrid
   - Notification preferences per user
