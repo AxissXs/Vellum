@@ -1,370 +1,123 @@
 # AI Agent Instructions for Vellum
 
-This document provides guidance for AI agents working on the Vellum project.
+High-signal notes you are likely to miss. For routine facts (file lists, schema, API tables) read `STRUCTURE.md`, `TODO.md`, and `README.md` instead of asking.
 
-## Project Overview
+## Quick Context
 
-**Vellum** (Vellum) is a Next.js 15 (App Router) team management platform with:
+- Next.js 16 (App Router, React 19, Turbopack) + TypeScript 5.9 + Tailwind CSS 4.1
+- PostgreSQL (Neon) with Drizzle ORM 0.45.2
+- **Package manager: `bun`** (lockfile `bun.lock`)
+- **Default branch: `master`** (not `main`)
+- **No test framework is configured yet** — do not run tests
+- **No CI / pre-commit hooks** — `lint` → `typecheck` → `build` are the only gates before push
 
-- PostgreSQL database using Drizzle ORM
-- Kanban boards for project management
-- Role-based authentication (superadmin, admin, member)
-- Team and project organization
-- Task tracking with priorities, statuses, comments
-- Activity logging
+## Before Any Work
 
-## Tech Stack
+1. `git checkout master && git pull origin master`
+2. Read `TODO.md` for available tasks
+3. Create a feature branch from `master`
+4. **Never push directly to `master`**
 
-- **Framework**: Next.js 16.2.6 (App Router, React 19, Turbopack)
-- **Database**: PostgreSQL (Neon) with Drizzle ORM 0.45.2
-- **Auth**: Custom session-based auth with bcryptjs
-- **Styling**: Tailwind CSS 4.1.17
-- **Language**: TypeScript 5.9.3
-- **Package Manager**: bun (with bun.lock)
+Branch prefixes: `feat/`, `fix/`, `chore/`, `refactor/`, `hotfix/`
 
-## Key Commands
+## Before Committing
 
-```bash
-# Development
-bun run dev              # Start dev server (Turbopack)
-
-# Database
-bun run db:generate      # Generate migrations from schema.ts
-bun run db:migrate       # Apply migrations to database
-bun run db:push          # Push schema directly (no migration files)
-bun run db:studio        # Open Drizzle Studio
-bun run db:seed          # Seed database with demo data
-
-# Code Quality
-bun run lint             # ESLint
-bun run typecheck        # TypeScript check
-
-# Build & Deploy
-bun run build            # Production build
-bun run start            # Start production server
-bun run vercel:build     # Build with migration generation
-bun run vercel:deploy    # Migrate + deploy to Vercel
-```
-
-## Environment Variables
-
-Required in `.env`:
-
-- `DATABASE_URL` - Pooled connection (for app runtime)
-- `DIRECT_DATABASE_URL` - Direct connection (for migrations)
-
-## Agent Workflow
-
-### Picking a Task
-
-1. Check `TODO.md` for available tasks
-2. Prefer tasks marked `priority: high` or `status: pending`
-3. Look for tasks with clear acceptance criteria
-
-### Executing a Task
-
-1. **Pull latest updates** — Before doing anything, run `git checkout master && git pull origin master` to ensure you have the most recent codebase. This prevents working on stale files and reduces merge conflicts.
-2. **Re-read project docs** — After pulling, re-read `AGENTS.md` and `STRUCTURE.md` to check for new conventions, updated patterns, or recently added features. This prevents reinventing the wheel or missing important workflow changes.
-3. **Create a branch** — Create a feature branch from the latest `master` following the branch naming conventions outlined in the **Branching Strategy** section below.
-4. **Read relevant files** — Understand existing patterns before modifying. **Always read `STRUCTURE.md` first** as your map of what's already built, then explore the actual source files (src/) to understand implementation details.
-5. **Follow conventions** — Match existing code style, naming, patterns
-6. **Write tests/verify** — Run `bun run lint`, `bun run typecheck`, `bun run build`
-7. **Update documentation** — Update `TODO.md`, `STRUCTURE.md`, `AGENTS.md` if applicable (see checklist below)
-8. **Check for overlap** — Check `TODO.md` to see if completing this task also resolves other pending tasks; mark them as done to avoid rework
-9. Stage changes: `git add -A`
-10. Commit with conventional message
-11. Push: `git push`
-
-### Documentation Update Checklist
-
-**Any agent that adds, removes, or renames files must update these docs:**
-
-- [ ] `TODO.md` — Mark completed tasks as done, add new tasks if discovered
-- [ ] `STRUCTURE.md` — Update file listings, exports, descriptions, and purposes
-- [ ] `AGENTS.md` — Update conventions, workflow, or infrastructure instructions if behavior changes
-
-**How to keep STRUCTURE.md accurate:**
-1. Add new files/directories to the tree listing in the "Source Code (`src/`)" section
-2. Add or update the "File Details" section for any new/modified module
-3. Update API route tables when adding/modifying endpoints
-4. Update the Data Flow diagram if auth or request flow changes
-5. Update the Hooks table when adding new React Query hooks
-6. Update the Lib table when adding new utilities
-
-> **Reminders for STRUCTURE.md:**
-> - The tree view must reflect the actual `src/` directory structure
-> - Every exported function/type listed must actually exist in the code
-> - Component props signatures must match the actual component interface
-> - API route method signatures must match the actual route handlers
-
-### Code Conventions
-
-- **Components**: PascalCase, client components marked with `"use client"`
-- **API Routes**: `route.ts` in `src/app/api/...`
-- **Database**: Schema in `src/db/schema.ts`, migrations in `drizzle/`
-- **Auth**: Use `getSession()` from `src/lib/auth.ts` in server components
-- **Imports**: Use `@/` path alias for `src/`
-
-### Common Patterns
-
-**Server Components** (default):
-
-```tsx
-import { getSession } from "@/lib/auth";
-import { db } from "@/db";
-
-export default async function Page() {
-  const session = await getSession();
-  // ...
-}
-```
-
-**Client Components**:
-
-```tsx
-"use client";
-import { useState } from "react";
-```
-
-**API Routes**:
-
-```ts
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { db } from "@/db";
-
-export async function GET() {
-  const session = await getSession();
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  // ...
-}
-```
-
-### Database Changes
-
-1. Modify `src/db/schema.ts`
-2. Run `bun run db:generate` to create migration
-3. Run `bun run db:migrate` to apply
-4. Commit both schema and migration files
-
-### Seeding Data
-
-- `seed.ts` - Full demo data (run manually with `bun run db:seed`)
-- `bootstrap.ts` - Minimal demo data (auto-runs on first API call via `ensureDemoData()`)
-
-## Commit Message Format
-
-Use conventional commits:
-
-```
-type(scope): description
-
-[optional body]
-
-[optional footer]
-```
-
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`
-
-Examples:
-
-- `feat(kanban): add drag-and-drop task reordering`
-- `fix(auth): handle expired session cleanup`
-- `db: add project_milestones table`
-
-## Branching Strategy (required for all AI agents)
-
-We use a feature-branch workflow to keep `master` stable and make code review easy.
-
-### 1. Create a feature branch
-
-Before starting any task, create a branch from the latest `master`:
+Run in this order (they catch different issues):
 
 ```bash
-git checkout master
-git pull origin master
-git checkout -b <branch-name>
+bun run lint       # flat ESLint config at eslint.config.mjs (no .eslintrc)
+bun run typecheck  # tsc --noEmit, strict enabled
+bun run build      # production build / Turbopack smoke test
 ```
 
-**Branch naming convention:**
+Commit with conventional commits: `type(scope): description`
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `db`
 
-- `feat/<short-description>` — New features  
-  e.g. `feat/notifications-bell`
-- `fix/<short-description>` — Bug fixes  
-  e.g. `fix/kanban-add-task-button`
-- `refactor/<short-description>` — Code refactoring  
-  e.g. `refactor/auth-middleware`
-- `chore/<short-description>` — Tooling, deps, docs updates  
-  e.g. `chore/update-tailwind`
-- `hotfix/<short-description>` — Urgent production fixes  
-  e.g. `hotfix/login-crash`
+## Database
 
-### 2. Work on the branch
+### Env
+Required in `.env` (copy from `.env.example`):
+- `DATABASE_URL` — **pooled** connection (Neon: `-pooler` suffix) → used by app runtime
+- `DIRECT_DATABASE_URL` — **direct** connection (Neon: no `-pooler`) → used by Drizzle Kit / migrations
 
-- Make focused, atomic commits with conventional messages (see above).
-- Run `bun run lint`, `bun run typecheck`, and `bun run build` before pushing.
-- Keep the branch up-to-date with `master` via `git pull origin master` if it drifts.
-
-### 3. Push the branch
-
+### Commands
 ```bash
-git push -u origin <branch-name>
+bun run db:generate   # Generate migrations from src/db/schema.ts
+bun run db:migrate    # Apply migrations
+bun run db:push       # Push schema directly (no migration files)
+bun run db:studio     # Drizzle Studio
+bun run db:seed       # Full demo data (manual, one-off)
 ```
+All `db:*` scripts load `.env` via `dotenv-cli`.
 
-### 4. Merge back to master
+### Changing Schema
+1. Edit `src/db/schema.ts`
+2. `bun run db:generate` → writes to `drizzle/`
+3. `bun run db:migrate`
+4. **Commit both `src/db/schema.ts` and `drizzle/*`**
 
-When the task is done and verified, merge the branch into `master`:
+### Setup & Seeding Quirks
+- **First-time setup** is via `/setup` page in the browser, not CLI seed. It creates the initial superadmin + first team, and only works when the `users` table is empty.
+- `bootstrap.ts` auto-seeds minimal demo data on the **first API call** (`ensureDemoData()`). Do not rely on this for full testing data.
+- `seed.ts` is the full demo dataset (8 users, 4 teams, 30+ tasks). Run manually with `bun run db:seed`.
 
-```bash
-git checkout master
-git merge --no-ff <branch-name>
-git push origin master
-```
+## Auth
 
-Then delete the merged branch:
+Custom session auth in `src/lib/auth.ts`:
+- Cookie name: `tf_session`, max-age 7 days
+- Get current user: `await getSession()` (server components and API routes)
+- Role gate: `requireRole(user, ['superadmin' | 'admin' | 'member'])`
+- **Banned users are evicted immediately** by `getSession()` (session destroyed, treated as logged out)
+- `inactive` users are blocked at login with a specific error
 
-```bash
-git branch -d <branch-name>      # local
-git push origin --delete <branch-name>   # remote
-```
+## Architecture Quirks
 
-> **Do not push directly to `master`.** All work must go through a feature branch.
+- **Server Components are default.** Add `"use client"` only for interactivity.
+- Path alias: `@/*` → `./src/*`
+- **DB singleton uses `globalThis.__arenaNextJsPostgresqlPool`** in `src/db/index.ts` to avoid creating multiple pools in dev. Do not rename this global or switch to a plain `new Pool()` without preserving the pattern.
+- **Next.js config is `next.config.ts`** and is intentionally empty/minimal.
+- **Tailwind v4** uses `@tailwindcss/postcss` in `postcss.config.mjs`. Do not create a `tailwind.config.js`.
+- Real-time via **Pusher** (not raw WebSockets). Server code in `src/lib/pusher*.ts`, client singleton in `src/lib/pusher-client.ts`, hook in `src/hooks/useRealtime.ts`.
+- Push notifications via Web Push (VAPID). Service worker at `public/sw.js`. Server utilities in `src/lib/push.ts`.
 
-## File Structure Reference
+## Required Conventions
 
-See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
-
-## Database Schema Reference
-
-See `src/db/schema.ts` for:
-
-- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `user_sessions`, `activity_logs`, `push_subscriptions`, `notification_preferences`
-- Enums: `user_role`, `user_status`, `task_status`, `task_priority`, `notification_event_type`
-- Relations defined via Drizzle references
-
-**User Status Field** (`users.status`):
-- `active` — Normal access
-- `inactive` — Cannot log in (user-initiated pause)
-- `banned` — Cannot log in, existing sessions destroyed (admin-enforced)
-
-## API Routes Reference
-
-| Route                           | Methods            | Description          |
-| ------------------------------- | ------------------ | -------------------- |
-| `/api/auth/login`               | POST               | User login           |
-| `/api/auth/logout`              | POST               | User logout          |
-| `/api/auth/me`                  | GET                | Current user session |
-| `/api/users`                    | GET, POST          | List/create users    |
-| `/api/users/[id]`               | GET, PATCH, DELETE | User CRUD            |
-| `/api/teams`                    | GET, POST          | List/create teams    |
-| `/api/teams/[id]`               | GET, PATCH, DELETE | Team CRUD            |
-| `/api/teams/[id]/members`       | GET, POST          | Team members         |
-| `/api/projects`                 | GET, POST          | List/create projects |
-| `/api/projects/[id]`            | GET, PATCH, DELETE | Project CRUD         |
-| `/api/projects/[id]/milestones` | GET, POST          | Project milestones   |
-| `/api/tasks`                    | GET, POST          | List/create tasks    |
-| `/api/tasks/[id]`               | GET, PATCH, DELETE | Task CRUD            |
-| `/api/comments`                 | GET, POST          | Task comments        |
-| `/api/comments/[id]`            | PATCH, DELETE      | Comment CRUD         |
-| `/api/activity`                 | GET                | Activity logs        |
-| `/api/stats`                    | GET                | Dashboard statistics |
-| `/api/push/subscribe`           | POST, DELETE       | Push subscription    |
-| `/api/push/preferences`         | GET, PATCH         | Notification prefs   |
-| `/api/health`                   | GET                | Health check         |
-| `/api/super-admin/users`        | GET                | List users (last login/IP) |
-| `/api/super-admin/users/[id]`   | PATCH              | Update user role/status |
-| `/api/super-admin/activity`     | GET                | Activity feed + 24h stats |
-| `/api/super-admin/sessions`     | GET                | Active sessions      |
-| `/api/super-admin/sessions/[id]`| DELETE             | Revoke session       |
-| `/api/super-admin/audit`        | GET                | Filtered audit logs (paginated) |
-| `/api/super-admin/audit/export` | GET                | CSV export of audit logs |
-| `/api/super-admin/health`       | GET                | System health metrics  |
-| `/api/super-admin/permissions`  | GET                | Role / permission matrix |
-
-## React Query Optimistic Updates Pattern
-
-All mutations use React Query hooks with optimistic updates. Pattern (see `src/hooks/useComments.ts`):
-
-```ts
-export function useCreateComment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input) => {
-      const res = await api.post("/api/comments", input);
-      return res.comment;
-    },
-    onMutate: async (newComment) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ["comments", newComment.taskId],
-      });
-
-      // Snapshot previous value
-      const previousComments = queryClient.getQueryData([
-        "comments",
-        newComment.taskId,
-      ]);
-
-      // Optimistically update
-      queryClient.setQueryData(["comments", newComment.taskId], (old) => [
-        ...(old || []),
-        { ...newComment, id: `temp-${Date.now()}`, authorName: null },
-      ]);
-
-      return { previousComments, taskId: newComment.taskId };
-    },
-    onError: (err, newComment, context) => {
-      // Rollback on error
-      if (context?.previousComments) {
-        queryClient.setQueryData(
-          ["comments", context.taskId],
-          context.previousComments,
-        );
-      }
-      toast.error("Failed to add comment");
-    },
-    onSuccess: (data, newComment) => {
-      // Replace temp with real
-      queryClient.setQueryData(
-        ["comments", newComment.taskId],
-        (old) => old?.map((c) => (c.id.startsWith("temp-") ? data : c)) || [],
-      );
-    },
-    onSettled: (data, error, newComment) => {
-      // Refetch to ensure sync
-      queryClient.invalidateQueries({
-        queryKey: ["comments", newComment.taskId],
-      });
-    },
-  });
-}
-```
-
-Apply same pattern to `useUpdateComment`, `useDeleteComment`, `useTasks`, `useProjects`, `useUsers`, etc.
-
-## Activity Logging Convention
-
-All mutating API routes must log to `activity_logs` table after successful operation:
+### Activity Logging
+All mutating API routes must write to `activity_logs` after the operation succeeds:
 
 ```ts
 import { getClientIP } from "@/lib/audit";
 
 await db.insert(activityLogs).values({
   userId: user.id,
-  action:
-    "created_task" |
-    "updated_task" |
-    "deleted_task" |
-    "created_comment" |
-    "updated_comment" |
-    "deleted_comment",
+  action: "created_task" | "updated_task" | "deleted_task" | ...,  // prefix: created_, updated_, deleted_, changed__status
   entityType: "task" | "comment" | "project" | "user",
   entityId: entity.id,
   details: `Created task: ${entity.title}`,
-  ipAddress: getClientIP(req), // Optional but recommended
+  ipAddress: getClientIP(req), // optional but preferred
 });
 ```
 
-Actions: `created_*`, `updated_*`, `deleted_*`, `changed_*_status`
+### React Query Optimistic Updates
+Every mutation must use the full optimistic-update pattern:
+- `onMutate` — snapshot old data, apply optimistic change
+- `onError` — rollback to snapshot, `toast.error("...")`
+- `onSuccess` — replace temp IDs with real server data
+- `onSettled` — invalidate queries to resync
+
+Reference implementation: `src/hooks/useComments.ts`. Apply the same pattern to `useTasks.ts`, `useProjects.ts`, `useTeams.ts`, `useUsers.ts`, `useMilestones.ts`, etc.
+
+## Documentation Update Rule
+
+**Any file add / remove / rename must update:**
+- `TODO.md` — mark tasks done, add new ones if discovered
+- `STRUCTURE.md` — update file tree, exports, API route tables, data flow
+- `AGENTS.md` — update conventions or workflow if behavior changes
+
+## Deploy (Vercel)
+
+```bash
+bun run vercel:build    # db:generate + next build
+bun run vercel:deploy   # db:migrate + vercel --prod
+```
+Migrations auto-run during build via `vercel:build`.
