@@ -337,10 +337,10 @@ export default function KanbanBoard({
     if (!data?.title.trim()) return;
 
     try {
-      await createTask.mutateAsync({
+      const task = await createTask.mutateAsync({
         title: data.title.trim(),
-        description: data.description.trim() || null,
-        priority: data.priority,
+        description: data.description?.trim() || null,
+        priority: data.priority || "medium",
         status,
         projectId,
         assigneeId: data.assigneeId || null,
@@ -348,6 +348,14 @@ export default function KanbanBoard({
       });
       setShowNewTask(null);
       setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "", projectId: "" } }));
+
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.key === status
+            ? { ...col, tasks: [task, ...col.tasks] }
+            : col
+        )
+      );
     } catch (err) {
       console.error("Failed to create task:", err);
     }

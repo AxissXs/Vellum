@@ -370,12 +370,12 @@ export default function KanbanBoardClient({
     if (!data?.title.trim()) return;
 
     try {
-      await createTask.mutateAsync({
+      const task = await createTask.mutateAsync({
         title: data.title.trim(),
-        description: data.description.trim() || null,
-        priority: data.priority,
+        description: data.description?.trim() || null,
+        priority: data.priority || "medium",
         status,
-        projectId: data.projectId,
+        projectId: data.projectId || (selectedProjectId !== "all" ? selectedProjectId : projects[0]?.id || ""),
         assigneeId: data.assigneeId || null,
         dueDate: data.dueDate || null,
       });
@@ -384,6 +384,19 @@ export default function KanbanBoardClient({
         ...prev,
         [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "", projectId: "" },
       }));
+
+      const normalizedTask = {
+        ...task,
+        projectName: task.projectName ?? null,
+        projectColor: task.projectColor ?? null,
+      } as Task;
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.key === status
+            ? { ...col, tasks: [normalizedTask, ...col.tasks] }
+            : col
+        )
+      );
     } catch (err) {
       console.error("Failed to create task:", err);
     }
