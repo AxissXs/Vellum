@@ -14,6 +14,8 @@ import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
 import SuperAdminActivityPanel from "./SuperAdminActivityPanel";
 import SuperAdminSessionsPanel from "./SuperAdminSessionsPanel";
 import SuperAdminAuditPanel from "./SuperAdminAuditPanel";
+import SuperAdminHealthPanel from "./SuperAdminHealthPanel";
+import SuperAdminRolesPanel from "./SuperAdminRolesPanel";
 
 const tabs = [
   { id: "users", label: "Users", icon: Users },
@@ -62,25 +64,9 @@ export default function SuperAdminClient() {
 
         {activeTab === "audit" && <SuperAdminAuditPanel />}
 
-        {activeTab === "health" && (
-          <div className="text-center py-12">
-            <HeartPulse size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-1">System Health</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              DB stats, API latency, and error rates. Coming in Part 6.
-            </p>
-          </div>
-        )}
+        {activeTab === "health" && <SuperAdminHealthPanel />}
 
-        {activeTab === "roles" && (
-          <div className="text-center py-12">
-            <ShieldCheck size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-1">Role Matrix</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Overview of what each role can do across the platform. Coming in Part 7.
-            </p>
-          </div>
-        )}
+        {activeTab === "roles" && <SuperAdminRolesPanel />}
       </div>
     </div>
   );

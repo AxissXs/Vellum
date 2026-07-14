@@ -58,7 +58,9 @@ src/
 │   │   │   ├── SuperAdminUsersPanel.tsx      # User management table
 │   │   │   ├── SuperAdminActivityPanel.tsx   # Real-time activity feed
 │   │   │   ├── SuperAdminSessionsPanel.tsx   # Active sessions table
-│   │   │   └── SuperAdminAuditPanel.tsx      # Filterable audit log table
+│   │   │   ├── SuperAdminAuditPanel.tsx      # Filterable audit log table
+│   │   │   ├── SuperAdminHealthPanel.tsx     # System health metrics
+│   │   │   └── SuperAdminRolesPanel.tsx      # Role / permission matrix
 │   │   ├── kanban/
 │   │   │   ├── page.tsx              # Global kanban board (server)
 │   │   │   └── KanbanBoardClient.tsx # Kanban board with dnd-kit (client)
@@ -297,6 +299,27 @@ src/
 - Filters: user ID, action, IP, date range
 - Paginated table (25 per page)
 - Export CSV button that downloads filtered results
+
+### `src/app/dashboard/super-admin/SuperAdminHealthPanel.tsx`
+
+**Purpose**: System health metrics dashboard
+**Exports**: `SuperAdminHealthPanel()` - Client component
+
+- Polls every 30 seconds
+- Stat cards: active sessions, total users, tasks, projects
+- User status breakdown (active/inactive/banned)
+- 24h activity summary: activities, failed logins, total teams
+- Top actions breakdown by count
+
+### `src/app/dashboard/super-admin/SuperAdminRolesPanel.tsx`
+
+**Purpose**: Role and permission matrix viewer
+**Exports**: `SuperAdminRolesPanel()` - Client component
+
+- Role cards: superadmin, admin, member with descriptions
+- Permission matrix table grouped by category
+- Toggle highlighting a role's column
+- Check/X icons for granted/denied permissions
 
 ### `src/app/dashboard/projects/page.tsx`
 
@@ -624,6 +647,22 @@ src/
 
 - `GET(req)` - Returns CSV download with headers and all matching rows
 - Query params: `userId`, `action`, `ip`, `from`, `to`
+
+#### `src/app/api/super-admin/health/route.ts`
+
+**Methods**: `GET`
+**Purpose**: System health metrics overview
+**Functions**:
+
+- `GET()` - Returns `{ activeSessions, totalUsers, userStatusBreakdown, activity24h, failedLogins24h, totalTasks, totalProjects, totalTeams, actionBreakdown }`
+
+#### `src/app/api/super-admin/permissions/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Role and permission matrix data
+**Functions**:
+
+- `GET()` - Returns `{ roles, permissions, rolePermissions }`
 
 ---
 
