@@ -279,6 +279,8 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/sessions/[id]`| DELETE             | Revoke session       |
 | `/api/super-admin/audit`        | GET                | Filtered audit logs (paginated) |
 | `/api/super-admin/audit/export` | GET                | CSV export of audit logs |
+| `/api/super-admin/health`       | GET                | System health metrics  |
+| `/api/super-admin/permissions`  | GET                | Role / permission matrix |
 
 ## React Query Optimistic Updates Pattern
 

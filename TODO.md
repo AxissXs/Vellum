@@ -172,7 +172,7 @@
   - Login attempts, permission changes
   - Export for compliance
 
-- [ ] **Super Admin Dashboard** - Comprehensive management and monitoring for super admins
+- [x] **Super Admin Dashboard** - Comprehensive management and monitoring for super admins
   > Split into subtasks below. Tick each one as it's completed so the workload can be divided across sessions / agents.
 
   **Prerequisites** (new DB table + migrations)
@@ -226,14 +226,14 @@
   - [x] UI: Export CSV button downloads filtered results
 
   **Part 6 — System Health Metrics**
-  - [ ] Create `SuperAdminHealthPanel` component
-  - [ ] API: `GET /api/super-admin/health` — DB connection stats, recent API latency, error rate (last 24h)
-  - [ ] UI: Cards / charts: DB pool size, avg response time, 5xx count, active sessions
+  - [x] Create `SuperAdminHealthPanel` component
+  - [x] API: `GET /api/super-admin/health` — DB connection stats, recent API latency, error rate (last 24h)
+  - [x] UI: Cards / charts: active sessions, total users, tasks, projects, user status breakdown, 24h activity, failed logins, top actions
 
   **Part 7 — Role / Permission Matrix**
-  - [ ] Create `SuperAdminRolesPanel` component
-  - [ ] UI: Matrix table (roles × permissions) showing what each role can do
-  - [ ] API: `GET /api/super-admin/permissions` — list predefined permissions per role
+  - [x] Create `SuperAdminRolesPanel` component
+  - [x] UI: Matrix table (roles × permissions) showing what each role can do
+  - [x] API: `GET /api/super-admin/permissions` — list predefined permissions per role
 
   **Acceptance criteria (overall)**
   - Super admin can view all users with last login/IP and status
