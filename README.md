@@ -2,6 +2,38 @@
 
 A modern team management platform with Kanban boards, task tracking, and real-time collaboration. Built with Next.js 15, PostgreSQL, and Drizzle ORM.
 
+## 🎯 Why Vellum?
+
+Most team management tools fall into the same traps: they're **expensive**, **bloated with features you never use**, or have **free tiers so limited** you hit paywalls for basic needs. Self-hosted alternatives often require a DevOps team just to keep running, and open-source options can be so complicated to develop or extend that you spend more time fighting the codebase than shipping work.
+
+Vellum was built to be different:
+- **Simple by default** — clean, intuitive interface that stays out of your way
+- **Powerful when you need it** — advanced features are there, but only when you want them
+- **Easy to extend** — well-documented codebase designed for fast iteration
+- **Truly open** — no artificial limits, no surprise paywalls
+
+## 📖 Our Story
+
+Like many teams, we tried everything: Jira, Trello, and a long list of others. We even settled on Vikunja for a while — it was simple and great for its use case. But eventually we found ourselves duct-taping multiple tools together, struggling with self-hosting costs, and hitting walls whenever we needed to customize or add features.
+
+We needed something **simple yet powerful**, **robust yet customizable**, something we could extend without a PhD in the codebase. So we started Vellum — using AI agents to ship fast for our own team.
+
+Then we realized: *we're not the only ones facing this*. Whether you're a small team, a growing startup, or part of a larger community, you might need the same thing. So we open-sourced it.
+
+Vellum grows every day with new features, but we stay committed to the original vision: **keep it simple and straightforward**. Features shouldn't get in your way unless you need them — and when you do, they're right there, easy to find and use.
+
+## 📜 Name & Meaning
+
+**Vellum** is prepared animal skin or membrane, historically used as a premium writing material — smooth, durable, and designed to last. We chose the name because it reflects what we believe about great team workflows: they should be **clear**, **organized**, and **timeless**.
+
+Just as vellum was the foundation for manuscripts, scrolls, and codices that preserved knowledge for centuries, Vellum aims to be the reliable foundation for how teams organize and ship their work.
+
+_Read more about the historical material on [Wikipedia](https://en.wikipedia.org/wiki/Vellum)._
+
+## 🗺️ Roadmap
+
+Vellum is actively developed. See [TODO.md](TODO.md) for planned features, upcoming improvements, and what's currently in progress.
+
 ## 🌟 Features
 
 - **Kanban Boards** - Visual project management with drag-and-drop tasks

@@ -312,7 +312,7 @@
   - Role matrix explains who can do what
   - All panels gated behind `superadmin` role check
 
-- [ ] **Update README.md** - Add project context and storytelling sections
+- [x] **Update README.md** - Add project context and storytelling sections
   - Project goal and what problem it solves
   - Inspiration and why it was built
   - Roadmap overview (linking to TODO.md)
