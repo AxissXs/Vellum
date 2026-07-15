@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           # Allow the workflow to push back to master
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
