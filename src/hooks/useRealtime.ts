@@ -82,6 +82,8 @@ export function useRealtime(projectId?: string, taskId?: string) {
     if (typeof window === "undefined") return;
 
     const client = getPusherClient();
+    if (!client) return;
+
     const channels: string[] = [];
 
     const isSelf = (actorUserId: string) => actorUserId === userIdRef.current;

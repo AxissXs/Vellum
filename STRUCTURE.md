@@ -848,8 +848,8 @@ src/
 
 **Purpose**: Pusher client singleton and channel ref counting for browser
 **Exports**:
-- `getPusherClient()` - Returns shared Pusher-js instance
-- `subscribeChannel(name)` - Client-side subscribe with ref counting
+- `getPusherClient()` - Shared Pusher-js instance, or `null` when `NEXT_PUBLIC_PUSHER_KEY` / `NEXT_PUBLIC_PUSHER_CLUSTER` unset (realtime no-ops; page must not crash)
+- `subscribeChannel(name)` - Client-side subscribe with ref counting (no-op if client null)
 - `unsubscribeChannel(name)` - Client-side unsubscribe with ref counting
 
 ---
