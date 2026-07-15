@@ -8,6 +8,7 @@ import {
   ClipboardList,
   HeartPulse,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
 import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
@@ -16,6 +17,7 @@ import SuperAdminSessionsPanel from "./SuperAdminSessionsPanel";
 import SuperAdminAuditPanel from "./SuperAdminAuditPanel";
 import SuperAdminHealthPanel from "./SuperAdminHealthPanel";
 import SuperAdminRolesPanel from "./SuperAdminRolesPanel";
+import SuperAdminTelegramPanel from "./SuperAdminTelegramPanel";
 
 const tabs = [
   { id: "users", label: "Users", icon: Users },
@@ -24,6 +26,7 @@ const tabs = [
   { id: "audit", label: "Audit Logs", icon: ClipboardList },
   { id: "health", label: "System Health", icon: HeartPulse },
   { id: "roles", label: "Role Matrix", icon: ShieldCheck },
+  { id: "telegram", label: "Telegram", icon: MessageCircle },
 ];
 
 export default function SuperAdminClient() {
@@ -67,6 +70,8 @@ export default function SuperAdminClient() {
         {activeTab === "health" && <SuperAdminHealthPanel />}
 
         {activeTab === "roles" && <SuperAdminRolesPanel />}
+
+        {activeTab === "telegram" && <SuperAdminTelegramPanel />}
       </div>
     </div>
   );
