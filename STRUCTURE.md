@@ -147,8 +147,9 @@ src/
 │   ├── useTeams.ts         # Team mutations with optimistic updates
 │   └── useUsers.ts         # User mutations with optimistic updates
 ├── lib/                    # Utilities
+│   ├── activity.ts         # Deferred activity-log writes (`after()`)
 │   ├── api.ts              # API client helpers
-│   ├── auth.ts             # Authentication utilities
+│   ├── auth.ts             # Authentication utilities (React `cache` + session JOIN)
 │   ├── brand.ts            # Whitelabel brand config (name, logos, colors, email domain)
 │   ├── pusher.ts           # Pusher server instance
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
@@ -659,8 +660,8 @@ src/
 **Exports**:
 
 - `db` - Drizzle database instance
-- `pool` - pg Pool instance
-  **Pattern**: Global singleton for connection pooling in dev
+- `pool` - pg Pool (`max: 10`, `idleTimeoutMillis: 30000`, `connectionTimeoutMillis: 5000`, `allowExitOnIdle`)
+  **Pattern**: Global singleton for connection pooling in non-production (HMR-safe)
 
 #### `src/db/schema.ts`
 
@@ -669,18 +670,18 @@ src/
 
 - `users` - User accounts
 - `teams` - Teams
-- `teamMembers` - Team membership
+- `teamMembers` - Team membership (indexes: `team_id`, `user_id`)
 - `projects` - Projects
 - `projectMilestones` - Project milestones
 - `projectNotes` - Project notes
-- `tasks` - Kanban tasks (includes `sprintId`, `estimate`)
-- `sprints` - Time-boxed sprints per project
-- `standups` - Daily standup entries per user
+- `tasks` - Kanban tasks (includes `sprintId`, `estimate`; indexes: `project_id`, `sprint_id`, `assignee_id`)
+- `sprints` - Time-boxed sprints per project (index: `project_id`)
+- `standups` - Daily standup entries per user (indexes: `user_id`, `(user_id, date)`)
 - `retroItems` - Sprint retrospective items
 - `taskStatusHistory` - Task status change history (burndown)
-- `comments` - Task comments
-- `sessions` - Auth sessions
-- `activityLogs` - Activity audit trail
+- `comments` - Task comments (index: `task_id`)
+- `sessions` - Auth sessions (index: `user_id`)
+- `activityLogs` - Activity audit trail (index: `created_at`)
 
 **Exports** (Enums):
 
@@ -689,6 +690,7 @@ src/
 - `taskPriorityEnum` - `low` | `medium` | `high` | `urgent`
 
 **Relations**: Defined via Drizzle `references()` and foreign keys
+**Migrations**: Hot-path FK/order indexes in `drizzle/0004_flimsy_sauron.sql`
 
 #### `src/db/seed.ts`
 
@@ -834,14 +836,22 @@ src/
 **Exports**:
 
 - `AuthUser` - Type for authenticated user
-- `getSession(): Promise<AuthUser | null>` - Get current session
+- `getSession(): Promise<AuthUser | null>` - Request-memoized via React `cache()`; single `sessions` LEFT JOIN `users` query
 - `createSession(userId): Promise<string>` - Create new session
 - `destroySession(sessionId)` - Delete session
-- `authenticateUser(email, password): Promise<AuthUser | null>` - Verify credentials
+- `authenticateUser(email, password): Promise<AuthUser | null>` - Verify credentials (async bcrypt `compare`)
 - `requireAuth(user)` - Assert user exists (throws)
 - `requireRole(user, roles)` - Assert user has role (throws)
 - `SESSION_COOKIE` - Cookie name constant
 - `SESSION_MAX_AGE` - Session duration (7 days)
+
+#### `src/lib/activity.ts`
+
+**Purpose**: Deferred activity-log inserts for mutating API routes
+**Exports**:
+
+- `ActivityLogInput` - Shape for activity rows
+- `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response)
 
 #### `src/lib/api.ts`
 

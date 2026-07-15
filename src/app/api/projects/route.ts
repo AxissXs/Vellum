@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, activityLogs } from "@/db/schema";
+import { projects } from "@/db/schema";
+import { logActivity } from "@/lib/activity";
 import { eq, asc } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     })
     .returning();
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "created_project",
     entityType: "project",

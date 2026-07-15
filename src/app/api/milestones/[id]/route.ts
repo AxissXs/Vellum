@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { projectMilestones, activityLogs } from "@/db/schema";
+import { projectMilestones } from "@/db/schema";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { eq } from "drizzle-orm";
 
 export async function PATCH(
@@ -32,7 +33,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
   }
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "updated_milestone",
     entityType: "milestone",
@@ -63,7 +64,7 @@ export async function DELETE(
 
   await db.delete(projectMilestones).where(eq(projectMilestones.id, id));
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "deleted_milestone",
     entityType: "milestone",

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, activityLogs, users, taskStatusHistory } from "@/db/schema";
+import { tasks, users, taskStatusHistory } from "@/db/schema";
+import { logActivity } from "@/lib/activity";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
@@ -65,7 +66,7 @@ export async function PATCH(
       ? `${task.title}: ${statusLabels[status]}`
       : `Updated task: ${task.title}`;
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: status !== undefined ? "changed_task_status" : "updated_task",
     entityType: "task",
@@ -121,7 +122,7 @@ export async function DELETE(
 
   await db.delete(tasks).where(eq(tasks.id, id));
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "deleted_task",
     entityType: "task",

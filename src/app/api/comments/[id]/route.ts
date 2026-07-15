@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { comments, users, activityLogs, tasks } from "@/db/schema";
+import { comments, users, tasks } from "@/db/schema";
+import { logActivity } from "@/lib/activity";
 import { eq } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
@@ -36,7 +37,7 @@ export async function PATCH(
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, comment.taskId)).limit(1);
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "updated_comment",
     entityType: "comment",
@@ -98,7 +99,7 @@ export async function DELETE(
 
   await db.delete(comments).where(eq(comments.id, id));
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "deleted_comment",
     entityType: "comment",

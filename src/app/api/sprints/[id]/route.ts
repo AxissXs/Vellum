@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { sprints, activityLogs, tasks } from "@/db/schema";
+import { sprints, tasks } from "@/db/schema";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { eq, and, not } from "drizzle-orm";
 
 export async function GET(
@@ -63,7 +64,7 @@ export async function PATCH(
 
   const [sprint] = await db.update(sprints).set(updateData).where(eq(sprints.id, id)).returning();
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "updated_sprint",
     entityType: "sprint",
@@ -89,7 +90,7 @@ export async function DELETE(
 
   await db.delete(sprints).where(eq(sprints.id, id));
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "deleted_sprint",
     entityType: "sprint",

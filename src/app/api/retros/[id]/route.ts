@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { retroItems, activityLogs } from "@/db/schema";
+import { retroItems } from "@/db/schema";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { eq } from "drizzle-orm";
 
 export async function PATCH(
@@ -26,7 +27,7 @@ export async function PATCH(
 
   const [item] = await db.update(retroItems).set(updateData).where(eq(retroItems.id, id)).returning();
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "updated_retro_item",
     entityType: "retro",
@@ -52,7 +53,7 @@ export async function DELETE(
 
   await db.delete(retroItems).where(eq(retroItems.id, id));
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "deleted_retro_item",
     entityType: "retro",
