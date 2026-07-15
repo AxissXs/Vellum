@@ -59,7 +59,7 @@
   - Move the Add task button from the bottom of the column to the top (next to the column header)
   - Acceptance criteria: Clicking Add task actually creates a task; button is at the top of each column
 
-- [ ] **Notifications bell** - Add in-app notification centre
+- [x] **Notifications bell** - Add in-app notification centre
   - Add a bell icon with unread badge in the top header / sidebar
   - Dropdown panel showing recent notifications (task assignments, mentions, status changes, comments)
   - Mark individual / all notifications as read

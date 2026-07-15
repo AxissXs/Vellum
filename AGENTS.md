@@ -124,6 +124,28 @@ Every mutation must use the full optimistic-update pattern:
 
 Reference implementation: `src/hooks/useComments.ts`. Apply the same pattern to `useTasks.ts`, `useProjects.ts`, `useTeams.ts`, `useUsers.ts`, `useMilestones.ts`, etc.
 
+### In-App Notifications
+
+After mutating an entity (task assignment, status change, comment), also send an in-app notification if there is a relevant recipient:
+
+```ts
+import { sendInAppNotification } from "@/lib/notifications";
+
+await sendInAppNotification({
+  userId: assigneeId,
+  type: "task_assigned", // or "status_changed", "new_comment", etc.
+  title: "New Task Assigned",
+  content: `${actorName} assigned you "${taskTitle}"`,
+  entityType: "task",
+  entityId: taskId,
+  actorUserId: actorId,
+});
+```
+
+- `sendInAppNotification()` checks `inAppEnabled` preferences automatically
+- Broadcasts to Pusher channel `user-${userId}` for real-time badge updates
+- Always place after the DB mutation succeeds and after `activityLogs` insert
+
 ## Documentation Update Rule
 
 **Any file add / remove / rename must update:**

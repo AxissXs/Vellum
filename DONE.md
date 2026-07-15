@@ -78,6 +78,20 @@ This document tracks features and tasks that have been fully implemented, tested
 - Per-team/project notification preferences
 - Users can enable/disable push per event type
 
+### In-App Notification Bell (July 2026)
+> Notification centre with dropdown panel and real-time badge.
+
+- Bell icon with unread count badge in sidebar header
+- Dropdown panel showing 50 most recent notifications
+- Mark individual / all notifications as read with optimistic updates
+- Stores notifications in `notifications` table (userId, type, title, content, read, entityType, entityId, actorUserId)
+- Triggered on: task assignment, status change, new comment
+- Real-time badge updates via Pusher user-specific channel (`user-${userId}`)
+- Polling fallback every 30 seconds
+- Respects `inAppEnabled` preference per event type
+- API: `GET /api/notifications`, `PATCH /api/notifications/[id]`, `POST /api/notifications/mark-all-read`
+- Components: `NotificationBell.tsx`, `useNotifications.ts`
+- Utilities: `sendInAppNotification()` in `src/lib/notifications.ts`
 ---
 
 ## Admin & Super Admin
@@ -154,6 +168,14 @@ This document tracks features and tasks that have been fully implemented, tested
 - "Name & Meaning" — historical vellum material and project connection
 - "Roadmap" — links to TODO.md for planned features
 
+### CONTRIBUTIONS.md Rewrite
+> Rewritten for human contributors.
+
+- Reduced from 250 to ~100 lines
+- Removed AGENTS.md dependency for humans
+- Added critical conventions inline (activity logging, optimistic updates)
+- Made `dev` branch target explicit
+- All relevant conventions now human-facing
 ---
 
 ## Architecture Decisions (Completed)

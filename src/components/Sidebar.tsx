@@ -19,6 +19,7 @@ import {
   Kanban,
 } from "lucide-react";
 import { clsx } from "clsx";
+import NotificationBell from "@/components/NotificationBell";
 
 type User = {
   id: string;
@@ -97,10 +98,11 @@ export default function Sidebar({ user }: { user: User }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           </div>
-{!collapsed && (
-              <span className="font-bold text-white text-lg truncate">Vellum</span>
-            )}
+          {!collapsed && (
+            <span className="font-bold text-white text-lg truncate">Vellum</span>
+          )}
         </div>
+        {!collapsed && <NotificationBell />}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="ml-auto p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition flex-shrink-0"
