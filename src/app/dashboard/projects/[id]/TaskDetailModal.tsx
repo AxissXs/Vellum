@@ -181,7 +181,7 @@ export default function TaskDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-slide-in">
+      <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85dvh] flex flex-col shadow-2xl animate-slide-in">
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-white/5">
           <div className="flex-1 min-w-0">
@@ -388,7 +388,7 @@ export default function TaskDetailModal({
                             <div className="flex items-center gap-1 ml-auto">
                               <button
                                 onClick={() => startEditComment(c)}
-                                className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
                                 title="Edit"
                               >
                                 <Edit2 size={12} />
@@ -396,7 +396,7 @@ export default function TaskDetailModal({
                               <button
                                 onClick={() => handleDeleteComment(c.id)}
                                 disabled={deleteCommentMutation.isPending}
-                                className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
                                 title="Delete"
                               >
                                 {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}

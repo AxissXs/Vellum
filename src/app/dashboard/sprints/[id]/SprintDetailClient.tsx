@@ -195,7 +195,7 @@ export default function SprintDetailClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <div className="flex items-center gap-1.5 text-slate-400">
             <Calendar size={14} />
             {sprint.startDate
@@ -234,7 +234,7 @@ export default function SprintDetailClient({
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-1 border-b border-white/10">
+      <div className="flex gap-1 border-b border-white/10 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none]">
         <TabButton tab="board" current={tab} onClick={setTab} icon={<ListTodo size={15} />} label="Board" />
         <TabButton tab="burndown" current={tab} onClick={setTab} icon={<TrendingDown size={15} />} label="Burndown" />
         <TabButton tab="planning" current={tab} onClick={setTab} icon={<Flag size={15} />} label={`Planning (${backlogForPlanning.length})`} />
@@ -292,7 +292,7 @@ function TabButton({
     <button
       onClick={() => onClick(tab)}
       className={clsx(
-        "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px",
+        "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px whitespace-nowrap flex-shrink-0",
         current === tab
           ? "text-white border-brand-500"
           : "text-slate-400 border-transparent hover:text-slate-200"
@@ -391,7 +391,7 @@ function BurndownChart({ sprintId }: { sprintId: string }) {
                 color: "#fff",
               }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type="monotone"
               dataKey="ideal"
@@ -450,10 +450,11 @@ function PlanningPanel({
               <button
                 onClick={() => onRemove(t)}
                 disabled={updating}
-                className="p-1 text-slate-500 hover:text-red-400 transition"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
                 title="Remove from sprint"
+                aria-label="Remove from sprint"
               >
-                <X size={14} />
+                <X size={16} />
               </button>
             </div>
           ))}
@@ -690,9 +691,10 @@ function RetroPanel({ sprintId }: { sprintId: string }) {
                     <span className="text-sm text-slate-200">{item.content}</span>
                     <button
                       onClick={() => deleteRetro.mutate({ id: item.id, sprintId })}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                      aria-label="Delete retro item"
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 ))}

@@ -166,9 +166,10 @@ export default function AdminClient({
                   <button
                     onClick={() => handleDelete(u.id)}
                     disabled={isLoading}
-                    className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
+                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
+                    aria-label="Delete user"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>

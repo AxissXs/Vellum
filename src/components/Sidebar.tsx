@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Kanban,
   Timer,
+  X,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -29,7 +30,15 @@ type User = {
   avatarUrl: string | null;
 };
 
-export default function Sidebar({ user }: { user: User }) {
+export default function Sidebar({
+  user,
+  mobileOpen = false,
+  onClose,
+}: {
+  user: User;
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -86,8 +95,12 @@ export default function Sidebar({ user }: { user: User }) {
   return (
     <aside
       className={clsx(
-        "fixed inset-y-0 left-0 z-30 flex flex-col bg-slate-900 border-r border-white/5 transition-all duration-200",
-        collapsed ? "w-[70px]" : "w-[260px]"
+        "fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-900 border-r border-white/5 transition-all duration-200",
+        // On mobile the drawer is always full width; icon-rail only applies from lg+
+        collapsed ? "w-[260px] lg:w-[70px]" : "w-[260px]",
+        // Off-canvas below lg unless opened; always on-canvas at lg+
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        "lg:translate-x-0"
       )}
     >
       {/* Logo */}
@@ -98,15 +111,25 @@ export default function Sidebar({ user }: { user: User }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           </div>
-{!collapsed && (
-              <span className="font-bold text-white text-lg truncate">Vellum</span>
-            )}
+          {!collapsed && (
+            <span className="font-bold text-white text-lg truncate lg:inline">Vellum</span>
+          )}
         </div>
+        {/* Desktop collapse toggle (lg+) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition flex-shrink-0"
+          className="ml-auto hidden lg:flex p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition flex-shrink-0"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+        {/* Mobile close button (below lg) */}
+        <button
+          onClick={onClose}
+          className="ml-auto flex lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition flex-shrink-0"
+          aria-label="Close menu"
+        >
+          <X size={18} />
         </button>
       </div>
 
@@ -119,6 +142,7 @@ export default function Sidebar({ user }: { user: User }) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition group",
                 isActive
@@ -127,9 +151,9 @@ export default function Sidebar({ user }: { user: User }) {
               )}
             >
               <Icon size={18} className="flex-shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              <span className={clsx("truncate", collapsed && "lg:hidden")}>{item.label}</span>
               {collapsed && (
-                <span className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50">
+                <span className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded-md opacity-0 lg:group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50 hidden lg:block">
                   {item.label}
                 </span>
               )}
@@ -140,25 +164,25 @@ export default function Sidebar({ user }: { user: User }) {
 
       {/* User */}
       <div className="p-3 border-t border-white/5">
-        <div className={clsx("flex items-center gap-3", collapsed && "justify-center")}>
+        <div className={clsx("flex items-center gap-3", collapsed && "lg:justify-center")}>
           <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-400 text-xs font-bold flex-shrink-0">
             {getInitials(user.name)}
           </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate">{user.name}</p>
-              <div className="mt-0.5">{getRoleBadge(user.role)}</div>
-            </div>
-          )}
-          {!collapsed && (
-            <button
-              onClick={handleLogout}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition flex-shrink-0"
-              title="Sign out"
-            >
-              <LogOut size={16} />
-            </button>
-          )}
+          <div className={clsx("min-w-0 flex-1", collapsed && "lg:hidden")}>
+            <p className="text-sm font-medium text-white truncate">{user.name}</p>
+            <div className="mt-0.5">{getRoleBadge(user.role)}</div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className={clsx(
+              "p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition flex-shrink-0",
+              collapsed && "lg:hidden"
+            )}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </aside>

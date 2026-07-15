@@ -72,7 +72,7 @@ export default function SetupPage() {
 
   if (step === "success") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="min-h-dvh bg-slate-950 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
             <div className="text-center">
@@ -92,7 +92,7 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-dvh bg-slate-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500/20 mb-4">

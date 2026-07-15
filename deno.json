@@ -11,7 +11,7 @@
     "db:studio": "node ./node_modules/drizzle-kit/bin.cjs studio",
     "db:seed": "node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts",
     "db:deploy": "deno run -A --env-file=.env ./migrate.ts",
-    "deploy": "deployctl deploy --include=.next --include=public jsr:@deno/nextjs-start/v16"
+    "deploy": "deno deploy --prod"
   },
   "fmt": {
     "exclude": ["**/*"]
@@ -25,6 +25,7 @@
     "app": "vellum"
   }
 }
+
 
 
 

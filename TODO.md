@@ -161,10 +161,10 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - Chart.js or Recharts integration
   - Export to PDF/CSV
 
-- [ ] **Mobile responsive improvements** - Better mobile UX
-  - Collapsible sidebar on mobile
-  - Touch-friendly Kanban
-  - PWA support (manifest, service worker)
+- [ ] **Mobile responsive improvements** - Better mobile UX (status: in_progress)
+  - [x] Collapsible sidebar on mobile (off-canvas drawer + hamburger top bar below `lg`)
+  - [x] Touch-friendly Kanban (always-visible drag grip on touch, pointer-based drag)
+  - [ ] PWA support (manifest, service worker) — deferred to a later pass
 
 - [ ] **Mobile-first limited-feature mode** - Lightweight mobile experience for messages, notifications, stats
   - Mobile-first responsive layout (collapsible nav, stacked cards, touch targets >=44px)

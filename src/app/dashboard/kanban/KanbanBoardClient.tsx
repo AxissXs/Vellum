@@ -267,12 +267,10 @@ function TaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       onClick={onClick}
       onDragStart={onDragStart}
       className={clsx(
-        "bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
+        "group bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
         priorityColors[task.priority],
         isDragging && "shadow-2xl ring-2 ring-brand-500/50 z-10"
       )}
@@ -280,12 +278,14 @@ function TaskCard({
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-sm font-medium text-white truncate pr-2">{task.title}</h4>
         <button
+          type="button"
           {...attributes}
           {...listeners}
-          className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+          className="flex-shrink-0 min-h-[44px] min-w-[44px] -m-2 flex items-center justify-center text-slate-500 hover:text-slate-300 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch-none cursor-grab active:cursor-grabbing"
           aria-label="Drag"
         >
-          <GripVertical size={14} />
+          <GripVertical size={16} />
         </button>
       </div>
 
@@ -384,7 +384,7 @@ export default function KanbanBoardClient({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 6,
       },
     }),
     useSensor(KeyboardSensor, {

@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Vellum — Team Management",
@@ -9,12 +8,17 @@ export const metadata: Metadata = {
     "A modern team management platform with kanban boards, task tracking, and real-time collaboration.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="bg-slate-950 text-slate-100 antialiased">
         {children}
-        <Analytics />
       </body>
     </html>
   );

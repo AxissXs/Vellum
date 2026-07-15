@@ -5,10 +5,13 @@ import { getPusherClient } from "./pusher-client";
 const channelRefCounts = new Map<string, number>();
 
 export function subscribeChannel(name: string): void {
+  const client = getPusherClient();
+  if (!client) return;
+
   const count = channelRefCounts.get(name) || 0;
   channelRefCounts.set(name, count + 1);
   if (count === 0) {
-    getPusherClient().subscribe(name);
+    client.subscribe(name);
   }
 }
 
@@ -17,7 +20,7 @@ export function unsubscribeChannel(name: string): void {
   if (count <= 0) {
     channelRefCounts.delete(name);
     try {
-      getPusherClient().unsubscribe(name);
+      getPusherClient()?.unsubscribe(name);
     } catch (_e) {
       // channel may not exist
     }
