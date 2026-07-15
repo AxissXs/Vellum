@@ -159,7 +159,7 @@ src/
 
 ### `src/app/layout.tsx`
 
-**Purpose**: Root HTML layout, metadata
+**Purpose**: Root HTML layout, metadata (no Vercel Analytics — app runs on Deno Deploy)
 **Exports**:
 
 - `metadata` - Page metadata

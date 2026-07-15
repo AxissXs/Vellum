@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Vellum — Team Management",
@@ -20,7 +19,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="bg-slate-950 text-slate-100 antialiased">
         {children}
-        <Analytics />
       </body>
     </html>
   );
