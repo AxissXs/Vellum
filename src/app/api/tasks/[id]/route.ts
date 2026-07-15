@@ -5,6 +5,7 @@ import { tasks, activityLogs, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendPushNotification, isPushEnabled } from "@/lib/push";
+import { sendInAppNotification } from "@/lib/notifications";
 
 export async function PATCH(
   req: NextRequest,
@@ -88,20 +89,38 @@ export async function PATCH(
   if (status !== undefined && task.assigneeId && task.assigneeId !== user.id) {
     const enabled = await isPushEnabled(task.assigneeId, "status_changed");
     if (enabled) {
-      const statusLabels: Record<string, string> = {
-        backlog: "moved to Backlog",
-        todo: "moved to To Do",
-        in_progress: "moved to In Progress",
-        review: "moved to Review",
-        done: "marked as Done",
-      };
+      const label = statusLabels[status] || "updated";
       await sendPushNotification(task.assigneeId, {
         title: "Task Status Changed",
-        body: `${user.name || "Someone"} ${statusLabels[status] || "updated"} "${task.title}"`,
+        body: `${user.name || "Someone"} ${label} "${task.title}"`,
         url: `/dashboard/tasks`,
         tag: `task-${task.id}`,
       });
     }
+
+    const label = statusLabels[status] || "updated";
+    await sendInAppNotification({
+      userId: task.assigneeId,
+      type: "status_changed",
+      title: "Task Status Changed",
+      content: `${user.name || "Someone"} ${label} "${task.title}"`,
+      entityType: "task",
+      entityId: task.id,
+      actorUserId: user.id,
+    });
+  }
+
+  // Send in-app notification for assignee changes
+  if (assigneeId !== undefined && assigneeId && assigneeId !== user.id) {
+    await sendInAppNotification({
+      userId: assigneeId,
+      type: "task_assigned",
+      title: "Task Assigned to You",
+      content: `${user.name || "Someone"} assigned you "${task.title}"`,
+      entityType: "task",
+      entityId: task.id,
+      actorUserId: user.id,
+    });
   }
 
   return NextResponse.json({ task });

@@ -5,6 +5,7 @@ import { tasks, activityLogs, users } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendPushNotification, isPushEnabled } from "@/lib/push";
+import { sendInAppNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -107,6 +108,16 @@ export async function POST(req: NextRequest) {
         tag: `task-${task.id}`,
       });
     }
+
+    await sendInAppNotification({
+      userId: task.assigneeId,
+      type: "task_assigned",
+      title: "New Task Assigned",
+      content: `${user.name || "Someone"} assigned you "${task.title}"`,
+      entityType: "task",
+      entityId: task.id,
+      actorUserId: user.id,
+    });
   }
 
   return NextResponse.json({ task }, { status: 201 });

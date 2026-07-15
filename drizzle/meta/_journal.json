@@ -29,6 +29,13 @@
       "when": 1783912193617,
       "tag": "0003_whole_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784081648585,
+      "tag": "0004_grey_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

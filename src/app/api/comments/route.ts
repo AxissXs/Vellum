@@ -5,6 +5,7 @@ import { comments, users, activityLogs, tasks } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendPushNotification, isPushEnabled } from "@/lib/push";
+import { sendInAppNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -101,6 +102,16 @@ export async function POST(req: NextRequest) {
         tag: `comment-${comment.id}`,
       });
     }
+
+    await sendInAppNotification({
+      userId: task.assigneeId,
+      type: "new_comment",
+      title: "New Comment",
+      content: `${user.name || "Someone"} commented on "${task.title}"`,
+      entityType: "task",
+      entityId: taskId,
+      actorUserId: user.id,
+    });
   }
 
   return NextResponse.json({ comment: result }, { status: 201 });
