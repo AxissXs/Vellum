@@ -11,10 +11,12 @@ Vellum/
 ├── .gitignore              # Git ignore rules
 ├── AGENTS.md               # AI agent instructions
 ├── CONTRIBUTIONS.md        # Contribution guidelines
+├── DONE.md                 # Completed features and tasks
 ├── LICENSE                 # MIT License
 ├── README.md               # Project overview
 ├── STRUCTURE.md            # This file
 ├── TODO.md                 # Task tracking
+│   └── TODO/               # Detailed task plans
 ├── bun.lock                # Bun lockfile
 ├── package.json            # Package scripts & dependencies
 ├── tsconfig.json           # TypeScript config

@@ -230,6 +230,7 @@ Update relevant docs when changing:
 - `AGENTS.md` - AI agent instructions
 - `STRUCTURE.md` - File structure
 - `TODO.md` - Task list
+- `DONE.md` - Completed tasks and features
 - Code comments (only when necessary)
 
 ## Questions?

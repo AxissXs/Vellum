@@ -32,7 +32,7 @@ _Read more about the historical material on [Wikipedia](https://en.wikipedia.org
 
 ## 🗺️ Roadmap
 
-Vellum is actively developed. See [TODO.md](TODO.md) for planned features, upcoming improvements, and what's currently in progress.
+Vellum is actively developed. See [TODO.md](TODO.md) for planned features and upcoming improvements, and [DONE.md](DONE.md) for what's already shipped.
 
 ## 🌟 Features
 

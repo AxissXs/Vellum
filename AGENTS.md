@@ -1,6 +1,6 @@
 # AI Agent Instructions for Vellum
 
-High-signal notes you are likely to miss. For routine facts (file lists, schema, API tables) read `STRUCTURE.md`, `TODO.md`, and `README.md` instead of asking.
+High-signal notes you are likely to miss. For routine facts (file lists, schema, API tables) read `STRUCTURE.md`, `TODO.md`, `DONE.md`, and `README.md` instead of asking.
 
 ## Quick Context
 
@@ -14,11 +14,12 @@ High-signal notes you are likely to miss. For routine facts (file lists, schema,
 ## Before Any Work
 
 1. `git checkout master && git pull origin master`
-2. Read `TODO.md` for available tasks
-3. Create a feature branch from `master`
-4. **Work on the feature branch, never on `master`**
-5. When the task is done, merge the feature branch into the **`dev` branch**, not `master`
-6. Before merging into `dev`, make sure `dev` is up to date with `master` (`git checkout dev && git pull origin dev && git merge master`)
+2. Read `TODO.md` for available tasks (completed tasks are in `DONE.md`)
+3. **Check for overlaps** — before picking a task, scan `TODO.md`, `DONE.md`, and the codebase to see if the feature/bug is already partially or fully addressed. If one task's completion would resolve another, mark both and avoid redundant work.
+4. Create a feature branch from `master`
+5. **Work on the feature branch, never on `master`**
+6. When the task is done, merge the feature branch into the **`dev` branch**, not `master`
+7. Before merging into `dev`, make sure `dev` is up to date with `master` (`git checkout dev && git pull origin dev && git merge master`)
 
 **Rules:**
 - **Never push directly to `master`** — all work goes through feature branches merged into `dev`
@@ -127,8 +128,15 @@ Reference implementation: `src/hooks/useComments.ts`. Apply the same pattern to 
 **Any file add / remove / rename must update:**
 
 - `TODO.md` — mark tasks done, add new ones if discovered
+- `DONE.md` — move completed tasks from TODO.md here
 - `STRUCTURE.md` — update file tree, exports, API route tables, data flow
 - `AGENTS.md` — update conventions or workflow if behavior changes
+
+**When marking a task as done, check for overlaps:**
+- Review the completed task's scope against remaining `TODO.md` items
+- If this work fixes or fully covers another task, mark that one as done too
+- Note the dependency in the commit message or a brief comment
+- This prevents future agents from redoing work that's already been handled
 
 ## Deploy (Vercel)
 
