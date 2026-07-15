@@ -2,6 +2,8 @@ import { db } from "@/db";
 import { notifications, notificationPreferences } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { pusher } from "@/lib/pusher";
+import { sendPushNotification, isPushEnabled } from "@/lib/push";
+import { sendTelegramNotification } from "@/lib/telegram";
 
 export async function isInAppEnabled(
   userId: string,
@@ -67,4 +69,47 @@ export async function sendInAppNotification({
   } catch (_e) {
     // Swallow Pusher errors
   }
+}
+
+export async function sendNotification({
+  userId,
+  type,
+  title,
+  content,
+  entityType,
+  entityId,
+  actorUserId,
+  pushPayload,
+  url,
+}: {
+  userId: string;
+  type: string;
+  title: string;
+  content: string;
+  entityType?: string;
+  entityId?: string;
+  actorUserId?: string;
+  pushPayload?: { title: string; body: string; tag?: string };
+  url?: string;
+}) {
+  if (!userId) return;
+
+  // In-app notification (checks its own preferences internally)
+  await sendInAppNotification({ userId, type, title, content, entityType, entityId, actorUserId });
+
+  // Push notification
+  if (pushPayload) {
+    const enabled = await isPushEnabled(userId, type);
+    if (enabled) {
+      await sendPushNotification(userId, {
+        title: pushPayload.title,
+        body: pushPayload.body,
+        url,
+        tag: pushPayload.tag,
+      });
+    }
+  }
+
+  // Telegram notification (checks its own preferences internally)
+  await sendTelegramNotification({ userId, eventType: type, title, content, url });
 }

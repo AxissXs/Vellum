@@ -4,8 +4,7 @@ import { db } from "@/db";
 import { tasks, activityLogs, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
-import { sendPushNotification, isPushEnabled } from "@/lib/push";
-import { sendInAppNotification } from "@/lib/notifications";
+import { sendNotification } from "@/lib/notifications";
 
 export async function PATCH(
   req: NextRequest,
@@ -85,21 +84,10 @@ export async function PATCH(
     actorName: user.name || "Someone",
   });
 
-  // Send push notification for status changes
+  // Send notification for status changes
   if (status !== undefined && task.assigneeId && task.assigneeId !== user.id) {
-    const enabled = await isPushEnabled(task.assigneeId, "status_changed");
-    if (enabled) {
-      const label = statusLabels[status] || "updated";
-      await sendPushNotification(task.assigneeId, {
-        title: "Task Status Changed",
-        body: `${user.name || "Someone"} ${label} "${task.title}"`,
-        url: `/dashboard/tasks`,
-        tag: `task-${task.id}`,
-      });
-    }
-
     const label = statusLabels[status] || "updated";
-    await sendInAppNotification({
+    await sendNotification({
       userId: task.assigneeId,
       type: "status_changed",
       title: "Task Status Changed",
@@ -107,12 +95,18 @@ export async function PATCH(
       entityType: "task",
       entityId: task.id,
       actorUserId: user.id,
+      pushPayload: {
+        title: "Task Status Changed",
+        body: `${user.name || "Someone"} ${label} "${task.title}"`,
+        tag: `task-${task.id}`,
+      },
+      url: `/dashboard/tasks`,
     });
   }
 
-  // Send in-app notification for assignee changes
+  // Send notification for assignee changes
   if (assigneeId !== undefined && assigneeId && assigneeId !== user.id) {
-    await sendInAppNotification({
+    await sendNotification({
       userId: assigneeId,
       type: "task_assigned",
       title: "Task Assigned to You",
@@ -120,6 +114,12 @@ export async function PATCH(
       entityType: "task",
       entityId: task.id,
       actorUserId: user.id,
+      pushPayload: {
+        title: "New Task Assigned",
+        body: `${user.name || "Someone"} assigned you: ${task.title}`,
+        tag: `task-${task.id}`,
+      },
+      url: `/dashboard/tasks`,
     });
   }
 
