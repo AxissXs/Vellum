@@ -87,6 +87,36 @@
   - Add `attachments` table to schema
   - Display in UI with previews
 
+- [ ] **Soft Delete System** — Soft-delete entities instead of permanent deletion; superadmin recovery and audit
+  > Full plan: [`TODO/soft-delete-system.md`](TODO/soft-delete-system.md)
+
+  Replace all permanent `DELETE` operations with soft deletes that preserve data integrity for audit trails. Add `deletedAt` and `deletedBy` columns to all applicable tables, update queries to exclude soft-deleted rows by default, provide recovery APIs, and update the audit log to reference preserved deleted entities.
+
+  - DB: Add `deletedAt`/`deletedBy` columns to `tasks`, `projects`, `comments`, `teams`, `projectMilestones`, `projectNotes`, `teamMembers`
+  - API: Replace `db.delete()` with `db.update({ deletedAt, deletedBy })` in task, project, comment, team, milestone, note delete routes
+  - API: `PATCH /api/super-admin/restore` — bulk or individual restore for soft-deleted entities (superadmin only)
+  - API: `GET /api/super-admin/trash` — list all soft-deleted items with entity type, title, deleted by, deleted at
+  - Queries: Add `isNull(table.deletedAt)` to all SELECT queries (or Drizzle view wrapper)
+  - Foreign keys: Do NOT cascade on delete; keep soft-deleted parent rows so audit logs remain linkable
+  - Superadmin UI: "Trash" panel in superadmin dashboard to browse, filter, and restore soft-deleted items
+  - Acceptance criteria: No entity is permanently deleted by regular users; deleted items disappear from normal views; superadmin can browse and restore; audit logs link to preserved records
+
+- [ ] **Audit Log — Enhanced Logs & Detail Modals** — Fix IP capture, add filters, tags, and clickable detail modals with deep linking
+  > Full plan: [`TODO/audit-log-improvements.md`](TODO/audit-log-improvements.md)
+
+  Improve the superadmin audit log tab to fix IP address reliability, add structured tags for quick filtering, and add a rich detail modal for every log entry. The modal shows full event context, snapshots from `activity_log_snapshots`, and clickable links to related users, tasks, projects, and other entities. Depends on **Soft Delete System** so that deleted entities remain linkable in the trail.
+
+  - Fix IP capture: Use `x-forwarded-for` parsing (first IP), fallback through `x-real-ip`/`x-client-ip`/`cf-connecting-ip`; handle private/reserved ranges; store as text array if multiple hops
+  - DB: Add `activity_log_snapshots` table (`logId`, `tableName`, `recordId`, `snapshot` JSONB, `snapshotType`) to preserve entity state at time of event
+  - DB: Add `tag`, `severity` columns to `activity_logs` (severity: `info`, `warning`, `critical`)
+  - API: Update all mutation routes to write snapshots on create, update, delete
+  - API: `GET /api/super-admin/audit/[id]` — single log entry with joined snapshot data
+  - UI: Tag filters (pill buttons) for action types, severity, entity type; multi-select checkboxes
+  - UI: Click any audit log row to open a detail modal (Sheet or Dialog)
+  - Detail modal: actor card (avatar, name, email, IP, timestamp, user agent), entity card (current state + snapshot diff), related links (e.g. task title → `/dashboard/tasks?taskId=...`), action timeline for that entity
+  - Export: Include snapshot diffs in CSV/JSON export
+  - Acceptance criteria: IP addresses are accurate and parsed correctly; every log entry is clickable and opens a modal; modal shows full context with deep links; snapshots preserve entity state; tags and filters work; export includes snapshots
+
 ## Priority: Medium
 
 - [ ] **Active session management for all users** - Allow users to view and manage their own active sessions
