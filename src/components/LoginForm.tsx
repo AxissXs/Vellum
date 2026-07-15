@@ -51,7 +51,7 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-brand-900 to-slate-900 p-4">
+    <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-slate-900 via-brand-900 to-slate-900 p-4">
       <div className="w-full max-w-md">
         {/* Logo & Branding */}
         <div className="text-center mb-8">

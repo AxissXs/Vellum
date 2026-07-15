@@ -332,8 +332,12 @@ export default function TeamManagementClient({
                         {member.projectName && <span className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">{member.projectName}</span>}
                         {member.responsibilities && <span className="max-w-xs truncate rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">{member.responsibilities}</span>}
                         {canManage && (
-                          <button onClick={() => removeMember(member.membershipId)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition">
-                            <Trash2 size={14} />
+                          <button
+                            onClick={() => removeMember(member.membershipId)}
+                            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition"
+                            aria-label="Remove member"
+                          >
+                            <Trash2 size={16} />
                           </button>
                         )}
                       </div>

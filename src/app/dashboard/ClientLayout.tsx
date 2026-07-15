@@ -28,7 +28,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
 
   return (
     <QueryProvider>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-dvh bg-slate-950">
         <Sidebar
           user={user}
           mobileOpen={mobileNavOpen}
@@ -45,7 +45,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         )}
 
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-white/5 bg-slate-900/80 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-white/5 bg-slate-900/80 px-4 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
           <button
             onClick={() => setMobileNavOpen(true)}
             className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition"
@@ -64,7 +64,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         </header>
 
         <main className="pl-0 lg:pl-[260px] transition-all duration-200">
-          <div className="p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8 max-w-[1600px] mx-auto">{children}</div>
+          <div className="p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8 max-w-[1600px] mx-auto">{children}</div>
         </main>
       </div>
     </QueryProvider>
