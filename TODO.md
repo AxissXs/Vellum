@@ -2,6 +2,32 @@
 
 ## Priority: High
 
+- [ ] **Role & Permission Manager** — Dynamic roles, granular permissions, and presets for superadmin
+  > Full plan: [`TODO/role-permission-manager.md`](TODO/role-permission-manager.md)
+
+  Replace the fixed 3-role enum with a DB-backed role system. Superadmins can create custom roles, assign granular permissions, and use presets. Add `roles` and `permissionPresets` tables, update auth to load permissions, add `requirePermission()` helper, build CRUD API routes and management UI, migrate existing role checks.
+
+  - DB: Add `roles` table (name, permissions[], isSystem), `permissionPresets` table, change `users.role` to text
+  - Auth: Add `permissions: string[]` to AuthUser, update `getSession()`, add `requirePermission()`
+  - API: CRUD for roles + permission presets under `/api/super-admin/`
+  - UI: Rewrite `SuperAdminRolesPanel` with editable matrix + preset selector
+  - Seed: 3 system roles (superadmin/admin/member) + 6 presets
+  - Migration: Gradually replace `requireRole()` and inline role checks with permission checks
+  - Acceptance: Superadmin can create/edit/delete roles, assign permissions, apply presets; all auth checks enforced via permissions
+
+- [ ] **Customizable Kanban Board Columns** — Per-project configurable columns with management UI
+  > Full plan: [`TODO/kanban-custom-columns.md`](TODO/kanban-custom-columns.md)
+
+  Replace hardcoded 5-column kanban with dynamic, per-project columns. Columns can be created, edited, deleted, reordered. Extract shared components to eliminate duplication across global and project kanban boards.
+
+  - DB: Add `boardColumns` table (projectId, name, key, color, position, isDeletable), change `tasks.status` to text
+  - API: CRUD for columns under `/api/projects/[id]/columns/`, reorder endpoint, global defaults endpoint
+  - UI: Column management (add/rename/recolor/delete), ColumnMenu, AddColumnForm, ColorPicker
+  - Shared: Extract TaskCard, BoardColumn, types, and utils to `src/components/kanban/` and `src/lib/kanban-utils.ts`
+  - Seed: Global default columns (backlog/todo/in_progress/review/done), copied to each project on creation
+  - Migration: Server components fetch columns from DB, client components use shared components
+  - Acceptance: Columns are DB-backed, per-project, fully manageable; no hardcoded statusColumns remain; shared components eliminate duplication
+
 - [ ] **Reorganize AI Agent documentation** - Optimize and restructure project docs for better agent onboarding
   - Create a dedicated `docs/agents/` directory for all agent-facing docs
   - Break `AGENTS.md` and `STRUCTURE.md` into focused, digestible pieces (e.g., `docs/agents/getting-started.md`, `docs/agents/architecture.md`, `docs/agents/database.md`, `docs/agents/api-routes.md`, `docs/agents/common-patterns.md`, `docs/agents/conventions.md`)
@@ -319,10 +345,29 @@ When adding tasks, use:
 
 ```
 - [ ] **Title** - Description
+  > Full plan: [`TODO/task-filename.md`](TODO/task-filename.md)
+
+  Brief summary of what needs to be done.
+
   - Sub-task 1
   - Sub-task 2
   - Acceptance criteria: ...
 ```
+
+## Task Detail Files (`TODO/`)
+
+Complex tasks should have a dedicated file in the `TODO/` directory. Each file contains the full context an agent needs to work on the task autonomously:
+
+- **Overview** — What and why
+- **Current State** — Existing code, file paths, line numbers
+- **Database Changes** — Schema modifications with exact Drizzle definitions
+- **API Routes** — New endpoints with request/response shapes
+- **UI Changes** — Components to create/modify
+- **Files to Create/Modify** — Complete file lists
+- **Migration Strategy** — Step-by-step execution order
+- **Acceptance Criteria** — Definition of done
+
+Agent workflow: Read `TODO.md` → pick a task → read its linked `TODO/*.md` file → execute.
 
 ## Status Tags
 
