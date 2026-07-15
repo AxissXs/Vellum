@@ -1,8 +1,9 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
-import { eq, gt } from "drizzle-orm";
-import { compareSync } from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { compare } from "bcryptjs";
 
 const SESSION_COOKIE = "tf_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -16,32 +17,15 @@ export type AuthUser = {
   avatarUrl: string | null;
 };
 
-export async function getSession(): Promise<AuthUser | null> {
+export const getSession = cache(async (): Promise<AuthUser | null> => {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionId) return null;
 
-  // Look up session in database
-  const [session] = await db
+  const [row] = await db
     .select({
-      id: sessions.id,
-      userId: sessions.userId,
+      sessionId: sessions.id,
       expiresAt: sessions.expiresAt,
-    })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .limit(1);
-
-  if (!session || session.expiresAt < new Date()) {
-    // Clean up expired session
-    if (session) {
-      await db.delete(sessions).where(eq(sessions.id, sessionId));
-    }
-    return null;
-  }
-
-  const [user] = await db
-    .select({
       id: users.id,
       name: users.name,
       email: users.email,
@@ -49,17 +33,32 @@ export async function getSession(): Promise<AuthUser | null> {
       status: users.status,
       avatarUrl: users.avatarUrl,
     })
-    .from(users)
-    .where(eq(users.id, session.userId))
+    .from(sessions)
+    .leftJoin(users, eq(sessions.userId, users.id))
+    .where(eq(sessions.id, sessionId))
     .limit(1);
 
-  if (!user) {
+  if (!row) return null;
+
+  if (row.expiresAt < new Date()) {
     await db.delete(sessions).where(eq(sessions.id, sessionId));
     return null;
   }
 
-  return user as AuthUser;
-}
+  if (!row.id) {
+    await db.delete(sessions).where(eq(sessions.id, sessionId));
+    return null;
+  }
+
+  return {
+    id: row.id,
+    name: row.name!,
+    email: row.email!,
+    role: row.role!,
+    status: row.status!,
+    avatarUrl: row.avatarUrl,
+  };
+});
 
 export async function createSession(userId: string): Promise<string> {
   const sessionId = crypto.randomUUID();
@@ -89,7 +88,7 @@ export async function authenticateUser(
     .limit(1);
 
   if (!user) return null;
-  if (!compareSync(password, user.passwordHash)) return null;
+  if (!(await compare(password, user.passwordHash))) return null;
 
   return {
     id: user.id,

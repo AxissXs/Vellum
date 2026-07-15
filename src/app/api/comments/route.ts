@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { comments, users, activityLogs, tasks } from "@/db/schema";
+import { comments, users, tasks } from "@/db/schema";
+import { logActivity } from "@/lib/activity";
 import { eq, asc } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "created_comment",
     entityType: "comment",

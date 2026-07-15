@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, activityLogs } from "@/db/schema";
+import { projects } from "@/db/schema";
+import { logActivity } from "@/lib/activity";
 import { eq } from "drizzle-orm";
 
 export async function GET(
@@ -75,7 +76,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "updated_project",
     entityType: "project",
@@ -107,7 +108,7 @@ export async function DELETE(
 
   await db.delete(projects).where(eq(projects.id, id));
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "deleted_project",
     entityType: "project",

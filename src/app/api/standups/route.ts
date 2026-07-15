@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { standups, activityLogs } from "@/db/schema";
+import { standups } from "@/db/schema";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { eq, desc, gte, lte, and } from "drizzle-orm";
 
 function startOfDay(d: Date) {
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     standup = created;
   }
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "created_standup",
     entityType: "standup",

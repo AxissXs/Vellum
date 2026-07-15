@@ -33,38 +33,43 @@ export default async function ProjectDetailPage({
 
   if (!project) notFound();
 
-  const taskRows = await db
-    .select({
-      id: tasks.id,
-      title: tasks.title,
-      description: tasks.description,
-      status: tasks.status,
-      priority: tasks.priority,
-      projectId: tasks.projectId,
-      assigneeId: tasks.assigneeId,
-      creatorId: tasks.creatorId,
-      dueDate: tasks.dueDate,
-      position: tasks.position,
-      createdAt: tasks.createdAt,
-      updatedAt: tasks.updatedAt,
-      assigneeName: users.name,
-      assigneeAvatar: users.avatarUrl,
-    })
-    .from(tasks)
-    .leftJoin(users, eq(tasks.assigneeId, users.id))
-    .where(eq(tasks.projectId, id))
-    .orderBy(tasks.position, tasks.createdAt);
-
-  const allUsers = await db
-    .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
-    .from(users)
-    .orderBy(users.name);
-
-  const milestoneRows = await db
-    .select()
-    .from(projectMilestones)
-    .where(eq(projectMilestones.projectId, id))
-    .orderBy(asc(projectMilestones.dueDate), asc(projectMilestones.createdAt));
+  const [taskRows, allUsers, milestoneRows, allProjects] = await Promise.all([
+    db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        priority: tasks.priority,
+        projectId: tasks.projectId,
+        assigneeId: tasks.assigneeId,
+        creatorId: tasks.creatorId,
+        dueDate: tasks.dueDate,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        assigneeName: users.name,
+        assigneeAvatar: users.avatarUrl,
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .where(eq(tasks.projectId, id))
+      .orderBy(tasks.position, tasks.createdAt),
+    db
+      .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
+      .from(users)
+      .orderBy(users.name),
+    db
+      .select()
+      .from(projectMilestones)
+      .where(eq(projectMilestones.projectId, id))
+      .orderBy(asc(projectMilestones.dueDate), asc(projectMilestones.createdAt)),
+    db
+      .select({ id: projects.id, name: projects.name, color: projects.color })
+      .from(projects)
+      .where(eq(projects.archived, false))
+      .orderBy(asc(projects.createdAt)),
+  ]);
 
   const doneTasks = taskRows.filter((task) => task.status === "done").length;
   const completionRate = taskRows.length > 0 ? Math.round((doneTasks / taskRows.length) * 100) : 0;
@@ -82,12 +87,6 @@ export default async function ProjectDetailPage({
     else current.openTasks += 1;
     memberMap.set(key, current);
   }
-
-  const allProjects = await db
-    .select({ id: projects.id, name: projects.name, color: projects.color })
-    .from(projects)
-    .where(eq(projects.archived, false))
-    .orderBy(asc(projects.createdAt));
 
   const columns = statusColumns.map((col) => ({
     ...col,

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, activityLogs, users } from "@/db/schema";
+import { tasks, users } from "@/db/schema";
+import { logActivity } from "@/lib/activity";
 import { eq, and, asc } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     })
     .returning();
 
-  await db.insert(activityLogs).values({
+  logActivity({
     userId: user.id,
     action: "created_task",
     entityType: "task",

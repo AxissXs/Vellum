@@ -23,6 +23,12 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
 
 ## Priority: High
 
+- [x] **DB / process optimization** - Cut session + query latency on hot paths
+  - `getSession` React `cache()` + sessions⋈users join; async bcrypt
+  - Tuned pg Pool; FK/order indexes (`drizzle/0004_flimsy_sauron.sql`)
+  - Parallel `Promise.all` on heavy RSC pages (dashboard, kanban, sprint detail, admin, project detail)
+  - `logActivity` via Next.js `after()`; Turbopack `root` in `next.config.ts`
+
 - [x] **Optimistic updates everywhere** - Implement optimistic UI updates across all mutations
   - Task CRUD (create, update, delete, reorder)
   - Project CRUD

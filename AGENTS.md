@@ -358,10 +358,12 @@ Apply same pattern to `useUpdateComment`, `useDeleteComment`, `useTasks`, `usePr
 
 ## Activity Logging Convention
 
-All mutating API routes must log to `activity_logs` table after successful operation:
+All mutating API routes must log to `activity_logs` after a successful entity write. Use `logActivity` from `src/lib/activity.ts` so the insert runs via Next.js `after()` (after the response is sent — does not block the client):
 
 ```ts
-await db.insert(activityLogs).values({
+import { logActivity } from "@/lib/activity";
+
+logActivity({
   userId: user.id,
   action:
     "created_task" |
@@ -375,5 +377,7 @@ await db.insert(activityLogs).values({
   details: `Created task: ${entity.title}`,
 });
 ```
+
+Do not `await db.insert(activityLogs)` in request handlers. Seed/bootstrap scripts may still insert directly.
 
 Actions: `created_*`, `updated_*`, `deleted_*`, `changed_*_status`

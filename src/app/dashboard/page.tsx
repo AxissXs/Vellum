@@ -17,66 +17,61 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getSession();
 
-  // Stats
-  const [projectCount] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(projects)
-    .where(eq(projects.archived, false));
+  const [
+    [projectCount],
+    [taskCount],
+    [doneCount],
+    [teamCount],
+    [userCount],
+    priorityData,
+    recentProjects,
+    activeTasks,
+  ] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projects)
+      .where(eq(projects.archived, false)),
+    db.select({ count: sql<number>`count(*)::int` }).from(tasks),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(tasks)
+      .where(eq(tasks.status, "done")),
+    db.select({ count: sql<number>`count(*)::int` }).from(teams),
+    db.select({ count: sql<number>`count(*)::int` }).from(users),
+    db
+      .select({
+        priority: tasks.priority,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(tasks)
+      .groupBy(tasks.priority),
+    db
+      .select()
+      .from(projects)
+      .where(eq(projects.archived, false))
+      .orderBy(projects.createdAt)
+      .limit(4),
+    db
+      .select()
+      .from(tasks)
+      .where(sql`${tasks.status} IN ('in_progress', 'review')`)
+      .orderBy(tasks.updatedAt)
+      .limit(5),
+  ]);
 
-  const [taskCount] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(tasks);
+  const completionRate =
+    taskCount.count > 0
+      ? Math.round((doneCount.count / taskCount.count) * 100)
+      : 0;
 
-  const [doneCount] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(tasks)
-    .where(eq(tasks.status, "done"));
-
-  const [teamCount] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(teams);
-
-  const [userCount] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(users);
-
-  const completionRate = taskCount.count > 0
-    ? Math.round((doneCount.count / taskCount.count) * 100)
-    : 0;
-
-  // Priority breakdown
-  const priorityData = await db
-    .select({
-      priority: tasks.priority,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(tasks)
-    .groupBy(tasks.priority);
-
-  // Recent projects
-  const recentProjects = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.archived, false))
-    .orderBy(projects.createdAt)
-    .limit(4);
-
-  // Active tasks (in progress + review)
-  const activeTasks = await db
-    .select()
-    .from(tasks)
-    .where(
-      sql`${tasks.status} IN ('in_progress', 'review')`
-    )
-    .orderBy(tasks.updatedAt)
-    .limit(5);
-
-  // Get user names for tasks
-  const userIds = [...new Set(activeTasks.map(t => t.assigneeId).filter(Boolean))];
-  const userRows = userIds.length > 0
-    ? await db.select({ id: users.id, name: users.name }).from(users)
-    : [];
-  const userMap = new Map(userRows.map(u => [u.id, u.name]));
+  const userIds = [
+    ...new Set(activeTasks.map((t) => t.assigneeId).filter(Boolean)),
+  ];
+  const userRows =
+    userIds.length > 0
+      ? await db.select({ id: users.id, name: users.name }).from(users)
+      : [];
+  const userMap = new Map(userRows.map((u) => [u.id, u.name]));
 
   const stats = [
     { label: "Active Projects", value: projectCount.count, icon: FolderKanban, color: "bg-brand-500/10 text-brand-600" },
