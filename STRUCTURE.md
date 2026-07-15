@@ -32,11 +32,13 @@ Vellum/
     ├── 0002_faulty_groot.sql
     ├── 0003_whole_kang.sql
     ├── 0004_grey_monster_badoon.sql
+    ├── 0005_melodic_puck.sql
     └── meta/
         ├── 0000_snapshot.json
         ├── 0001_snapshot.json
         ├── 0002_snapshot.json
         ├── 0003_snapshot.json
+        ├── 0004_snapshot.json
         └── _journal.json
 ```
 
@@ -69,7 +71,8 @@ src/
 │   │   │   ├── SuperAdminSessionsPanel.tsx   # Active sessions table
 │   │   │   ├── SuperAdminAuditPanel.tsx      # Filterable audit log table
 │   │   │   ├── SuperAdminHealthPanel.tsx     # System health metrics
-│   │   │   └── SuperAdminRolesPanel.tsx      # Role / permission matrix
+│   │   │   ├── SuperAdminRolesPanel.tsx      # Role / permission matrix
+│   │   │   └── SuperAdminTelegramPanel.tsx   # Telegram bot configuration
 │   │   ├── kanban/
 │   │   │   ├── page.tsx              # Global kanban board (server)
 │   │   │   └── KanbanBoardClient.tsx # Kanban board with dnd-kit (client)
@@ -127,6 +130,11 @@ src/
 │       │   ├── route.ts             # GET - List notifications
 │       │   ├── mark-all-read/route.ts # POST - Mark all as read
 │       │   └── [id]/route.ts        # PATCH - Mark single as read
+│       ├── telegram/
+│       │   ├── pairing-code/route.ts  # GET - Generate pairing code
+│       │   ├── unlink/route.ts        # DELETE - Unlink Telegram account
+│       │   ├── status/route.ts        # GET - Check Telegram link status
+│       │   └── webhook/route.ts       # POST - Receive Telegram Bot API updates
 │       └── super-admin/
 │           ├── users/route.ts      # GET - List users with last login / IP
 │           ├── users/[id]/route.ts # PATCH - Update user role / status
@@ -134,7 +142,11 @@ src/
 │           ├── sessions/route.ts   # GET - Active sessions
 │           ├── sessions/[id]/route.ts  # DELETE - Revoke session
 │           ├── audit/route.ts      # GET - Filtered audit logs with pagination
-│           └── audit/export/route.ts  # GET - CSV export of audit logs
+│           ├── audit/export/route.ts  # GET - CSV export of audit logs
+│           └── telegram/
+│               ├── settings/route.ts  # GET, PATCH - Bot settings
+│               ├── test/route.ts      # POST - Test bot connectivity
+│               └── stats/route.ts     # GET - Paired user count
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── PushNotificationToggle.tsx  # UI toggle for browser push notifications
@@ -275,7 +287,7 @@ src/
 **Purpose**: Super Admin tabbed dashboard layout
 **Exports**: `SuperAdminClient()` - Client component
 
-- Tabs: Users, Live Activity, Sessions, Audit Logs, System Health, Role Matrix
+- Tabs: Users, Live Activity, Sessions, Audit Logs, System Health, Role Matrix, Telegram
 - Renders appropriate panel component per active tab
 
 ### `src/app/dashboard/super-admin/SuperAdminUsersPanel.tsx`
@@ -335,6 +347,16 @@ src/
 - Permission matrix table grouped by category
 - Toggle highlighting a role's column
 - Check/X icons for granted/denied permissions
+
+### `src/app/dashboard/super-admin/SuperAdminTelegramPanel.tsx`
+
+**Purpose**: Telegram bot configuration and stats
+**Exports**: `SuperAdminTelegramPanel()` - Client component
+
+- Bot token input (masked), supergroup ID, channel ID
+- Test connectivity button
+- Paired user count stat card
+- Save settings with optimistic updates
 
 ### `src/app/dashboard/projects/page.tsx`
 
@@ -397,11 +419,13 @@ src/
 
 ### `src/app/dashboard/settings/page.tsx`
 
-**Purpose**: Settings page with notification preferences
+**Purpose**: Settings page with notification preferences and Telegram linking
 **Exports**: `SettingsPage()` - Server component
 **Features**:
 - Renders `PushNotificationToggle` for browser push notification management
-- Displays and manages per-event notification preferences via `useNotificationPreferences`
+- Displays and manages per-event notification preferences (Push / In-App / Email / Telegram)
+- Telegram account linking: generate pairing code, copy `/start <code>`, unlink
+- Uses `useNotificationPreferences`, `useTelegramStatus`, `useGeneratePairingCode`, `useUnlinkTelegram`
 
 ---
 
@@ -703,6 +727,63 @@ src/
 
 - `GET()` - Returns `{ roles, permissions, rolePermissions }`
 
+#### `src/app/api/telegram/pairing-code/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Generate a single-use pairing code for Telegram account linking
+**Functions**:
+
+- `GET()` - Creates a 6-char code in `telegram_pairing_codes`, returns `{ code }`
+
+#### `src/app/api/telegram/unlink/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Unlink Telegram from current user
+**Functions**:
+
+- `DELETE()` - Clears `telegramChatId` and `telegramUsername` on current user
+
+#### `src/app/api/telegram/status/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Check if current user has linked Telegram
+**Functions**:
+
+- `GET()` - Returns `{ linked: boolean, telegramUsername: string | null }`
+
+#### `src/app/api/telegram/webhook/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Receive Telegram Bot API updates
+**Functions**:
+
+- `POST(req)` - Parses update JSON; handles `/start <code>` to link accounts
+
+#### `src/app/api/super-admin/telegram/settings/route.ts`
+
+**Methods**: `GET`, `PATCH`
+**Purpose**: Manage Telegram bot configuration
+**Functions**:
+
+- `GET()` - Returns `{ settings: { telegram_bot_token, telegram_supergroup_id, telegram_channel_id } }` (token masked)
+- `PATCH(req)` - Updates one or more settings keys
+
+#### `src/app/api/super-admin/telegram/test/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Test bot connectivity
+**Functions**:
+
+- `POST()` - Calls `getMe` via Bot API, returns `{ ok, username, firstName }`
+
+#### `src/app/api/super-admin/telegram/stats/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Telegram pairing statistics
+**Functions**:
+
+- `GET()` - Returns `{ pairedUsers: number }`
+
 ---
 
 ### Components
@@ -781,7 +862,7 @@ src/
 **Purpose**: Complete database schema definition
 **Exports** (Tables):
 
-- `users` - User accounts
+- `users` - User accounts (includes `telegramChatId`, `telegramUsername`)
 - `teams` - Teams
 - `teamMembers` - Team membership
 - `projects` - Projects
@@ -793,8 +874,10 @@ src/
 - `userSessions` - Login history (IP, user agent, success/failure)
 - `activityLogs` - Activity audit trail
 - `pushSubscriptions` - Browser push notification subscriptions
-- `notificationPreferences` - Per-user notification event preferences
-- `notifications` - In-app notification storage (userId, type, title, content, read, entityType, entityId, actorUserId)
+- `notificationPreferences` - Per-user notification event preferences (includes `telegramEnabled`)
+- `notifications` - In-app notification storage
+- `telegramPairingCodes` - Single-use codes for Telegram account linking
+- `platformSettings` - Key-value store for superadmin configuration (e.g. `telegram_bot_token`)
 
 **Exports** (Enums):
 
@@ -915,6 +998,14 @@ src/
 
 **Pattern**: Standard React Query with cache invalidation on mutation success
 
+#### `src/hooks/useTelegram.ts`
+
+**Purpose**: React Query hooks for Telegram account linking
+**Exports**:
+- `useTelegramStatus()` - Query hook returning `{ linked, telegramUsername }`
+- `useGeneratePairingCode()` - Mutation hook generating a `/start <code>` pairing code
+- `useUnlinkTelegram()` - Mutation hook to unlink Telegram from current user
+
 ---
 
 ### Providers (`src/providers/`)
@@ -1009,10 +1100,26 @@ src/
 
 #### `src/lib/notifications.ts`
 
-**Purpose**: In-app notification creation and real-time broadcast via Pusher
+**Purpose**: Unified notification dispatch (in-app + push + telegram)
 **Exports**:
 - `isInAppEnabled(userId, eventType)` - Checks notification preferences for in-app channel
 - `sendInAppNotification({ userId, type, title, content, ... })` - Creates notification row + broadcasts to user-specific Pusher channel
+- `sendNotification({ userId, type, title, content, pushPayload, url, ... })` - Dispatches in-app, push, and Telegram notifications in one call
+
+#### `src/lib/telegram.ts`
+
+**Purpose**: Telegram Bot API server utilities
+**Exports**:
+- `getPlatformSetting(key)` / `setPlatformSetting(key, value)` - Read/write `platform_settings`
+- `getBotToken()` / `isTelegramConfigured()` - Bot token helpers
+- `getTelegramBotInfo()` - Returns bot username/first name from `getMe`
+- `setTelegramWebhook(webhookUrl)` - Registers webhook with Telegram
+- `sendTelegramMessage(chatId, text, options)` - Raw `sendMessage` API call
+- `sendTelegramNotification({ userId, eventType, title, content, url })` - Sends DM if user has enabled Telegram for event type
+- `broadcastToSupergroup(text, topicId?)` - Posts to configured supergroup
+- `broadcastToChannel(text)` - Posts to configured channel
+
+---
 
 ---
 

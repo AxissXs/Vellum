@@ -128,7 +128,7 @@
   - Self-protection: prevent revoking the current session (show disabled state)
   - Acceptance criteria: Users can see all their active sessions, revoke individual or all others, UI updates optimistically
 
-- [ ] **Telegram bot integration** - Platform-wide Telegram bot for notifications
+- [x] **Telegram bot integration** - Platform-wide Telegram bot for notifications
   - Superadmin configures a single Telegram bot API token in platform settings (`telegram_bot_token` in a `platform_settings` table or env var)
   - Bot connects to a Telegram supergroup with topics: map notification types (task assignments, status changes, comments, mentions, due dates) to specific forum topics
   - Bot connects to Telegram channels for broadcast notifications (release announcements, platform updates)
