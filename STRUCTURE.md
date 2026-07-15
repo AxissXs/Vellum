@@ -11,10 +11,12 @@ Vellum/
 ├── .gitignore              # Git ignore rules
 ├── AGENTS.md               # AI agent instructions
 ├── CONTRIBUTIONS.md        # Contribution guidelines
+├── DONE.md                 # Completed features and tasks
 ├── LICENSE                 # MIT License
 ├── README.md               # Project overview
 ├── STRUCTURE.md            # This file
 ├── TODO.md                 # Task tracking
+│   └── TODO/               # Detailed task plans
 ├── bun.lock                # Bun lockfile
 ├── package.json            # Package scripts & dependencies
 ├── tsconfig.json           # TypeScript config
@@ -29,6 +31,7 @@ Vellum/
     ├── 0001_swift_lucky_pierre.sql
     ├── 0002_faulty_groot.sql
     ├── 0003_whole_kang.sql
+    ├── 0004_grey_monster_badoon.sql
     └── meta/
         ├── 0000_snapshot.json
         ├── 0001_snapshot.json
@@ -120,6 +123,10 @@ src/
 │       ├── push/
 │       │   ├── subscribe/route.ts   # POST, DELETE - Push subscriptions
 │       │   └── preferences/route.ts # GET, PATCH - Notification preferences
+│       ├── notifications/
+│       │   ├── route.ts             # GET - List notifications
+│       │   ├── mark-all-read/route.ts # POST - Mark all as read
+│       │   └── [id]/route.ts        # PATCH - Mark single as read
 │       └── super-admin/
 │           ├── users/route.ts      # GET - List users with last login / IP
 │           ├── users/[id]/route.ts # PATCH - Update user role / status
@@ -131,6 +138,7 @@ src/
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── PushNotificationToggle.tsx  # UI toggle for browser push notifications
+│   ├── NotificationBell.tsx        # In-app notification bell with dropdown panel
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
 │   ├── Sidebar.tsx         # Navigation sidebar (client)
 │   └── ui/
@@ -143,9 +151,10 @@ src/
 ├── hooks/                  # React Query Hooks
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
+│   ├── useNotifications.ts # In-app notification queries + mark-read mutations with optimistic updates
+│   ├── useNotificationPreferences.ts  # React Query hooks for notification preferences
 │   ├── useProjects.ts      # Project mutations with optimistic updates
 │   ├── usePushNotifications.ts     # Service worker registration & push subscriptions
-│   ├── useNotificationPreferences.ts  # React Query hooks for notification preferences
 │   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
@@ -593,6 +602,30 @@ src/
 - `GET()` - Returns the current user's notification preference settings
 - `PATCH(req)` - Updates specific event-type preferences (enabled/disabled)
 
+#### `src/app/api/notifications/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List current user's in-app notifications
+**Functions**:
+
+- `GET()` - Returns `{ notifications }` (limit 50, ordered by newest first), joined with actor name
+
+#### `src/app/api/notifications/[id]/route.ts`
+
+**Methods**: `PATCH`
+**Purpose**: Mark single notification as read
+**Functions**:
+
+- `PATCH(req, { params })` - Sets `read: true` for the notification if owned by current user
+
+#### `src/app/api/notifications/mark-all-read/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Mark all notifications as read for current user
+**Functions**:
+
+- `POST()` - Sets `read: true` for all notifications belonging to current user
+
 #### `src/app/api/super-admin/users/route.ts`
 
 **Methods**: `GET`
@@ -697,8 +730,23 @@ src/
 - Collapsible (icon-only mode)
 - Navigation links (Dashboard, Projects, Tasks, Teams, Activity, Admin)
 - Role-based Admin link (superadmin/admin only)
+- **NotificationBell** integrated in header (only when expanded)
 - User avatar with initials, role badge
 - Logout button
+
+#### `src/components/NotificationBell.tsx`
+
+**Purpose**: In-app notification bell with dropdown panel
+**Exports**: `NotificationBell()` - Client component
+**Features**:
+
+- Bell icon with unread count badge (red dot with count)
+- Dropdown panel showing 50 most recent notifications
+- Mark individual as read (check button) or mark all as read
+- Relative timestamps (e.g. "5m ago", "2h ago")
+- Click outside to close
+- Real-time updates via `useNotifications` hook (Pusher + polling fallback)
+- Connects to `useNotifications` for data and mutations
 
 #### `src/components/PushNotificationToggle.tsx`
 
@@ -746,6 +794,7 @@ src/
 - `activityLogs` - Activity audit trail
 - `pushSubscriptions` - Browser push notification subscriptions
 - `notificationPreferences` - Per-user notification event preferences
+- `notifications` - In-app notification storage (userId, type, title, content, read, entityType, entityId, actorUserId)
 
 **Exports** (Enums):
 
@@ -957,6 +1006,13 @@ src/
 - `getNotificationPreferences(userId)` - Gets per-event preferences
 - `updateNotificationPreferences(userId, preferences)` - Updates preferences
 - `shouldNotify(userId, eventType)` - Checks if a user should receive a notification for an event
+
+#### `src/lib/notifications.ts`
+
+**Purpose**: In-app notification creation and real-time broadcast via Pusher
+**Exports**:
+- `isInAppEnabled(userId, eventType)` - Checks notification preferences for in-app channel
+- `sendInAppNotification({ userId, type, title, content, ... })` - Creates notification row + broadcasts to user-specific Pusher channel
 
 ---
 
