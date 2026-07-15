@@ -1,0 +1,22 @@
+CREATE TABLE "platform_settings" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"key" text NOT NULL,
+	"value" text,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "platform_settings_key_unique" UNIQUE("key")
+);
+--> statement-breakpoint
+CREATE TABLE "telegram_pairing_codes" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"code" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"used" boolean DEFAULT false NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "telegram_pairing_codes_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
+ALTER TABLE "notification_preferences" ADD COLUMN "telegram_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "telegram_chat_id" text;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "telegram_username" text;--> statement-breakpoint
+ALTER TABLE "telegram_pairing_codes" ADD CONSTRAINT "telegram_pairing_codes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;

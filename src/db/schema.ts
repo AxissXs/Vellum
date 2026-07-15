@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("member"),
   status: userStatusEnum("status").notNull().default("active"),
   avatarUrl: text("avatar_url"),
+  telegramChatId: text("telegram_chat_id"),
+  telegramUsername: text("telegram_username"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -234,6 +236,25 @@ export const notificationPreferences = pgTable("notification_preferences", {
   pushEnabled: boolean("push_enabled").default(true).notNull(),
   inAppEnabled: boolean("in_app_enabled").default(true).notNull(),
   emailEnabled: boolean("email_enabled").default(false).notNull(),
+  telegramEnabled: boolean("telegram_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const telegramPairingCodes = pgTable("telegram_pairing_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull().unique(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  used: boolean("used").notNull().default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const platformSettings = pgTable("platform_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
