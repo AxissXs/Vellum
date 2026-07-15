@@ -26,8 +26,14 @@ Vellum/
 ├── drizzle.config.ts       # Drizzle Kit config (TypeScript)
 └── drizzle/                # Drizzle migrations (committed)
     ├── 0000_faithful_the_twelve.sql
+    ├── 0001_swift_lucky_pierre.sql
+    ├── 0002_faulty_groot.sql
+    ├── 0003_whole_kang.sql
     └── meta/
         ├── 0000_snapshot.json
+        ├── 0001_snapshot.json
+        ├── 0002_snapshot.json
+        ├── 0003_snapshot.json
         └── _journal.json
 ```
 
@@ -736,13 +742,18 @@ src/
 - `tasks` - Kanban tasks
 - `comments` - Task comments
 - `sessions` - Auth sessions
+- `userSessions` - Login history (IP, user agent, success/failure)
 - `activityLogs` - Activity audit trail
+- `pushSubscriptions` - Browser push notification subscriptions
+- `notificationPreferences` - Per-user notification event preferences
 
 **Exports** (Enums):
 
 - `userRoleEnum` - `superadmin` | `admin` | `member`
+- `userStatusEnum` - `active` | `inactive` | `banned`
 - `taskStatusEnum` - `backlog` | `todo` | `in_progress` | `review` | `done`
 - `taskPriorityEnum` - `low` | `medium` | `high` | `urgent`
+- `notificationEventTypeEnum` - `task_assigned` | `task_mentioned` | `due_date_approaching` | `status_changed` | `new_comment` | `comment_mention`
 
 **Relations**: Defined via Drizzle `references()` and foreign keys
 
