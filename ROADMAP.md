@@ -1,4 +1,4 @@
-# Vellum Roadmap — Phases, Milestones & Checklists
+# Roadmap — Phases, Milestones & Checklists
 
 Phased view of the work tracked in [`TODO.md`](TODO.md). **Single source of truth is `TODO.md`** — this file is the phase/milestone grouping, and each item links back to its `TODO.md` entry. When a task is completed, tick it in **both** files.
 

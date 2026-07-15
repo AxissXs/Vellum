@@ -83,10 +83,10 @@ const priorityColors: Record<string, string> = {
 };
 
 const priorityBadges: Record<string, string> = {
-  urgent: "bg-red-500/10 text-red-400",
-  high: "bg-orange-500/10 text-orange-400",
-  medium: "bg-amber-500/10 text-amber-400",
-  low: "bg-emerald-500/10 text-emerald-400",
+  urgent: "bg-red-500/10 text-red-600",
+  high: "bg-orange-500/10 text-orange-600",
+  medium: "bg-amber-500/10 text-amber-600",
+  low: "bg-emerald-500/10 text-emerald-600",
 };
 
 function columnDroppableId(columnKey: string) {
@@ -132,7 +132,7 @@ function TaskCardBody({ task }: { task: Task }) {
   return (
     <>
       {task.description && (
-        <p className="mt-2 text-xs text-slate-400 line-clamp-2">{task.description}</p>
+        <p className="mt-2 text-xs text-slate-500 line-clamp-2">{task.description}</p>
       )}
 
       <div className="mt-3 flex items-center justify-between gap-2">
@@ -142,7 +142,7 @@ function TaskCardBody({ task }: { task: Task }) {
           </span>
           {task.assigneeName && (
             <div className="flex -space-x-1.5">
-              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400">
+              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-600">
                 {task.assigneeName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
               </div>
             </div>
@@ -178,11 +178,11 @@ function StaticTaskCard({
     <div
       onClick={onClick}
       className={clsx(
-        "bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
+        "bg-slate-50 border border-slate-200 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-slate-100",
         priorityColors[task.priority]
       )}
     >
-      <h4 className="text-sm font-medium text-white truncate pr-2">{task.title}</h4>
+      <h4 className="text-sm font-medium text-slate-900 truncate pr-2">{task.title}</h4>
       <TaskCardBody task={task} />
     </div>
   );
@@ -205,8 +205,8 @@ function StaticKanbanBoard({
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${column.color}`} />
-                  <h3 className="text-sm font-semibold text-white capitalize">{column.label}</h3>
-                  <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+                  <h3 className="text-sm font-semibold text-slate-900 capitalize">{column.label}</h3>
+                  <span className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full">
                     {column.tasks.length}
                   </span>
                 </div>
@@ -217,7 +217,7 @@ function StaticKanbanBoard({
                 aria-label={`${column.label} tasks`}
               >
                 {column.tasks.length === 0 && (
-                  <div className="h-24 border-2 border-dashed border-white/5 rounded-xl flex items-center justify-center">
+                  <div className="h-24 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center">
                     <span className="text-slate-600 text-xs">Drop tasks here</span>
                   </div>
                 )}
@@ -270,19 +270,19 @@ function TaskCard({
       onClick={onClick}
       onDragStart={onDragStart}
       className={clsx(
-        "group bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
+        "group bg-slate-50 border border-slate-200 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-slate-100",
         priorityColors[task.priority],
-        isDragging && "shadow-2xl ring-2 ring-brand-500/50 z-10"
+        isDragging && "shadow-lg ring-2 ring-brand-500/50 z-10"
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <h4 className="text-sm font-medium text-white truncate pr-2">{task.title}</h4>
+        <h4 className="text-sm font-medium text-slate-900 truncate pr-2">{task.title}</h4>
         <button
           type="button"
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="flex-shrink-0 min-h-[44px] min-w-[44px] -m-2 flex items-center justify-center text-slate-500 hover:text-slate-300 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch-none cursor-grab active:cursor-grabbing"
+          className="flex-shrink-0 min-h-[44px] min-w-[44px] -m-2 flex items-center justify-center text-slate-500 hover:text-slate-600 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch-none cursor-grab active:cursor-grabbing"
           aria-label="Drag"
         >
           <GripVertical size={16} />
@@ -321,8 +321,8 @@ function Column({
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-full ${column.color}`} />
-            <h3 className="text-sm font-semibold text-white capitalize">{column.label}</h3>
-            <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">
+            <h3 className="text-sm font-semibold text-slate-900 capitalize">{column.label}</h3>
+            <span className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full">
               {column.tasks.length}
             </span>
           </div>
@@ -340,7 +340,7 @@ function Column({
           aria-label={`${column.label} tasks`}
         >
           {column.tasks.length === 0 && (
-            <div className="h-24 border-2 border-dashed border-white/5 rounded-xl flex items-center justify-center">
+            <div className="h-24 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center">
               <span className="text-slate-600 text-xs">Drop tasks here</span>
             </div>
           )}
@@ -571,10 +571,10 @@ export default function KanbanBoardClient({
   return (
     <div className="h-full flex flex-col">
       {/* Header with filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-white/5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <Kanban size={24} className="text-brand-400" />
-          <h1 className="text-2xl font-bold text-white">Kanban Board</h1>
+          <Kanban size={24} className="text-brand-600" />
+          <h1 className="text-2xl font-bold text-slate-900">Kanban Board</h1>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -585,7 +585,7 @@ export default function KanbanBoardClient({
               id="project-filter"
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="appearance-none bg-slate-800/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500 pr-10"
+              className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 pr-10"
             >
               {projectsWithAll.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -606,7 +606,7 @@ export default function KanbanBoardClient({
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-10 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-10 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -639,7 +639,7 @@ export default function KanbanBoardClient({
               <>
                 <button
                   onClick={() => setShowNewTask(isAdding ? null : colConfig.key)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
                 >
                   <Plus size={16} />
                   {isAdding ? "Cancel" : "Add task"}
@@ -648,14 +648,14 @@ export default function KanbanBoardClient({
                 {isAdding && (
                   <form
                     onSubmit={(e) => { e.preventDefault(); handleCreateTask(colConfig.key); }}
-                    className="mt-2 bg-slate-800/50 border border-white/10 rounded-xl p-3 space-y-3 animate-slide-down"
+                    className="mt-2 bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3 animate-slide-down"
                   >
                     <input
                       type="text"
                       placeholder="Task title"
                       value={newTaskData[colConfig.key]?.title || ""}
                       onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], title: e.target.value } }))}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       autoFocus
                       required
                     />
@@ -663,14 +663,14 @@ export default function KanbanBoardClient({
                       placeholder="Description (optional)"
                       value={newTaskData[colConfig.key]?.description || ""}
                       onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], description: e.target.value } }))}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 min-h-[60px] resize-none"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 min-h-[60px] resize-none"
                       rows={2}
                     />
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={newTaskData[colConfig.key]?.priority || "medium"}
                         onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], priority: e.target.value } }))}
-                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -680,7 +680,7 @@ export default function KanbanBoardClient({
                       <select
                         value={newTaskData[colConfig.key]?.assigneeId || ""}
                         onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], assigneeId: e.target.value } }))}
-                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       >
                         <option value="">Unassigned</option>
                         {users.map((u) => (
@@ -692,7 +692,7 @@ export default function KanbanBoardClient({
                       <select
                         value={newTaskData[colConfig.key]?.projectId || (selectedProjectId !== "all" ? selectedProjectId : projects[0]?.id || "")}
                         onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], projectId: e.target.value } }))}
-                        className="col-span-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       >
                         {projects.map((p) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
@@ -702,14 +702,14 @@ export default function KanbanBoardClient({
                         type="date"
                         value={newTaskData[colConfig.key]?.dueDate || ""}
                         onChange={(e) => setNewTaskData((prev) => ({ ...prev, [colConfig.key]: { ...prev[colConfig.key], dueDate: e.target.value } }))}
-                        className="col-span-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     </div>
                     <div className="flex gap-2 pt-1">
                       <button
                         type="button"
                         onClick={() => setShowNewTask(null)}
-                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition"
+                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                       >
                         Cancel
                       </button>
@@ -743,11 +743,11 @@ export default function KanbanBoardClient({
           {activeDragTask ? (
             <div
               className={clsx(
-                "bg-slate-800 border border-brand-500/40 rounded-xl p-3 shadow-2xl cursor-grabbing w-72",
+                "bg-slate-100 border border-brand-500/40 rounded-xl p-3 shadow-lg cursor-grabbing w-72",
                 priorityColors[activeDragTask.priority]
               )}
             >
-              <h4 className="text-sm font-medium text-white truncate">{activeDragTask.title}</h4>
+              <h4 className="text-sm font-medium text-slate-900 truncate">{activeDragTask.title}</h4>
             </div>
           ) : null}
         </DragOverlay>

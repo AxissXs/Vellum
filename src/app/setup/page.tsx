@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Loader2, AlertCircle, CheckCircle, User, Mail, Lock, Shield } from "lucide-react";
+import { brand } from "@/lib/brand";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -72,16 +73,16 @@ export default function SetupPage() {
 
   if (step === "success") {
     return (
-      <div className="min-h-dvh bg-slate-950 flex items-center justify-center px-4">
+      <div className="min-h-dvh bg-slate-50 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 backdrop-blur-sm">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-6">
-                <CheckCircle className="w-8 h-8 text-emerald-400" />
+                <CheckCircle className="w-8 h-8 text-emerald-600" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Setup Complete!</h1>
-              <p className="text-slate-400 mb-6">
-                Your Vellum workspace has been created successfully. Redirecting to login...
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Setup Complete!</h1>
+              <p className="text-slate-500 mb-6">
+                Your {brand.displayName} workspace has been created successfully. Redirecting to login...
               </p>
               <Loader2 className="w-6 h-6 text-brand-500 animate-spin mx-auto" />
             </div>
@@ -92,22 +93,22 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-dvh bg-slate-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500/20 mb-4">
-            <Shield className="w-8 h-8 text-brand-400" />
+            <Shield className="w-8 h-8 text-brand-600" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome to Vellum</h1>
-          <p className="text-slate-400">Set up your workspace and create the first superadmin account</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to {brand.displayName}</h1>
+          <p className="text-slate-500">Set up your workspace and create the first superadmin account</p>
         </div>
 
-        <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="bg-slate-800/50 border border-white/5 rounded-xl p-4 mb-2">
-              <div className="flex items-center gap-3 text-slate-400 text-sm mb-3">
-                <Shield className="w-5 h-5 text-brand-400" />
-                <span className="font-medium text-slate-300">Superadmin Account</span>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-2">
+              <div className="flex items-center gap-3 text-slate-500 text-sm mb-3">
+                <Shield className="w-5 h-5 text-brand-600" />
+                <span className="font-medium text-slate-600">Superadmin Account</span>
               </div>
               <p className="text-xs text-slate-500">
                 This account will have full access to manage users, teams, and all projects.
@@ -115,7 +116,7 @@ export default function SetupPage() {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-sm">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{error}</span>
               </div>
@@ -123,7 +124,7 @@ export default function SetupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="name" className="block text-sm font-medium text-slate-600 mb-1.5">
                   Full Name
                 </label>
                 <div className="relative">
@@ -133,7 +134,7 @@ export default function SetupPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="Alex Morgan"
                     required
                     disabled={loading}
@@ -142,7 +143,7 @@ export default function SetupPage() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
@@ -152,7 +153,7 @@ export default function SetupPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="alex@company.com"
                     required
                     disabled={loading}
@@ -163,7 +164,7 @@ export default function SetupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-600 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -173,7 +174,7 @@ export default function SetupPage() {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="••••••••"
                     required
                     disabled={loading}
@@ -183,7 +184,7 @@ export default function SetupPage() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-600 mb-1.5">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -193,7 +194,7 @@ export default function SetupPage() {
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="••••••••"
                     required
                     disabled={loading}
@@ -203,7 +204,7 @@ export default function SetupPage() {
             </div>
 
             <div>
-              <label htmlFor="teamName" className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label htmlFor="teamName" className="block text-sm font-medium text-slate-600 mb-1.5">
                 Team Name
               </label>
               <div className="relative">
@@ -213,7 +214,7 @@ export default function SetupPage() {
                   type="text"
                   value={formData.teamName}
                   onChange={(e) => setFormData({ ...formData, teamName: e.target.value })}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                   placeholder="Engineering"
                   required
                   disabled={loading}
@@ -225,7 +226,7 @@ export default function SetupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50 transition"
             >
               {loading ? (
                 <>
@@ -242,9 +243,9 @@ export default function SetupPage() {
 
             <p className="text-center text-xs text-slate-500">
               By creating an account, you agree to our{' '}
-              <a href="/terms" className="text-brand-400 hover:underline">Terms of Service</a>{' '}
+              <a href="/terms" className="text-brand-600 hover:underline">Terms of Service</a>{' '}
               and{' '}
-              <a href="/privacy" className="text-brand-400 hover:underline">Privacy Policy</a>
+              <a href="/privacy" className="text-brand-600 hover:underline">Privacy Policy</a>
             </p>
           </form>
         </div>

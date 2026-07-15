@@ -1,6 +1,6 @@
-# Contributing to Vellum
+# Contributing
 
-Thank you for your interest in contributing to Vellum! This project is built with AI assistance and human review. All contributions are welcome.
+Thank you for your interest in contributing! This project is built with AI assistance and human review. All contributions are welcome.
 
 ## Code of Conduct
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hashSync } from "bcryptjs";
 import { db } from "@/db";
 import { users, teams, teamMembers, projects } from "@/db/schema";
+import { brand } from "@/lib/brand";
 
 export async function POST(req: Request) {
   try {
@@ -53,8 +54,8 @@ export async function POST(req: Request) {
 
     await db.insert(projects).values({
       name: "Getting Started",
-      description: "Welcome to Vellum! This is your first project to explore the platform.",
-      color: "#6366f1",
+      description: `Welcome to ${brand.displayName}! This is your first project to explore the platform.`,
+      color: brand.primaryColor,
       icon: "layout-dashboard",
       ownerId: userId,
     });

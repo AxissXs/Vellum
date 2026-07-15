@@ -11,9 +11,9 @@ import type { Sprint } from "@/hooks/useSprints";
 type Project = { id: string; name: string; color: string | null };
 
 const statusStyles: Record<string, string> = {
-  planned: "bg-slate-500/10 text-slate-300 border-slate-500/20",
-  active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  completed: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  planned: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+  active: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  completed: "bg-blue-500/10 text-blue-600 border-blue-500/20",
 };
 
 export default function SprintsClient({
@@ -89,7 +89,7 @@ export default function SprintsClient({
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
@@ -113,11 +113,11 @@ export default function SprintsClient({
           <Loader2 size={20} className="animate-spin" />
         </div>
       ) : sprints.length === 0 ? (
-        <div className="border-2 border-dashed border-white/5 rounded-2xl py-16 text-center">
-          <p className="text-slate-400">No sprints yet for this project.</p>
+        <div className="border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center">
+          <p className="text-slate-500">No sprints yet for this project.</p>
           <button
             onClick={() => setShowModal(true)}
-            className="mt-3 text-sm text-brand-400 hover:underline"
+            className="mt-3 text-sm text-brand-600 hover:underline"
           >
             Create the first sprint
           </button>
@@ -127,12 +127,12 @@ export default function SprintsClient({
           {sprints.map((sprint) => (
             <div
               key={sprint.id}
-              className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 flex flex-col"
+              className="bg-white/60 border border-slate-200 rounded-2xl p-5 flex flex-col"
             >
               <div className="flex items-start justify-between gap-2">
                 <Link
                   href={`/dashboard/sprints/${sprint.id}`}
-                  className="text-base font-semibold text-white hover:text-brand-400 transition"
+                  className="text-base font-semibold text-slate-900 hover:text-brand-600 transition"
                 >
                   {sprint.name}
                 </Link>
@@ -147,7 +147,7 @@ export default function SprintsClient({
               </div>
 
               {sprint.goal && (
-                <p className="mt-2 text-sm text-slate-400 line-clamp-2">{sprint.goal}</p>
+                <p className="mt-2 text-sm text-slate-500 line-clamp-2">{sprint.goal}</p>
               )}
 
               <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
@@ -167,11 +167,11 @@ export default function SprintsClient({
                   : "—"}
               </div>
 
-              <div className="mt-4 flex items-center gap-2 pt-3 border-t border-white/5">
+              <div className="mt-4 flex items-center gap-2 pt-3 border-t border-slate-200">
                 {sprint.status !== "active" && (
                   <button
                     onClick={() => handleSetActive(sprint)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/20 transition"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/20 transition"
                   >
                     <CheckCircle2 size={13} />
                     Set active
@@ -179,7 +179,7 @@ export default function SprintsClient({
                 )}
                 <button
                   onClick={() => handleDelete(sprint)}
-                  className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                  className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
                   title="Delete sprint"
                 >
                   <Trash2 size={14} />
@@ -196,12 +196,12 @@ export default function SprintsClient({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowModal(false)}
           />
-          <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div className="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-lg">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-white">New Sprint</h2>
+              <h2 className="text-lg font-semibold text-slate-900">New Sprint</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 text-slate-400 hover:text-white"
+                className="p-1 text-slate-500 hover:text-slate-900"
               >
                 <X size={18} />
               </button>
@@ -209,27 +209,27 @@ export default function SprintsClient({
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Name</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="Sprint 1 — Core Experience"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Goal (optional)
                 </label>
                 <textarea
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   rows={2}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   placeholder="What should this sprint achieve?"
                 />
               </div>

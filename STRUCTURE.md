@@ -1,4 +1,4 @@
-# Project Structure - Vellum
+# Project Structure - Vellum (UI brand: Perfect)
 
 Detailed directory and file structure with exports, purposes, and key functions.
 
@@ -18,6 +18,11 @@ Vellum/
 ├── deno.json               # Deno task definitions (replaces npm/bun scripts)
 ├── deno.lock               # Deno lockfile (generated)
 ├── package.json            # Package dependencies (no scripts - see deno.json)
+├── public/                 # Static assets
+│   ├── logo.svg            # Brand wordmark (light / colored)
+│   ├── logo-white.svg      # Brand wordmark (dark backgrounds)
+│   ├── icon.svg            # Favicon
+│   └── deploy/             # Deploy migrations copied at build
 ├── tsconfig.json           # TypeScript config
 ├── next.config.ts          # Next.js config
 ├── eslint.config.mjs       # ESLint config (flat)
@@ -120,6 +125,8 @@ src/
 │       └── health/
 │           └── route.ts            # GET - Health check
 ├── components/             # Shared React Components
+│   ├── BrandLogo.tsx       # Whitelabel logo from brand config
+│   ├── BrandVars.tsx       # Runtime CSS brand color scale injection
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
 │   └── Sidebar.tsx         # Navigation sidebar (client)
@@ -142,6 +149,7 @@ src/
 ├── lib/                    # Utilities
 │   ├── api.ts              # API client helpers
 │   ├── auth.ts             # Authentication utilities
+│   ├── brand.ts            # Whitelabel brand config (name, logos, colors, email domain)
 │   ├── pusher.ts           # Pusher server instance
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
@@ -602,6 +610,17 @@ src/
 
 ### Components
 
+#### `src/components/BrandLogo.tsx`
+
+**Purpose**: Whitelabel logo image from `brand.logo`
+**Exports**: `BrandLogo({ variant?, className?, showName? })` - Client component
+**Notes**: `variant="light"` = colored wordmark; `variant="dark"` = white wordmark for dark UIs
+
+#### `src/components/BrandVars.tsx`
+
+**Purpose**: Injects `--color-brand-*` CSS vars from `brand.primaryColor` at runtime
+**Exports**: `BrandVars()` - Client component (renders null; mounts in root layout)
+
 #### `src/components/LoginForm.tsx`
 
 **Purpose**: Login form with email/password
@@ -800,6 +819,14 @@ src/
 ---
 
 ### Lib (`src/lib/`)
+
+#### `src/lib/brand.ts`
+
+**Purpose**: Whitelabel brand source of truth (name, logos, primary color, email domain, font var)
+**Exports**:
+- `BrandConfig` - Brand shape
+- `brand` - Resolved config (defaults = Perfect; overridable via `NEXT_PUBLIC_BRAND_*`)
+- `DEFAULT_BRAND_COLOR` - Default primary used in `globals.css` (`#0052cc`)
 
 #### `src/lib/auth.ts`
 

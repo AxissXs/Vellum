@@ -20,15 +20,15 @@ const actionIcons: Record<string, React.ElementType> = {
 };
 
 const actionColors: Record<string, string> = {
-  created_project: "bg-brand-500/10 text-brand-400",
-  updated_project: "bg-blue-500/10 text-blue-400",
-  deleted_project: "bg-red-500/10 text-red-400",
-  created_task: "bg-emerald-500/10 text-emerald-400",
-  updated_task: "bg-amber-500/10 text-amber-400",
-  deleted_task: "bg-red-500/10 text-red-400",
-  completed_task: "bg-emerald-500/10 text-emerald-400",
-  started_task: "bg-blue-500/10 text-blue-400",
-  changed_task_status: "bg-purple-500/10 text-purple-400",
+  created_project: "bg-brand-500/10 text-brand-600",
+  updated_project: "bg-blue-500/10 text-blue-600",
+  deleted_project: "bg-red-500/10 text-red-600",
+  created_task: "bg-emerald-500/10 text-emerald-600",
+  updated_task: "bg-amber-500/10 text-amber-600",
+  deleted_task: "bg-red-500/10 text-red-600",
+  completed_task: "bg-emerald-500/10 text-emerald-600",
+  started_task: "bg-blue-500/10 text-blue-600",
+  changed_task_status: "bg-purple-500/10 text-purple-600",
 };
 
 export default async function ActivityPage() {
@@ -69,36 +69,36 @@ export default async function ActivityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Activity</h1>
-        <p className="text-slate-400 text-sm mt-1">Recent actions across all projects</p>
+        <h1 className="text-2xl font-bold text-slate-900">Activity</h1>
+        <p className="text-slate-500 text-sm mt-1">Recent actions across all projects</p>
       </div>
 
       {rows.length === 0 ? (
-        <div className="bg-slate-900 border border-white/5 rounded-2xl p-12 text-center">
-          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-800 flex items-center justify-center">
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
             <Activity size={28} className="text-slate-500" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No activity yet</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No activity yet</h3>
           <p className="text-sm text-slate-500">Activity will appear here as your team works.</p>
         </div>
       ) : (
-        <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
-          <div className="divide-y divide-white/5">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="divide-y divide-slate-200">
             {rows.map((log) => {
               const Icon = actionIcons[log.action] || Activity;
-              const colorClass = actionColors[log.action] || "bg-slate-500/10 text-slate-400";
+              const colorClass = actionColors[log.action] || "bg-slate-500/10 text-slate-500";
               return (
                 <div key={log.id} className="flex items-center gap-4 px-5 py-3.5">
                   <div className={clsx("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0", colorClass)}>
                     <Icon size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-300">{log.details}</p>
+                    <p className="text-sm text-slate-600">{log.details}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {log.userName || "Unknown"} · {formatTime(log.createdAt)}
                     </p>
                   </div>
-                  <div className="h-7 w-7 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 flex-shrink-0">
                     {getInitials(log.userName)}
                   </div>
                 </div>

@@ -15,7 +15,7 @@ export default function ProjectNav({ projectId }: { projectId: string }) {
   ];
 
   return (
-    <div className="flex gap-1 border-b border-white/10">
+    <div className="flex gap-1 border-b border-slate-200">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = item.exact
@@ -28,8 +28,8 @@ export default function ProjectNav({ projectId }: { projectId: string }) {
             className={clsx(
               "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px",
               isActive
-                ? "text-white border-brand-500"
-                : "text-slate-400 border-transparent hover:text-slate-200"
+                ? "text-brand-600 border-brand-500"
+                : "text-slate-500 border-transparent hover:text-slate-800"
             )}
           >
             <Icon size={15} />

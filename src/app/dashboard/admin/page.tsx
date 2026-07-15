@@ -32,11 +32,11 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-slate-900">Admin Panel</h1>
+        <p className="text-slate-500 text-sm mt-1">
           Manage users and system settings
           {currentUser.role === "superadmin" && (
-            <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 border border-purple-500/20">
               Superadmin
             </span>
           )}
@@ -45,16 +45,16 @@ export default async function AdminPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <p className="text-3xl font-bold text-white">{userRows.length}</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <p className="text-3xl font-bold text-slate-900">{userRows.length}</p>
           <p className="text-xs text-slate-500 mt-1">Total Users</p>
         </div>
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <p className="text-3xl font-bold text-white">{projectCount.count}</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <p className="text-3xl font-bold text-slate-900">{projectCount.count}</p>
           <p className="text-xs text-slate-500 mt-1">Total Projects</p>
         </div>
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <p className="text-3xl font-bold text-white">{taskCount.count}</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <p className="text-3xl font-bold text-slate-900">{taskCount.count}</p>
           <p className="text-xs text-slate-500 mt-1">Total Tasks</p>
         </div>
       </div>

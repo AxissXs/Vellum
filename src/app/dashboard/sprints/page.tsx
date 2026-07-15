@@ -18,8 +18,8 @@ export default async function SprintsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Sprints</h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900">Sprints</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Time-boxed iterations with boards, burndown, standups, and retros.
         </p>
       </div>

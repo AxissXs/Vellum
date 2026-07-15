@@ -120,23 +120,23 @@ export default async function ProjectDetailPage({
     <div className="space-y-8">
       <div className="flex items-center gap-4">
         <div
-          className="h-12 w-12 rounded-xl flex items-center justify-center text-white text-xl flex-shrink-0"
+          className="h-12 w-12 rounded-xl flex items-center justify-center text-slate-900 text-xl flex-shrink-0"
           style={{ backgroundColor: project.color || "#6366f1" }}
         >
           📁
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-            <span className="rounded-full bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400">
+            <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500">
               {project.status}
             </span>
-            <span className="rounded-full bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400">
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500">
               {project.health.replace("_", " ")}
             </span>
           </div>
           {project.description && (
-            <p className="text-sm text-slate-400 mt-0.5">{project.description}</p>
+            <p className="text-sm text-slate-500 mt-0.5">{project.description}</p>
           )}
         </div>
       </div>
@@ -153,7 +153,7 @@ export default async function ProjectDetailPage({
 
       <div>
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-white">Delivery Board</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Delivery Board</h2>
           <p className="text-sm text-slate-500">Plan and move execution work across your workflow.</p>
         </div>
         <KanbanBoard
