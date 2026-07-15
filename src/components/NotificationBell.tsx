@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { Bell, Check, CheckCheck } from "lucide-react";
 import { clsx } from "clsx";
+import { Bell, Check, CheckCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export default function NotificationBell() {
@@ -11,7 +10,6 @@ export default function NotificationBell() {
   const panelRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markRead, markAllRead, isLoading } = useNotifications();
 
-  // Close on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -43,8 +41,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[360px] max-h-[480px] bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col">
-          {/* Header */}
+        <div className="absolute right-0 mt-2 w-[360px] max-h-[480px] bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
             <h3 className="text-sm font-semibold text-white">Notifications</h3>
             {unreadCount > 0 && (
@@ -58,7 +55,6 @@ export default function NotificationBell() {
             )}
           </div>
 
-          {/* List */}
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="p-8 text-center text-slate-500 text-sm">Loading...</div>
@@ -82,15 +78,19 @@ export default function NotificationBell() {
                     }}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={clsx(
-                        "mt-0.5 w-2 h-2 rounded-full flex-shrink-0",
-                        n.read ? "bg-transparent" : "bg-brand-400"
-                      )} />
+                      <div
+                        className={clsx(
+                          "mt-0.5 w-2 h-2 rounded-full flex-shrink-0",
+                          n.read ? "bg-transparent" : "bg-brand-400"
+                        )}
+                      />
                       <div className="flex-1 min-w-0">
-                        <p className={clsx(
-                          "text-sm leading-snug",
-                          n.read ? "text-slate-400" : "text-slate-200"
-                        )}>
+                        <p
+                          className={clsx(
+                            "text-sm leading-snug",
+                            n.read ? "text-slate-400" : "text-slate-200"
+                          )}
+                        >
                           {n.content}
                         </p>
                         <p className="text-[11px] text-slate-500 mt-1">

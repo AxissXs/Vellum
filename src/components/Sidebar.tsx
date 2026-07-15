@@ -19,7 +19,6 @@ import {
   Kanban,
 } from "lucide-react";
 import { clsx } from "clsx";
-import NotificationBell from "@/components/NotificationBell";
 
 type User = {
   id: string;
@@ -102,10 +101,9 @@ export default function Sidebar({ user }: { user: User }) {
             <span className="font-bold text-white text-lg truncate">Vellum</span>
           )}
         </div>
-        {!collapsed && <NotificationBell />}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition flex-shrink-0"
+          className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition flex-shrink-0"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
