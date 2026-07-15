@@ -1,6 +1,9 @@
-# Vellum (Vellum)
+# Vellum (product brand: Perfect)
 
 A modern team management platform with Kanban boards, task tracking, and real-time collaboration. Built with Next.js 15, PostgreSQL, and Drizzle ORM.
+
+**Whitelabel:** product name, logos, colors, and email domain live in [`src/lib/brand.ts`](src/lib/brand.ts) (overridable via `NEXT_PUBLIC_BRAND_*`). Defaults ship as **Perfect**.
+
 
 ## 🌟 Features
 
@@ -56,9 +59,9 @@ deno task dev          # Start dev server at http://localhost:3000
 
 | Role       | Email                                                                                        | Password    |
 | ---------- | -------------------------------------------------------------------------------------------- | ----------- |
-| Superadmin | alex@vellum.app                                                                              | password123 |
-| Admin      | sarah@vellum.app / lisa@vellum.app                                                           | password123 |
-| Member     | marcus@vellum.app / emily@vellum.app / david@vellum.app / james@vellum.app / anna@vellum.app | password123 |
+| Superadmin | alex@perfect.my                                                                              | password123 |
+| Admin      | sarah@perfect.my / lisa@perfect.my                                                           | password123 |
+| Member     | marcus@perfect.my / emily@perfect.my / david@perfect.my / james@perfect.my / anna@perfect.my | password123 |
 
 ## 📁 Project Structure
 

@@ -9,18 +9,18 @@ import { clsx } from "clsx";
 export const dynamic = "force-dynamic";
 
 const priorityBadges: Record<string, string> = {
-  urgent: "bg-red-500/10 text-red-400",
-  high: "bg-orange-500/10 text-orange-400",
-  medium: "bg-amber-500/10 text-amber-400",
-  low: "bg-emerald-500/10 text-emerald-400",
+  urgent: "bg-red-500/10 text-red-600",
+  high: "bg-orange-500/10 text-orange-600",
+  medium: "bg-amber-500/10 text-amber-600",
+  low: "bg-emerald-500/10 text-emerald-600",
 };
 
 const statusBadges: Record<string, string> = {
-  backlog: "bg-slate-500/10 text-slate-400",
-  todo: "bg-blue-500/10 text-blue-400",
-  in_progress: "bg-amber-500/10 text-amber-400",
-  review: "bg-purple-500/10 text-purple-400",
-  done: "bg-emerald-500/10 text-emerald-400",
+  backlog: "bg-slate-500/10 text-slate-500",
+  todo: "bg-blue-500/10 text-blue-600",
+  in_progress: "bg-amber-500/10 text-amber-600",
+  review: "bg-purple-500/10 text-purple-600",
+  done: "bg-emerald-500/10 text-emerald-600",
 };
 
 export default async function TasksPage() {
@@ -56,24 +56,24 @@ export default async function TasksPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Tasks</h1>
-        <p className="text-slate-400 text-sm mt-1">{allTasks.length} total tasks</p>
+        <h1 className="text-2xl font-bold text-slate-900">Tasks</h1>
+        <p className="text-slate-500 text-sm mt-1">{allTasks.length} total tasks</p>
       </div>
 
       {/* My Tasks */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">My Tasks</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">My Tasks</h2>
         {myTasks.length === 0 ? (
-          <div className="bg-slate-900 border border-white/5 rounded-2xl p-12 text-center">
-            <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-800 flex items-center justify-center">
+          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+            <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
               <CheckSquare size={28} className="text-slate-500" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">No tasks assigned to you</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No tasks assigned to you</h3>
             <p className="text-sm text-slate-500">You don&apos;t have any tasks assigned yet.</p>
           </div>
         ) : (
-          <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
-            <div className="divide-y divide-white/5">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="divide-y divide-slate-200">
               {myTasks.map((task) => (
                 <Link
                   key={task.id}
@@ -81,7 +81,7 @@ export default async function TasksPage() {
                   className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-200 truncate">{task.title}</p>
+                    <p className="text-sm text-slate-800 truncate">{task.title}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded", statusBadges[task.status])}>
                         {task.status.replace("_", " ")}
@@ -108,9 +108,9 @@ export default async function TasksPage() {
 
       {/* All Tasks */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">All Tasks</h2>
-        <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
-          <div className="divide-y divide-white/5">
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">All Tasks</h2>
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="divide-y divide-slate-200">
             {allTasks.length === 0 ? (
               <div className="p-12 text-center">
                 <p className="text-sm text-slate-500">No tasks yet</p>
@@ -123,7 +123,7 @@ export default async function TasksPage() {
                   className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-200 truncate">{task.title}</p>
+                    <p className="text-sm text-slate-800 truncate">{task.title}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded", statusBadges[task.status])}>
                         {task.status.replace("_", " ")}

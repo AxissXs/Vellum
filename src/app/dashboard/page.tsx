@@ -79,10 +79,10 @@ export default async function DashboardPage() {
   const userMap = new Map(userRows.map(u => [u.id, u.name]));
 
   const stats = [
-    { label: "Active Projects", value: projectCount.count, icon: FolderKanban, color: "bg-brand-500/10 text-brand-400" },
-    { label: "Total Tasks", value: taskCount.count, icon: CheckSquare, color: "bg-emerald-500/10 text-emerald-400" },
-    { label: "Teams", value: teamCount.count, icon: Users, color: "bg-blue-500/10 text-blue-400" },
-    { label: "Team Members", value: userCount.count, icon: Users, color: "bg-amber-500/10 text-amber-400" },
+    { label: "Active Projects", value: projectCount.count, icon: FolderKanban, color: "bg-brand-500/10 text-brand-600" },
+    { label: "Total Tasks", value: taskCount.count, icon: CheckSquare, color: "bg-emerald-500/10 text-emerald-600" },
+    { label: "Teams", value: teamCount.count, icon: Users, color: "bg-blue-500/10 text-blue-600" },
+    { label: "Team Members", value: userCount.count, icon: Users, color: "bg-amber-500/10 text-amber-600" },
   ];
 
   const priorityColors: Record<string, string> = {
@@ -103,8 +103,8 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Welcome back, {user?.name?.split(" ")[0]} 👋</h1>
-        <p className="text-slate-400 mt-1">Here&apos;s what&apos;s happening across your teams today.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.name?.split(" ")[0]} 👋</h1>
+        <p className="text-slate-500 mt-1">Here&apos;s what&apos;s happening across your teams today.</p>
       </div>
 
       {/* Stats Grid */}
@@ -112,13 +112,13 @@ export default async function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-slate-900 border border-white/5 rounded-xl p-5 hover:border-white/10 transition">
+            <div key={stat.label} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-200 transition">
               <div className="flex items-center gap-3">
                 <div className={clsx("h-10 w-10 rounded-xl flex items-center justify-center", stat.color)}>
                   <Icon size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
                   <p className="text-xs text-slate-500">{stat.label}</p>
                 </div>
               </div>
@@ -129,10 +129,10 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Completion */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-6 lg:col-span-1">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={18} className="text-emerald-400" />
-            <h3 className="font-semibold text-white text-sm">Completion Rate</h3>
+            <TrendingUp size={18} className="text-emerald-600" />
+            <h3 className="font-semibold text-slate-900 text-sm">Completion Rate</h3>
           </div>
           <div className="flex items-center justify-center">
             <div className="relative h-32 w-32">
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-white">{completionRate}%</span>
+                  <span className="text-3xl font-bold text-slate-900">{completionRate}%</span>
                   <p className="text-[10px] text-slate-500">complete</p>
                 </div>
               </div>
@@ -162,10 +162,10 @@ export default async function DashboardPage() {
         </div>
 
         {/* Priority Breakdown */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-6 lg:col-span-1">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle size={18} className="text-amber-400" />
-            <h3 className="font-semibold text-white text-sm">By Priority</h3>
+            <AlertTriangle size={18} className="text-amber-600" />
+            <h3 className="font-semibold text-slate-900 text-sm">By Priority</h3>
           </div>
           <div className="space-y-3">
             {(["urgent", "high", "medium", "low"] as const).map((p) => {
@@ -176,10 +176,10 @@ export default async function DashboardPage() {
               return (
                 <div key={p}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-400">{priorityLabels[p]}</span>
+                    <span className="text-slate-500">{priorityLabels[p]}</span>
                     <span className="text-slate-500">{count}</span>
                   </div>
-                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={clsx("h-full rounded-full transition-all", priorityColors[p])}
                       style={{ width: `${pct}%` }}
@@ -192,17 +192,17 @@ export default async function DashboardPage() {
         </div>
 
         {/* Active Tasks */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-6 lg:col-span-1">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
-            <Clock size={18} className="text-blue-400" />
-            <h3 className="font-semibold text-white text-sm">Active Tasks</h3>
+            <Clock size={18} className="text-blue-600" />
+            <h3 className="font-semibold text-slate-900 text-sm">Active Tasks</h3>
           </div>
           {activeTasks.length === 0 ? (
             <p className="text-sm text-slate-500 text-center py-8">No active tasks</p>
           ) : (
             <div className="space-y-2">
               {activeTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                <div key={task.id} className="flex items-center gap-3 py-2 border-b border-slate-200 last:border-0">
                   <div
                     className={clsx(
                       "h-2 w-2 rounded-full flex-shrink-0",
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
                     )}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-slate-300 truncate">{task.title}</p>
+                    <p className="text-sm text-slate-600 truncate">{task.title}</p>
                     {task.assigneeId && (
                       <p className="text-xs text-slate-600">{userMap.get(task.assigneeId) || "Unassigned"}</p>
                     )}
@@ -218,8 +218,8 @@ export default async function DashboardPage() {
                   <span className={clsx(
                     "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded",
                     task.status === "in_progress"
-                      ? "bg-blue-500/10 text-blue-400"
-                      : "bg-purple-500/10 text-purple-400"
+                      ? "bg-blue-500/10 text-blue-600"
+                      : "bg-purple-500/10 text-purple-600"
                   )}>
                     {task.status === "in_progress" ? "In Progress" : "Review"}
                   </span>
@@ -232,23 +232,23 @@ export default async function DashboardPage() {
 
       {/* Recent Projects */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Recent Projects</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">Recent Projects</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {recentProjects.map((project) => (
             <a
               key={project.id}
               href={`/dashboard/projects/${project.id}`}
-              className="bg-slate-900 border border-white/5 rounded-xl p-5 hover:border-white/10 transition group"
+              className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-200 transition group"
             >
               <div className="flex items-center gap-3 mb-3">
                 <div
-                  className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-lg"
+                  className="h-10 w-10 rounded-xl flex items-center justify-center text-slate-900 text-lg"
                   style={{ backgroundColor: project.color || "#6366f1" }}
                 >
                   📁
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-white text-sm truncate group-hover:text-brand-400 transition">
+                  <h3 className="font-semibold text-slate-900 text-sm truncate group-hover:text-brand-600 transition">
                     {project.name}
                   </h3>
                 </div>

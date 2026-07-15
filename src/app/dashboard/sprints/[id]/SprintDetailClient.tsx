@@ -168,27 +168,27 @@ export default function SprintDetailClient({
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/sprints"
-            className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
+            className="p-2 rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
           >
             <ArrowRight size={16} className="rotate-180" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-white">{sprint.name}</h1>
+              <h1 className="text-2xl font-bold text-slate-900">{sprint.name}</h1>
               <span
                 className={clsx(
                   "text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border",
                   sprint.status === "active"
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                     : sprint.status === "completed"
-                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                    : "bg-slate-500/10 text-slate-300 border-slate-500/20"
+                    ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                    : "bg-slate-500/10 text-slate-600 border-slate-500/20"
                 )}
               >
                 {sprint.status}
               </span>
             </div>
-            <p className="text-sm text-slate-400 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               {project.name}
               {sprint.goal ? ` · ${sprint.goal}` : ""}
             </p>
@@ -196,7 +196,7 @@ export default function SprintDetailClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-500">
             <Calendar size={14} />
             {sprint.startDate
               ? new Date(sprint.startDate).toLocaleDateString("en-US", {
@@ -212,7 +212,7 @@ export default function SprintDetailClient({
                 })
               : "—"}
           </div>
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-500">
             <Flag size={14} />
             {donePoints}/{sprintPoints} pts
           </div>
@@ -220,7 +220,7 @@ export default function SprintDetailClient({
             <button
               onClick={completeSprint}
               disabled={updateSprint.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500/10 text-blue-400 px-3 py-1.5 text-xs font-medium hover:bg-blue-500/20 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500/10 text-blue-600 px-3 py-1.5 text-xs font-medium hover:bg-blue-500/20 transition disabled:opacity-50"
             >
               {updateSprint.isPending ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -234,7 +234,7 @@ export default function SprintDetailClient({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/10 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex gap-1 border-b border-slate-200 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none]">
         <TabButton tab="board" current={tab} onClick={setTab} icon={<ListTodo size={15} />} label="Board" />
         <TabButton tab="burndown" current={tab} onClick={setTab} icon={<TrendingDown size={15} />} label="Burndown" />
         <TabButton tab="planning" current={tab} onClick={setTab} icon={<Flag size={15} />} label={`Planning (${backlogForPlanning.length})`} />
@@ -294,8 +294,8 @@ function TabButton({
       className={clsx(
         "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px whitespace-nowrap flex-shrink-0",
         current === tab
-          ? "text-white border-brand-500"
-          : "text-slate-400 border-transparent hover:text-slate-200"
+          ? "text-brand-600 border-brand-500"
+          : "text-slate-500 border-transparent hover:text-slate-800"
       )}
     >
       {icon}
@@ -351,7 +351,7 @@ function BurndownChart({ sprintId }: { sprintId: string }) {
 
   if (error) {
     return (
-      <div className="border-2 border-dashed border-white/5 rounded-2xl py-16 text-center text-slate-400">
+      <div className="border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center text-slate-500">
         {error}
       </div>
     );
@@ -359,7 +359,7 @@ function BurndownChart({ sprintId }: { sprintId: string }) {
 
   if (!data?.actual?.length) {
     return (
-      <div className="border-2 border-dashed border-white/5 rounded-2xl py-16 text-center text-slate-400">
+      <div className="border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center text-slate-500">
         No burndown data yet. Add tasks with estimates to this sprint.
       </div>
     );
@@ -372,10 +372,10 @@ function BurndownChart({ sprintId }: { sprintId: string }) {
   }));
 
   return (
-    <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5">
+    <div className="bg-white/60 border border-slate-200 rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-white">Burndown</h3>
-        <span className="text-sm text-slate-400">{data.totalPoints} total points</span>
+        <h3 className="text-base font-semibold text-slate-900">Burndown</h3>
+        <span className="text-sm text-slate-500">{data.totalPoints} total points</span>
       </div>
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -436,21 +436,21 @@ function PlanningPanel({
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">
+      <div className="bg-white/60 border border-slate-200 rounded-2xl p-4">
+        <h3 className="text-base font-semibold text-slate-900 mb-3">
           In Sprint ({sprintTasks.length})
         </h3>
         <div className="space-y-2 max-h-[480px] overflow-y-auto">
           {sprintTasks.map((t) => (
             <div
               key={t.id}
-              className="flex items-center justify-between gap-2 bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2"
+              className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
             >
-              <span className="text-sm text-white truncate">{t.title}</span>
+              <span className="text-sm text-slate-900 truncate">{t.title}</span>
               <button
                 onClick={() => onRemove(t)}
                 disabled={updating}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
                 title="Remove from sprint"
                 aria-label="Remove from sprint"
               >
@@ -464,27 +464,27 @@ function PlanningPanel({
         </div>
       </div>
 
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-4">
+      <div className="bg-white/60 border border-slate-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-white">Backlog</h3>
+          <h3 className="text-base font-semibold text-slate-900">Backlog</h3>
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter tasks..."
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
         <div className="space-y-2 max-h-[480px] overflow-y-auto">
           {filteredBacklog.map((t) => (
             <div
               key={t.id}
-              className="flex items-center justify-between gap-2 bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2"
+              className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
             >
-              <span className="text-sm text-white truncate">{t.title}</span>
+              <span className="text-sm text-slate-900 truncate">{t.title}</span>
               <button
                 onClick={() => onAdd(t)}
                 disabled={updating}
-                className="inline-flex items-center gap-1 text-xs rounded-lg bg-brand-500/10 text-brand-400 px-2 py-1 hover:bg-brand-500/20 transition"
+                className="inline-flex items-center gap-1 text-xs rounded-lg bg-brand-500/10 text-brand-600 px-2 py-1 hover:bg-brand-500/20 transition"
               >
                 <Plus size={12} />
                 Add
@@ -537,36 +537,36 @@ function StandupPanel({
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5">
-        <h3 className="text-base font-semibold text-white mb-4">My standup — {today}</h3>
+      <div className="bg-white/60 border border-slate-200 rounded-2xl p-5">
+        <h3 className="text-base font-semibold text-slate-900 mb-4">My standup — {today}</h3>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Yesterday</label>
+            <label className="block text-xs text-slate-500 mb-1">Yesterday</label>
             <textarea
               value={yesterday}
               onChange={(e) => setYesterday(e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               placeholder="What did you complete?"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Today</label>
+            <label className="block text-xs text-slate-500 mb-1">Today</label>
             <textarea
               value={todayText}
               onChange={(e) => setTodayText(e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               placeholder="What are you working on?"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Blockers</label>
+            <label className="block text-xs text-slate-500 mb-1">Blockers</label>
             <textarea
               value={blockers}
               onChange={(e) => setBlockers(e.target.value)}
               rows={1}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               placeholder="Anything blocking you?"
             />
           </div>
@@ -581,8 +581,8 @@ function StandupPanel({
         </div>
       </div>
 
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5">
-        <h3 className="text-base font-semibold text-white mb-4">Team feed</h3>
+      <div className="bg-white/60 border border-slate-200 rounded-2xl p-5">
+        <h3 className="text-base font-semibold text-slate-900 mb-4">Team feed</h3>
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-slate-500">
             <Loader2 size={18} className="animate-spin" />
@@ -590,15 +590,15 @@ function StandupPanel({
         ) : standups && standups.length > 0 ? (
           <div className="space-y-3 max-h-[480px] overflow-y-auto">
             {standups.map((s: Standup) => (
-              <div key={s.id} className="bg-slate-800/50 border border-white/10 rounded-lg p-3">
+              <div key={s.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-white">{nameFor(s.userId)}</span>
+                  <span className="text-sm font-medium text-slate-900">{nameFor(s.userId)}</span>
                   <span className="text-[10px] text-slate-500">{s.date.slice(0, 10)}</span>
                 </div>
-                {s.yesterday && <p className="text-xs text-slate-400">✅ {s.yesterday}</p>}
-                {s.today && <p className="text-xs text-slate-400">▶️ {s.today}</p>}
+                {s.yesterday && <p className="text-xs text-slate-500">✅ {s.yesterday}</p>}
+                {s.today && <p className="text-xs text-slate-500">▶️ {s.today}</p>}
                 {s.blockers && (
-                  <p className="text-xs text-red-400/80">⛔ {s.blockers}</p>
+                  <p className="text-xs text-red-600/80">⛔ {s.blockers}</p>
                 )}
               </div>
             ))}
@@ -636,8 +636,8 @@ function RetroPanel({ sprintId }: { sprintId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5">
-        <h3 className="text-base font-semibold text-white mb-3">Add retro item</h3>
+      <div className="bg-white/60 border border-slate-200 rounded-2xl p-5">
+        <h3 className="text-base font-semibold text-slate-900 mb-3">Add retro item</h3>
         <div className="flex flex-wrap gap-2 mb-3">
           {retroCategories.map((c) => (
             <button
@@ -646,8 +646,8 @@ function RetroPanel({ sprintId }: { sprintId: string }) {
               className={clsx(
                 "text-xs px-3 py-1.5 rounded-lg border transition",
                 category === c.key
-                  ? "bg-white/10 text-white " + c.color
-                  : "text-slate-400 border-white/10 hover:text-white"
+                  ? "bg-slate-100 text-slate-900 " + c.color
+                  : "text-slate-500 border-slate-200 hover:text-slate-900"
               )}
             >
               {c.label}
@@ -660,7 +660,7 @@ function RetroPanel({ sprintId }: { sprintId: string }) {
             onChange={(e) => setContent(e.target.value)}
             rows={2}
             placeholder="Share a reflection..."
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+            className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
           />
           <button
             onClick={add}
@@ -680,18 +680,18 @@ function RetroPanel({ sprintId }: { sprintId: string }) {
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {retroCategories.map((c) => (
-            <div key={c.key} className={clsx("bg-slate-900/40 border rounded-2xl p-4", c.color)}>
-              <h4 className="text-sm font-semibold text-white mb-3">{c.label}</h4>
+            <div key={c.key} className={clsx("bg-white/40 border rounded-2xl p-4", c.color)}>
+              <h4 className="text-sm font-semibold text-slate-900 mb-3">{c.label}</h4>
               <div className="space-y-2">
                 {grouped(c.key).map((item) => (
                   <div
                     key={item.id}
-                    className="group flex items-start justify-between gap-2 bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2"
+                    className="group flex items-start justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
                   >
-                    <span className="text-sm text-slate-200">{item.content}</span>
+                    <span className="text-sm text-slate-800">{item.content}</span>
                     <button
                       onClick={() => deleteRetro.mutate({ id: item.id, sprintId })}
-                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
                       aria-label="Delete retro item"
                     >
                       <Trash2 size={16} />

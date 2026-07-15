@@ -37,14 +37,14 @@ export function renderMarkdown(value: string) {
 
   const inline = (text: string) =>
     text
-      .replace(/`([^`]+)`/g, '<code class="rounded bg-slate-800 px-1 py-0.5 text-brand-300">$1</code>')
+      .replace(/`([^`]+)`/g, '<code class="rounded bg-slate-100 px-1 py-0.5 text-brand-500">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/\*([^*]+)\*/g, "<em>$1</em>")
       .replace(
         /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-        '<a class="text-brand-400 hover:text-brand-300 underline" target="_blank" rel="noreferrer" href="$2">$1</a>'
+        '<a class="text-brand-600 hover:text-brand-500 underline" target="_blank" rel="noreferrer" href="$2">$1</a>'
       )
-      .replace(/@(\w+)/g, '<span class="text-brand-400 font-medium">@$1</span>');
+      .replace(/@(\w+)/g, '<span class="text-brand-600 font-medium">@$1</span>');
 
   const closeLists = () => {
     if (inUl) {
@@ -66,13 +66,13 @@ export function renderMarkdown(value: string) {
 
     if (line.startsWith("## ")) {
       closeLists();
-      html.push(`<h3 class="text-sm font-semibold text-white mt-3 mb-1">${inline(line.slice(3))}</h3>`);
+      html.push(`<h3 class="text-sm font-semibold text-slate-900 mt-3 mb-1">${inline(line.slice(3))}</h3>`);
     } else if (line.startsWith("# ")) {
       closeLists();
-      html.push(`<h2 class="text-base font-semibold text-white mt-3 mb-1">${inline(line.slice(2))}</h2>`);
+      html.push(`<h2 class="text-base font-semibold text-slate-900 mt-3 mb-1">${inline(line.slice(2))}</h2>`);
     } else if (line.startsWith("> ")) {
       closeLists();
-      html.push(`<blockquote class="border-l-2 border-brand-500 pl-3 text-slate-400 italic">${inline(line.slice(2))}</blockquote>`);
+      html.push(`<blockquote class="border-l-2 border-brand-500 pl-3 text-slate-500 italic">${inline(line.slice(2))}</blockquote>`);
     } else if (/^-\s+/.test(line)) {
       if (!inUl) {
         closeLists();
@@ -106,7 +106,7 @@ export function RichTextPreview({ value, empty = "No content yet" }: { value: st
 
   return (
     <div
-      className="prose prose-invert prose-sm max-w-none text-sm leading-6 text-slate-300 space-y-2"
+      className="prose prose-invert prose-sm max-w-none text-sm leading-6 text-slate-600 space-y-2"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -270,10 +270,10 @@ export default function RichTextEditor({
 
   return (
     <div>
-      {label && <label className="block text-sm font-medium text-slate-300 mb-1.5">{label}</label>}
+      {label && <label className="block text-sm font-medium text-slate-600 mb-1.5">{label}</label>}
       <div className="relative">
-        <div className="overflow-hidden rounded-lg border border-white/10 bg-white/5 focus-within:ring-2 focus-within:ring-brand-500">
-          <div className="flex items-center justify-between gap-2 border-b border-white/10 bg-slate-950/40 px-2 py-1.5">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50 focus-within:ring-2 focus-within:ring-brand-500">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-100 px-2 py-1.5">
             <div className="flex flex-wrap items-center gap-1">
               {tools.map((tool) => {
                 const Icon = tool.icon;
@@ -283,7 +283,7 @@ export default function RichTextEditor({
                     type="button"
                     onClick={tool.action}
                     title={tool.label}
-                    className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition"
+                    className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
                   >
                     <Icon size={14} />
                   </button>
@@ -298,19 +298,19 @@ export default function RichTextEditor({
                     textareaRef.current?.focus();
                   }}
                   title="Mention user"
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition"
+                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
                 >
                   <AtSign size={14} />
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1 rounded-md bg-slate-900 p-0.5">
+            <div className="flex items-center gap-1 rounded-md bg-white p-0.5">
               <button
                 type="button"
                 onClick={() => setMode("edit")}
                 className={clsx(
                   "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
-                  mode === "edit" ? "bg-brand-500 text-white" : "text-slate-400 hover:text-white"
+                  mode === "edit" ? "bg-brand-500 text-white" : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 <Edit3 size={12} /> Edit
@@ -320,7 +320,7 @@ export default function RichTextEditor({
                 onClick={() => setMode("preview")}
                 className={clsx(
                   "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
-                  mode === "preview" ? "bg-brand-500 text-white" : "text-slate-400 hover:text-white"
+                  mode === "preview" ? "bg-brand-500 text-white" : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 <Eye size={12} /> Preview
@@ -336,7 +336,7 @@ export default function RichTextEditor({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               rows={rows}
-              className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none min-h-[120px]"
+              className="w-full resize-none border-0 bg-transparent px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none min-h-[120px]"
               spellCheck={false}
             />
           ) : (
@@ -347,16 +347,16 @@ export default function RichTextEditor({
           {showMentions && filteredUsers.length > 0 && (
             <div
               ref={mentionListRef}
-              className="absolute z-50 bottom-full left-4 mb-1 w-56 bg-slate-900 border border-white/10 rounded-lg shadow-xl py-1 animate-slide-in"
+              className="absolute z-50 bottom-full left-4 mb-1 w-56 bg-white border border-slate-200 rounded-lg shadow-xl py-1 animate-slide-in"
             >
               {filteredUsers.map((user) => (
                 <button
                   key={user.id}
                   type="button"
                   onClick={() => handleMentionSelect(user)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
                 >
-                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-400 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-600 flex-shrink-0">
                     {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                   </div>
                   <span className="truncate">{user.name}</span>

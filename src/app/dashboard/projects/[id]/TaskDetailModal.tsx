@@ -39,10 +39,10 @@ type Comment = {
 };
 
 const priorityBadges: Record<string, string> = {
-  urgent: "bg-red-500/10 text-red-400 border-red-500/20",
-  high: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  urgent: "bg-red-500/10 text-red-600 border-red-500/20",
+  high: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  medium: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  low: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
 };
 
 async function fetchComments(taskId: string) {
@@ -181,20 +181,20 @@ export default function TaskDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85dvh] flex flex-col shadow-2xl animate-slide-in">
+      <div className="relative bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[85dvh] flex flex-col shadow-lg animate-slide-in">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-white/5">
+        <div className="flex items-start justify-between p-6 border-b border-slate-200">
           <div className="flex-1 min-w-0">
             {editing ? (
               <input
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 autoFocus
               />
             ) : (
-              <h3 className="text-lg font-semibold text-white">{task.title}</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
             )}
             <div className="flex items-center gap-2 mt-2">
               <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
@@ -207,7 +207,7 @@ export default function TaskDetailModal({
             {!editing ? (
               <button
                 onClick={() => setEditing(true)}
-                className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition"
+                className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
               >
                 Edit
               </button>
@@ -222,7 +222,7 @@ export default function TaskDetailModal({
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
+                  className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
                 >
                   Cancel
                 </button>
@@ -231,11 +231,11 @@ export default function TaskDetailModal({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
             >
               {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
             </button>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white transition">
+            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition">
               <X size={18} />
             </button>
           </div>
@@ -251,7 +251,7 @@ export default function TaskDetailModal({
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="backlog">Backlog</option>
                   <option value="todo">To Do</option>
@@ -260,7 +260,7 @@ export default function TaskDetailModal({
                   <option value="done">Done</option>
                 </select>
               ) : (
-                <p className="text-sm text-slate-300 capitalize">{task.status.replace("_", " ")}</p>
+                <p className="text-sm text-slate-600 capitalize">{task.status.replace("_", " ")}</p>
               )}
             </div>
 
@@ -270,7 +270,7 @@ export default function TaskDetailModal({
                 <select
                   value={editPriority}
                   onChange={(e) => setEditPriority(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -278,7 +278,7 @@ export default function TaskDetailModal({
                   <option value="urgent">Urgent</option>
                 </select>
               ) : (
-                <p className="text-sm text-slate-300 capitalize">{task.priority}</p>
+                <p className="text-sm text-slate-600 capitalize">{task.priority}</p>
               )}
             </div>
 
@@ -288,7 +288,7 @@ export default function TaskDetailModal({
                 <select
                   value={editAssignee}
                   onChange={(e) => setEditAssignee(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">Unassigned</option>
                   {users.map((u) => (
@@ -296,7 +296,7 @@ export default function TaskDetailModal({
                   ))}
                 </select>
               ) : (
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-slate-600">
                   {task.assigneeName || <span className="text-slate-600">Unassigned</span>}
                 </p>
               )}
@@ -309,10 +309,10 @@ export default function TaskDetailModal({
                   type="date"
                   value={editDueDate}
                   onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               ) : (
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-slate-600">
                   {task.dueDate ? formatDate(task.dueDate) : <span className="text-slate-600">None</span>}
                 </p>
               )}
@@ -339,7 +339,7 @@ export default function TaskDetailModal({
 
           {/* Comments */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-3">
+            <h4 className="text-sm font-semibold text-slate-900 mb-3">
               Comments ({comments.length})
             </h4>
 
@@ -349,7 +349,7 @@ export default function TaskDetailModal({
               )}
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-600 flex-shrink-0">
                     {getInitials(c.authorName)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -366,7 +366,7 @@ export default function TaskDetailModal({
                           <button
                             type="button"
                             onClick={cancelEditComment}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
+                            className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
                           >
                             Cancel
                           </button>
@@ -382,13 +382,13 @@ export default function TaskDetailModal({
                     ) : (
                       <>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-slate-300">{c.authorName || "Unknown"}</span>
+                          <span className="text-xs font-medium text-slate-600">{c.authorName || "Unknown"}</span>
                           <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
                           {c.authorId === currentUserId && (
                             <div className="flex items-center gap-1 ml-auto">
                               <button
                                 onClick={() => startEditComment(c)}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
                                 title="Edit"
                               >
                                 <Edit2 size={12} />
@@ -396,7 +396,7 @@ export default function TaskDetailModal({
                               <button
                                 onClick={() => handleDeleteComment(c.id)}
                                 disabled={deleteCommentMutation.isPending}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
                                 title="Delete"
                               >
                                 {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}

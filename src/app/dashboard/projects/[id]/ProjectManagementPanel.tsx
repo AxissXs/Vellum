@@ -40,16 +40,16 @@ type Member = {
 };
 
 const statusBadges: Record<string, string> = {
-  planning: "bg-slate-500/10 text-slate-400 border-slate-500/20",
-  active: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  paused: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  planning: "bg-slate-500/10 text-slate-500 border-slate-500/20",
+  active: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  paused: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  completed: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
 };
 
 const healthBadges: Record<string, string> = {
-  on_track: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  watching: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  at_risk: "bg-red-500/10 text-red-400 border-red-500/20",
+  on_track: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  watching: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  at_risk: "bg-red-500/10 text-red-600 border-red-500/20",
 };
 
 export default function ProjectManagementPanel({
@@ -167,10 +167,10 @@ export default function ProjectManagementPanel({
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <div className="xl:col-span-2 space-y-6">
-        <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <section className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-5">
             <div>
-              <h2 className="text-lg font-semibold text-white">Project Command Center</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Project Command Center</h2>
               <p className="text-sm text-slate-500">Goals, health, risks, dates, and delivery checkpoints.</p>
             </div>
             <button
@@ -186,7 +186,7 @@ export default function ProjectManagementPanel({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
             <label className="block">
               <span className="text-xs text-slate-500">Status</span>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="planning">Planning</option>
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
@@ -195,7 +195,7 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Health</span>
-              <select value={health} onChange={(e) => setHealth(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <select value={health} onChange={(e) => setHealth(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="on_track">On track</option>
                 <option value="watching">Watching</option>
                 <option value="at_risk">At risk</option>
@@ -203,7 +203,7 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Visibility</span>
-              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="team">Team</option>
                 <option value="company">Company</option>
                 <option value="private">Private</option>
@@ -211,19 +211,19 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Start date</span>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Target date</span>
-              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </label>
-            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               <span className="text-xs text-slate-500">Delivery progress</span>
               <div className="mt-2 flex items-center gap-3">
-                <div className="h-2 flex-1 rounded-full bg-slate-800 overflow-hidden">
+                <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden">
                   <div className="h-full rounded-full bg-brand-500" style={{ width: `${completionRate}%` }} />
                 </div>
-                <span className="text-sm font-semibold text-white">{completionRate}%</span>
+                <span className="text-sm font-semibold text-slate-900">{completionRate}%</span>
               </div>
             </div>
           </div>
@@ -237,26 +237,26 @@ export default function ProjectManagementPanel({
           </div>
         </section>
 
-        <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <section className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Milestones</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Milestones</h2>
               <p className="text-sm text-slate-500">Track important checkpoints and delivery dates.</p>
             </div>
-            <span className="text-xs rounded-full bg-slate-800 px-2 py-1 text-slate-400">{milestones.length} total</span>
+            <span className="text-xs rounded-full bg-slate-100 px-2 py-1 text-slate-500">{milestones.length} total</span>
           </div>
 
-          <form onSubmit={createMilestone} className="mb-5 rounded-xl border border-white/5 bg-slate-950/40 p-4 space-y-3">
+          <form onSubmit={createMilestone} className="mb-5 rounded-xl border border-slate-200 bg-slate-100 p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input value={milestoneTitle} onChange={(e) => setMilestoneTitle(e.target.value)} placeholder="Milestone title" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <select value={milestoneOwner} onChange={(e) => setMilestoneOwner(e.target.value)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <input value={milestoneTitle} onChange={(e) => setMilestoneTitle(e.target.value)} placeholder="Milestone title" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <select value={milestoneOwner} onChange={(e) => setMilestoneOwner(e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="">No owner</option>
                 {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
               </select>
             </div>
             <RichTextEditor value={milestoneDescription} onChange={setMilestoneDescription} rows={3} placeholder="Milestone definition of done, scope, or dependencies..." />
-            <button disabled={creatingMilestone || !milestoneTitle.trim()} className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/15 disabled:opacity-50 transition">
+            <button disabled={creatingMilestone || !milestoneTitle.trim()} className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-white/15 disabled:opacity-50 transition">
               {creatingMilestone ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               Add milestone
             </button>
@@ -264,12 +264,12 @@ export default function ProjectManagementPanel({
 
           <div className="space-y-3">
             {milestones.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
+              <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
                 <Flag className="mx-auto mb-3 text-slate-600" size={28} />
                 <p className="text-sm text-slate-500">No milestones yet. Add the first delivery checkpoint above.</p>
               </div>
             ) : milestones.map((milestone) => (
-              <div key={milestone.id} className="rounded-xl border border-white/5 bg-slate-950/40 p-4">
+              <div key={milestone.id} className="rounded-xl border border-slate-200 bg-slate-100 p-4">
                 <div className="flex items-start gap-3">
                   <button
                     onClick={() => updateMilestone(milestone.id, { status: milestone.status === "done" ? "planned" : "done" })}
@@ -278,8 +278,8 @@ export default function ProjectManagementPanel({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className={clsx("text-sm font-semibold", milestone.status === "done" ? "text-slate-500 line-through" : "text-white")}>{milestone.title}</h3>
-                      <span className="text-[10px] uppercase tracking-wider rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">{milestone.status}</span>
+                      <h3 className={clsx("text-sm font-semibold", milestone.status === "done" ? "text-slate-500 line-through" : "text-slate-900")}>{milestone.title}</h3>
+                      <span className="text-[10px] uppercase tracking-wider rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">{milestone.status}</span>
                     </div>
                     <div className="mt-2">
                       <RichTextPreview value={milestone.description || ""} empty="No details" />
@@ -289,7 +289,7 @@ export default function ProjectManagementPanel({
                       <span>Owner: {users.find((user) => user.id === milestone.ownerId)?.name || "Unassigned"}</span>
                     </div>
                   </div>
-                  <button onClick={() => deleteMilestone(milestone.id)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition">
+                  <button onClick={() => deleteMilestone(milestone.id)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-600 transition">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -300,8 +300,8 @@ export default function ProjectManagementPanel({
       </div>
 
       <aside className="space-y-6">
-        <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Executive Snapshot</h2>
+        <section className="bg-white border border-slate-200 rounded-xl p-5">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Executive Snapshot</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Status</span>
@@ -313,19 +313,19 @@ export default function ProjectManagementPanel({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Next milestone</span>
-              <span className="text-sm text-slate-300 text-right">{nextMilestone?.title || "None"}</span>
+              <span className="text-sm text-slate-600 text-right">{nextMilestone?.title || "None"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Target</span>
-              <span className="text-sm text-slate-300">{formatDate(targetDate || null)}</span>
+              <span className="text-sm text-slate-600">{formatDate(targetDate || null)}</span>
             </div>
           </div>
         </section>
 
-        <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <section className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Users size={18} className="text-brand-400" />
-            <h2 className="text-lg font-semibold text-white">Workload</h2>
+            <Users size={18} className="text-brand-600" />
+            <h2 className="text-lg font-semibold text-slate-900">Workload</h2>
           </div>
           <div className="space-y-3">
             {members.length === 0 ? (
@@ -334,15 +334,15 @@ export default function ProjectManagementPanel({
               const total = member.openTasks + member.doneTasks;
               const donePct = total > 0 ? Math.round((member.doneTasks / total) * 100) : 0;
               return (
-                <div key={member.userId || member.name || "unassigned"} className="rounded-lg bg-slate-950/50 p-3">
+                <div key={member.userId || member.name || "unassigned"} className="rounded-lg bg-slate-50/50 p-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-400">{getInitials(member.name)}</div>
+                    <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-600">{getInitials(member.name)}</div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-white truncate">{member.name || "Unassigned"}</p>
+                      <p className="text-sm text-slate-900 truncate">{member.name || "Unassigned"}</p>
                       <p className="text-xs text-slate-500">{member.openTasks} open · {member.doneTasks} done</p>
                     </div>
                   </div>
-                  <div className="mt-3 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="mt-3 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: `${donePct}%` }} />
                   </div>
                 </div>
@@ -351,18 +351,18 @@ export default function ProjectManagementPanel({
           </div>
         </section>
 
-        <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <section className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Target size={18} className="text-emerald-400" />
-            <h2 className="font-semibold text-white">Goal preview</h2>
+            <Target size={18} className="text-emerald-600" />
+            <h2 className="font-semibold text-slate-900">Goal preview</h2>
           </div>
           <RichTextPreview value={goal} empty="No project goal captured yet" />
         </section>
 
-        <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <section className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <ShieldAlert size={18} className="text-amber-400" />
-            <h2 className="font-semibold text-white">Risk preview</h2>
+            <ShieldAlert size={18} className="text-amber-600" />
+            <h2 className="font-semibold text-slate-900">Risk preview</h2>
           </div>
           <RichTextPreview value={risks} empty="No active risks captured" />
         </section>

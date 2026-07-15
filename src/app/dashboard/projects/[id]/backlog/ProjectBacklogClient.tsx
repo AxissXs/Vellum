@@ -27,10 +27,10 @@ type Task = {
 };
 
 const priorityBadges: Record<string, string> = {
-  urgent: "bg-red-500/10 text-red-400",
-  high: "bg-orange-500/10 text-orange-400",
-  medium: "bg-amber-500/10 text-amber-400",
-  low: "bg-emerald-500/10 text-emerald-400",
+  urgent: "bg-red-500/10 text-red-600",
+  high: "bg-orange-500/10 text-orange-600",
+  medium: "bg-amber-500/10 text-amber-600",
+  low: "bg-emerald-500/10 text-emerald-600",
 };
 
 export default function ProjectBacklogClient({
@@ -110,7 +110,7 @@ export default function ProjectBacklogClient({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add a backlog item..."
-          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <button
           type="submit"
@@ -123,8 +123,8 @@ export default function ProjectBacklogClient({
       </form>
 
       {tasks.length === 0 ? (
-        <div className="border-2 border-dashed border-white/5 rounded-2xl py-16 text-center">
-          <p className="text-slate-400">Backlog is empty.</p>
+        <div className="border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center">
+          <p className="text-slate-500">Backlog is empty.</p>
           <p className="text-sm text-slate-500 mt-1">
             Add tasks here, then pull them into a sprint during planning.
           </p>
@@ -134,10 +134,10 @@ export default function ProjectBacklogClient({
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 border border-white/10 rounded-xl px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 bg-white/60 border border-slate-200 rounded-xl px-4 py-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white truncate">{task.title}</p>
+                <p className="text-sm font-medium text-slate-900 truncate">{task.title}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span
                     className={clsx(
@@ -162,7 +162,7 @@ export default function ProjectBacklogClient({
                   <button
                     onClick={() => assignToSprint(task, activeSprint.id)}
                     disabled={updateTask.isPending}
-                    className="text-xs rounded-lg bg-emerald-500/10 text-emerald-400 px-3 py-1.5 hover:bg-emerald-500/20 transition disabled:opacity-50"
+                    className="text-xs rounded-lg bg-emerald-500/10 text-emerald-600 px-3 py-1.5 hover:bg-emerald-500/20 transition disabled:opacity-50"
                   >
                     → {activeSprint.name}
                   </button>
@@ -174,7 +174,7 @@ export default function ProjectBacklogClient({
                       if (e.target.value) assignToSprint(task, e.target.value);
                       e.target.value = "";
                     }}
-                    className="text-xs rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="text-xs rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="">Add to sprint...</option>
                     {plannedSprints.map((s) => (

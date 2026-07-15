@@ -3,9 +3,12 @@ import { db, pool } from "./index";
 import { users, projects, teams, teamMembers, tasks, comments, activityLogs, sprints, standups, retroItems, taskStatusHistory } from "./schema";
 import { eq, inArray } from "drizzle-orm";
 import { hashSync } from "bcryptjs";
+import { brand } from "@/lib/brand";
 
 async function seed() {
   console.log("🌱 Seeding database...");
+  const domain = brand.emailDomain;
+  const platformName = `${brand.name} Platform`;
 
   // Clean existing data
   await db.delete(activityLogs);
@@ -27,56 +30,56 @@ async function seed() {
     .values([
       {
         name: "Alex Morgan",
-        email: "alex@vellum.app",
+        email: `alex@${domain}`,
         passwordHash,
         role: "superadmin",
         avatarUrl: "",
       },
       {
         name: "Sarah Chen",
-        email: "sarah@vellum.app",
+        email: `sarah@${domain}`,
         passwordHash,
         role: "admin",
         avatarUrl: "",
       },
       {
         name: "Marcus Johnson",
-        email: "marcus@vellum.app",
+        email: `marcus@${domain}`,
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "Emily Rodriguez",
-        email: "emily@vellum.app",
+        email: `emily@${domain}`,
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "David Kim",
-        email: "david@vellum.app",
+        email: `david@${domain}`,
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "Lisa Thompson",
-        email: "lisa@vellum.app",
+        email: `lisa@${domain}`,
         passwordHash,
         role: "admin",
         avatarUrl: "",
       },
       {
         name: "James Wilson",
-        email: "james@vellum.app",
+        email: `james@${domain}`,
         passwordHash,
         role: "member",
         avatarUrl: "",
       },
       {
         name: "Anna Martinez",
-        email: "anna@vellum.app",
+        email: `anna@${domain}`,
         passwordHash,
         role: "member",
         avatarUrl: "",
@@ -128,7 +131,7 @@ async function seed() {
     .insert(projects)
     .values([
 {
-        name: "Vellum Platform",
+        name: platformName,
         description: "Core team management application with kanban boards and collaboration features",
         color: "#6366f1",
         icon: "layout-dashboard",
@@ -166,7 +169,7 @@ async function seed() {
     .returning({ id: projects.id, name: projects.name });
 
   const projectMap = new Map(projectIds.map((p) => [p.name, p.id]));
-  const vellumProjectId = projectMap.get("Vellum Platform")!;
+  const platformProjectId = projectMap.get(platformName)!;
   const mobileProjectId = projectMap.get("Mobile App Redesign")!;
   const apiProjectId = projectMap.get("API Gateway")!;
   const marketingProjectId = projectMap.get("Q4 Marketing Campaign")!;
@@ -174,29 +177,29 @@ async function seed() {
 
   // Create team members
   await db.insert(teamMembers).values([
-    { teamId: engTeamId, userId: alexId, projectId: vellumProjectId },
-    { teamId: engTeamId, userId: davidId, projectId: vellumProjectId },
+    { teamId: engTeamId, userId: alexId, projectId: platformProjectId },
+    { teamId: engTeamId, userId: davidId, projectId: platformProjectId },
     { teamId: engTeamId, userId: jamesId, projectId: apiProjectId },
-    { teamId: engTeamId, userId: annaId, projectId: vellumProjectId },
+    { teamId: engTeamId, userId: annaId, projectId: platformProjectId },
     { teamId: designTeamId, userId: sarahId, projectId: mobileProjectId },
     { teamId: designTeamId, userId: emilyId, projectId: mobileProjectId },
     { teamId: designTeamId, userId: annaId, projectId: mobileProjectId },
     { teamId: marketingTeamId, userId: lisaId, projectId: marketingProjectId },
     { teamId: marketingTeamId, userId: marcusId, projectId: marketingProjectId },
-    { teamId: productTeamId, userId: alexId, projectId: vellumProjectId },
+    { teamId: productTeamId, userId: alexId, projectId: platformProjectId },
     { teamId: productTeamId, userId: sarahId, projectId: mobileProjectId },
     { teamId: productTeamId, userId: lisaId, projectId: marketingProjectId },
   ]);
 
   // Create tasks
   const taskData = [
-    // Vellum Platform tasks
+    // Platform project tasks
     {
       title: "Set up CI/CD pipeline",
       description: "Configure GitHub Actions for automated testing and deployment to staging environment.",
       status: "done" as const,
       priority: "high" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: davidId,
       creatorId: alexId,
       dueDate: new Date("2026-03-15"),
@@ -207,7 +210,7 @@ async function seed() {
       description: "Add email/password authentication with session management and role-based access control.",
       status: "done" as const,
       priority: "urgent" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: jamesId,
       creatorId: alexId,
       dueDate: new Date("2026-03-20"),
@@ -218,7 +221,7 @@ async function seed() {
       description: "Create normalized database schema for users, projects, tasks, teams, and activity logging.",
       status: "done" as const,
       priority: "high" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: annaId,
       creatorId: alexId,
       dueDate: new Date("2026-03-22"),
@@ -229,7 +232,7 @@ async function seed() {
       description: "Create drag-and-drop kanban board with smooth animations and task cards showing priority, assignee, and due date.",
       status: "in_progress" as const,
       priority: "high" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: annaId,
       creatorId: alexId,
       dueDate: new Date("2026-04-05"),
@@ -240,7 +243,7 @@ async function seed() {
       description: "Implement notification system for task assignments, comments, and status changes using WebSockets.",
       status: "todo" as const,
       priority: "medium" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: davidId,
       creatorId: alexId,
       dueDate: new Date("2026-04-12"),
@@ -251,7 +254,7 @@ async function seed() {
       description: "Build analytics dashboard showing team velocity, burndown charts, and task completion metrics.",
       status: "backlog" as const,
       priority: "medium" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: jamesId,
       creatorId: alexId,
       dueDate: new Date("2026-04-25"),
@@ -262,7 +265,7 @@ async function seed() {
       description: "Document all REST API endpoints with OpenAPI/Swagger specification for external developers.",
       status: "backlog" as const,
       priority: "low" as const,
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       assigneeId: annaId,
       creatorId: alexId,
       dueDate: new Date("2026-05-01"),
@@ -467,7 +470,7 @@ async function seed() {
     .set({ estimate: 3 })
     .where(eq(tasks.id, taskIdMap.get("Service discovery")!));
 
-  // Create an active sprint for the Vellum Platform project
+  // Create an active sprint for the platform project
   const now = new Date();
   const sprintStart = new Date(now);
   sprintStart.setDate(sprintStart.getDate() - 7);
@@ -477,7 +480,7 @@ async function seed() {
   const [sprint] = await db
     .insert(sprints)
     .values({
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       name: "Sprint 1 — Core Experience",
       goal: "Ship the kanban board and notifications for the core platform.",
       startDate: sprintStart,
@@ -551,7 +554,7 @@ async function seed() {
   const [prevSprint] = await db
     .insert(sprints)
     .values({
-      projectId: vellumProjectId,
+      projectId: platformProjectId,
       name: "Sprint 0 — Foundations",
       goal: "Establish the platform foundation.",
       startDate: new Date(sprintStart.getTime() - 14 * 86400000),
@@ -583,7 +586,7 @@ async function seed() {
 
   // Create activity logs
   await db.insert(activityLogs).values([
-    { userId: alexId, action: "created_project", entityType: "project", entityId: vellumProjectId, details: "Created project: Vellum Platform" },
+    { userId: alexId, action: "created_project", entityType: "project", entityId: platformProjectId, details: `Created project: ${platformName}` },
     { userId: sarahId, action: "created_project", entityType: "project", entityId: mobileProjectId, details: "Created project: Mobile App Redesign" },
     { userId: davidId, action: "created_project", entityType: "project", entityId: apiProjectId, details: "Created project: API Gateway" },
     { userId: lisaId, action: "created_project", entityType: "project", entityId: marketingProjectId, details: "Created project: Q4 Marketing Campaign" },
@@ -597,9 +600,9 @@ async function seed() {
 
   console.log("✅ Seed completed successfully!");
   console.log("\n📧 Demo accounts (password: password123):");
-  console.log("  Superadmin: alex@vellum.app");
-  console.log("  Admin:      sarah@vellum.app / lisa@vellum.app");
-  console.log("  Member:     marcus@vellum.app / emily@vellum.app / david@vellum.app / james@vellum.app / anna@vellum.app");
+  console.log(`  Superadmin: alex@${domain}`);
+  console.log(`  Admin:      sarah@${domain} / lisa@${domain}`);
+  console.log(`  Member:     marcus@${domain} / emily@${domain} / david@${domain} / james@${domain} / anna@${domain}`);
 }
 
 seed()

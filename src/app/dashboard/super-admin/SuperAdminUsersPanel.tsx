@@ -34,15 +34,15 @@ function formatDate(dateStr: string) {
 }
 
 const roleBadges: Record<string, string> = {
-  superadmin: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  member: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  superadmin: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  admin: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  member: "bg-slate-500/10 text-slate-500 border-slate-500/20",
 };
 
 const statusBadges: Record<string, string> = {
-  active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  inactive: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  banned: "bg-red-500/10 text-red-400 border-red-500/20",
+  active: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  inactive: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  banned: "bg-red-500/10 text-red-600 border-red-500/20",
 };
 
 export default function SuperAdminUsersPanel() {
@@ -147,14 +147,14 @@ export default function SuperAdminUsersPanel() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full rounded-lg border border-white/10 bg-white/5 pl-9 pr-4 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="all">All roles</option>
           <option value="superadmin">Superadmin</option>
@@ -165,7 +165,7 @@ export default function SuperAdminUsersPanel() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="all">All statuses</option>
           <option value="active">Active</option>
@@ -175,7 +175,7 @@ export default function SuperAdminUsersPanel() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         {isLoading && (
           <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
             <Loader2 size={16} className="animate-spin mr-2" />
@@ -184,7 +184,7 @@ export default function SuperAdminUsersPanel() {
         )}
 
         {isError && (
-          <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+          <div className="flex items-center justify-center py-12 text-red-600 text-sm">
             Failed to load users.
           </div>
         )}
@@ -193,29 +193,29 @@ export default function SuperAdminUsersPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-5 py-3 font-medium text-slate-400">User</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Role</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Status</th>
+                <tr className="border-b border-slate-200 bg-white/[0.02]">
+                  <th className="px-5 py-3 font-medium text-slate-500">User</th>
+                  <th className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap">Role</th>
+                  <th className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap">Status</th>
                   <th
-                    className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap cursor-pointer select-none"
+                    className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap cursor-pointer select-none"
                     onClick={() => toggleSort("createdAt")}
                   >
                     Created {sortBy === "createdAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
                   </th>
-                  <th className="px-5 py-3 font-medium text-slate-400 text-right">Actions</th>
+                  <th className="px-5 py-3 font-medium text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-slate-200">
                 {filtered.map((u) => (
                   <tr key={u.id} className="hover:bg-white/[0.02] transition">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 flex-shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 flex-shrink-0">
                           {getInitials(u.name)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-slate-200 truncate">{u.name}</p>
+                          <p className="font-medium text-slate-800 truncate">{u.name}</p>
                           <p className="text-xs text-slate-500 truncate">{u.email}</p>
                         </div>
                       </div>
@@ -240,7 +240,7 @@ export default function SuperAdminUsersPanel() {
                           value={u.role}
                           onChange={(e) => updateUser.mutate({ id: u.id, patch: { role: e.target.value } })}
                           disabled={updateUser.isPending}
-                          className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                           title="Change role"
                         >
                           <option value="member">Member</option>
@@ -253,7 +253,7 @@ export default function SuperAdminUsersPanel() {
                           value={u.status}
                           onChange={(e) => updateUser.mutate({ id: u.id, patch: { status: e.target.value } })}
                           disabled={updateUser.isPending}
-                          className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                           title="Change status"
                         >
                           <option value="active">Active</option>

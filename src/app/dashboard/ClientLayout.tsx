@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { QueryProvider } from "@/providers/QueryProvider";
 import Sidebar from "@/components/Sidebar";
+import { BrandLogo } from "@/components/BrandLogo";
+import { brand } from "@/lib/brand";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -28,7 +30,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
 
   return (
     <QueryProvider>
-      <div className="min-h-dvh bg-slate-950">
+      <div className="min-h-dvh bg-slate-50">
         <Sidebar
           user={user}
           mobileOpen={mobileNavOpen}
@@ -45,21 +47,17 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         )}
 
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-white/5 bg-slate-900/80 px-4 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
             aria-label="Open menu"
           >
             <Menu size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0">
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </div>
-            <span className="font-bold text-white">Vellum</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <BrandLogo variant="light" className="h-5 w-auto max-w-[120px]" />
+            <span className="sr-only">{brand.name}</span>
           </div>
         </header>
 

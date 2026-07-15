@@ -38,8 +38,8 @@ export default async function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Projects</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
+          <p className="text-slate-500 text-sm mt-1">
             {activeProjects.length} active project{activeProjects.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -47,11 +47,11 @@ export default async function ProjectsPage() {
       </div>
 
       {projectsWithCounts.length === 0 ? (
-        <div className="bg-slate-900 border border-white/5 rounded-2xl p-12 text-center">
-          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-800 flex items-center justify-center">
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
             <FolderKanban size={28} className="text-slate-500" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No projects yet</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No projects yet</h3>
           <p className="text-sm text-slate-500 max-w-sm mx-auto">
             Create your first project to start organizing tasks and collaborating with your team.
           </p>
@@ -62,17 +62,17 @@ export default async function ProjectsPage() {
             <Link
               key={project.id}
               href={`/dashboard/projects/${project.id}`}
-              className="bg-slate-900 border border-white/5 rounded-xl p-5 hover:border-white/10 transition group"
+              className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-200 transition group"
             >
               <div className="flex items-start gap-3">
                 <div
-                  className="h-12 w-12 rounded-xl flex items-center justify-center text-white text-xl flex-shrink-0"
+                  className="h-12 w-12 rounded-xl flex items-center justify-center text-slate-900 text-xl flex-shrink-0"
                   style={{ backgroundColor: project.color || "#6366f1" }}
                 >
                   📁
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-white group-hover:text-brand-400 transition truncate">
+                  <h3 className="font-semibold text-slate-900 group-hover:text-brand-600 transition truncate">
                     {project.name}
                   </h3>
                   {project.description && (

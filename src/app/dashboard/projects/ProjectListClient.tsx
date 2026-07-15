@@ -58,47 +58,47 @@ export default function ProjectListClient({ userRole }: { userRole: string }) {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-slide-in">
+          <div className="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-lg animate-slide-in">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-white">Create Project</h2>
-              <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-white">
+              <h2 className="text-lg font-semibold text-slate-900">Create Project</h2>
+              <button onClick={() => setShowModal(false)} className="p-1 text-slate-500 hover:text-slate-900">
                 <X size={18} />
               </button>
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-sm text-red-400 mb-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 text-sm text-red-600 mb-4">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Name</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="Project name"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Description (optional)</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Description (optional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   placeholder="Brief description..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Color</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Color</label>
                 <div className="flex gap-2">
                   {colors.map((c) => (
                     <button

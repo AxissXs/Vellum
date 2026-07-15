@@ -53,14 +53,14 @@ export default async function ProjectBacklogPage({
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <div
-          className="h-12 w-12 rounded-xl flex items-center justify-center text-white text-xl flex-shrink-0"
+          className="h-12 w-12 rounded-xl flex items-center justify-center text-slate-900 text-xl flex-shrink-0"
           style={{ backgroundColor: project.color || "#6366f1" }}
         >
           📁
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
             Project backlog — unassigned sprint work ({serializedTasks.length} items)
           </p>
         </div>

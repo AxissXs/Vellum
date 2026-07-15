@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
+  /* Default brand scale (Perfect blue). Overridden at runtime by BrandVars when
+     brand.primaryColor differs — keeps utilities like bg-brand-500 available. */
+  --color-brand-50: #e7f0ff;
+  --color-brand-100: #cfe0ff;
+  --color-brand-200: #a3c2ff;
+  --color-brand-300: #6f9dff;
+  --color-brand-400: #2979e8;
+  --color-brand-500: #0052cc;
+  --color-brand-600: #0044aa;
+  --color-brand-700: #003d99;
+  --color-brand-800: #073a8c;
+  --color-brand-900: #062a5e;
 }
 
 * {

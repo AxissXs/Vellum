@@ -4,7 +4,7 @@ This document provides guidance for AI agents working on the Vellum project.
 
 ## Project Overview
 
-**Vellum** (Vellum) is a Next.js 15 (App Router) team management platform with:
+**Vellum** (product UI brand: **Perfect**) is a Next.js 15 (App Router) team management platform with:
 
 - PostgreSQL database using Drizzle ORM
 - Kanban boards for project management
@@ -12,6 +12,7 @@ This document provides guidance for AI agents working on the Vellum project.
 - Team and project organization
 - Task tracking with priorities, statuses, comments
 - Activity logging
+- Whitelabel-ready branding via [`src/lib/brand.ts`](src/lib/brand.ts) (`NEXT_PUBLIC_BRAND_*` overrides)
 
 ## Tech Stack
 

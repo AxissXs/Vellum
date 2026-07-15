@@ -13,6 +13,7 @@ import {
   standups,
   retroItems,
 } from "@/db/schema";
+import { brand } from "@/lib/brand";
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -31,37 +32,39 @@ async function seedIfEmpty() {
   if (existingUsers.count > 0) return;
 
   const passwordHash = hashSync("password123", 10);
+  const domain = brand.emailDomain;
+  const platformName = `${brand.name} Platform`;
 
   const insertedUsers = await db
     .insert(users)
     .values([
       {
         name: "Alex Morgan",
-        email: "alex@vellum.app",
+        email: `alex@${domain}`,
         passwordHash,
         role: "superadmin",
       },
       {
         name: "Sarah Chen",
-        email: "sarah@vellum.app",
+        email: `sarah@${domain}`,
         passwordHash,
         role: "admin",
       },
       {
         name: "Marcus Johnson",
-        email: "marcus@vellum.app",
+        email: `marcus@${domain}`,
         passwordHash,
         role: "member",
       },
       {
         name: "Emily Rodriguez",
-        email: "emily@vellum.app",
+        email: `emily@${domain}`,
         passwordHash,
         role: "member",
       },
       {
         name: "David Kim",
-        email: "david@vellum.app",
+        email: `david@${domain}`,
         passwordHash,
         role: "member",
       },
@@ -90,10 +93,10 @@ async function seedIfEmpty() {
     .insert(projects)
     .values([
       {
-        name: "Vellum Platform",
+        name: platformName,
         description:
           "Core team management platform with kanban boards, activity tracking, and collaboration.",
-        color: "#6366f1",
+        color: brand.primaryColor,
         icon: "layout-dashboard",
         ownerId: alexId,
       },
@@ -117,7 +120,7 @@ async function seedIfEmpty() {
     .returning({ id: projects.id, name: projects.name });
 
   const projectMap = new Map(insertedProjects.map((project) => [project.name, project.id]));
-  const platformId = projectMap.get("Vellum Platform")!;
+  const platformId = projectMap.get(platformName)!;
   const mobileId = projectMap.get("Mobile App Redesign")!;
   const launchId = projectMap.get("Q4 Launch Campaign")!;
 
@@ -293,7 +296,7 @@ async function seedIfEmpty() {
       action: "created_project",
       entityType: "project",
       entityId: platformId,
-      details: "Created project: Vellum Platform",
+      details: `Created project: ${platformName}`,
     },
     {
       userId: sarahId,
