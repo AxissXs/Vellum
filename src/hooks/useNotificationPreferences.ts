@@ -11,6 +11,7 @@ type NotificationPreference = {
   pushEnabled: boolean;
   inAppEnabled: boolean;
   emailEnabled: boolean;
+  telegramEnabled: boolean;
 };
 
 export function useNotificationPreferences() {
@@ -32,6 +33,7 @@ export function useUpdateNotificationPreference() {
       pushEnabled?: boolean;
       inAppEnabled?: boolean;
       emailEnabled?: boolean;
+      telegramEnabled?: boolean;
     }) => {
       const res = await api.patch<{ preferences: NotificationPreference[] }>("/api/push/preferences", input);
       return res.preferences;
@@ -61,6 +63,10 @@ export function useUpdateNotificationPreference() {
                     newPref.emailEnabled !== undefined
                       ? newPref.emailEnabled
                       : p.emailEnabled,
+                  telegramEnabled:
+                    newPref.telegramEnabled !== undefined
+                      ? newPref.telegramEnabled
+                      : p.telegramEnabled,
                 }
               : p
           )

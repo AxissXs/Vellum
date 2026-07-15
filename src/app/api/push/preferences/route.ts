@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { eventType, pushEnabled, inAppEnabled, emailEnabled } = await req.json();
+  const { eventType, pushEnabled, inAppEnabled, emailEnabled, telegramEnabled } = await req.json();
 
   if (!eventType) {
     return NextResponse.json({ error: "eventType is required" }, { status: 400 });
@@ -28,6 +28,7 @@ export async function PATCH(req: NextRequest) {
     pushEnabled,
     inAppEnabled,
     emailEnabled,
+    telegramEnabled,
   });
 
   const prefs = await getNotificationPreferences(user.id);

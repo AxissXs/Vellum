@@ -57,12 +57,12 @@ export async function getNotificationPreferences(userId: string) {
 
 export async function getDefaultNotificationPreferences() {
   return [
-    { eventType: "task_assigned", pushEnabled: true, inAppEnabled: true, emailEnabled: false },
-    { eventType: "task_mentioned", pushEnabled: true, inAppEnabled: true, emailEnabled: false },
-    { eventType: "due_date_approaching", pushEnabled: true, inAppEnabled: true, emailEnabled: false },
-    { eventType: "status_changed", pushEnabled: true, inAppEnabled: true, emailEnabled: false },
-    { eventType: "new_comment", pushEnabled: true, inAppEnabled: true, emailEnabled: false },
-    { eventType: "comment_mention", pushEnabled: true, inAppEnabled: true, emailEnabled: false },
+    { eventType: "task_assigned", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
+    { eventType: "task_mentioned", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
+    { eventType: "due_date_approaching", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
+    { eventType: "status_changed", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
+    { eventType: "new_comment", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
+    { eventType: "comment_mention", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
   ] as const;
 }
 
@@ -78,6 +78,7 @@ export async function ensureNotificationPreferences(userId: string) {
         pushEnabled: pref.pushEnabled,
         inAppEnabled: pref.inAppEnabled,
         emailEnabled: pref.emailEnabled,
+        telegramEnabled: pref.telegramEnabled,
       });
     }
   }
@@ -88,7 +89,7 @@ export async function ensureNotificationPreferences(userId: string) {
 export async function updateNotificationPreference(
   userId: string,
   eventType: string,
-  channels: { pushEnabled?: boolean; inAppEnabled?: boolean; emailEnabled?: boolean }
+  channels: { pushEnabled?: boolean; inAppEnabled?: boolean; emailEnabled?: boolean; telegramEnabled?: boolean }
 ) {
   const existing = await db
     .select()
@@ -116,6 +117,7 @@ export async function updateNotificationPreference(
       pushEnabled: channels.pushEnabled ?? true,
       inAppEnabled: channels.inAppEnabled ?? true,
       emailEnabled: channels.emailEnabled ?? false,
+      telegramEnabled: channels.telegramEnabled ?? false,
     });
   }
 }
