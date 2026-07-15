@@ -282,10 +282,10 @@ function TaskCard({
         <button
           {...attributes}
           {...listeners}
-          className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100"
+          className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch-none"
           aria-label="Drag"
         >
-          <GripVertical size={14} />
+          <GripVertical size={16} />
         </button>
       </div>
 
@@ -384,7 +384,7 @@ export default function KanbanBoardClient({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 6,
       },
     }),
     useSensor(KeyboardSensor, {

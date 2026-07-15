@@ -189,6 +189,12 @@ src/
 
 **Purpose**: Dashboard client layout wrapper providing QueryProvider, sidebar, and main content area
 **Exports**: `DashboardLayout({ children, user })` - Client component
+**Responsive**:
+- Holds `mobileNavOpen` state driving the off-canvas `Sidebar` drawer
+- Renders a mobile-only top bar (`lg:hidden`) with a hamburger button + logo
+- Renders a click-to-close backdrop when the drawer is open (`lg:hidden`)
+- Locks body scroll while the drawer is open
+- Main content: `pl-0 lg:pl-[260px]` so the sidebar only offsets content at `lg+`
 
 ### `src/app/dashboard/layout.tsx`
 
@@ -611,14 +617,16 @@ src/
 
 #### `src/components/Sidebar.tsx`
 
-**Purpose**: Collapsible navigation sidebar
-**Exports**: `Sidebar({ user })` - Client component
-**Props**: `user: AuthUser`
+**Purpose**: Collapsible navigation sidebar / mobile drawer
+**Exports**: `Sidebar({ user, mobileOpen?, onClose? })` - Client component
+**Props**: `user: AuthUser`, `mobileOpen?: boolean`, `onClose?: () => void`
 **Features**:
 
-- Collapsible (icon-only mode)
-- Navigation links (Dashboard, Projects, Tasks, Teams, Sprints, Activity, Admin)
-- Role-based Admin link (superadmin/admin only)
+- Collapsible icon-rail mode (`lg+` only via chevron toggle)
+- Off-canvas drawer below `lg`: slides in when `mobileOpen`, hidden (`-translate-x-full`) otherwise; always on-canvas at `lg+`
+- Mobile close (`X`) button (below `lg`); nav links call `onClose` to auto-close the drawer
+- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Admin, Super Admin)
+- Role-based Admin / Super Admin links
 - User avatar with initials, role badge
 - Logout button
 
