@@ -65,8 +65,21 @@ All `db:*` scripts load `.env` via `dotenv-cli`.
 
 1. Edit `src/db/schema.ts`
 2. `bun run db:generate` → writes to `drizzle/`
-3. `bun run db:migrate`
-4. **Commit both `src/db/schema.ts` and `drizzle/*`**
+3. **DO NOT run `db:migrate` on a feature branch** — migrations are applied by CI on `master`
+4. **Commit both `src/db/schema.ts` and `drizzle/*`** (SQL files + snapshots + journal)
+
+#### Why agents must NOT run `db:migrate`
+
+`db:generate` only creates local files (SQL, snapshots, journal) — safe to commit.  
+`db:migrate` connects to the database and applies pending migrations. Running it from local branches:
+
+- Pollutes the shared database with half-baked schema changes from unmerged branches
+- Causes `drizzle/meta/_journal.json` and snapshot churn, creating merge conflicts when multiple branches add migrations
+- Makes it impossible to know which migrations are "production-ready" vs experimental
+
+**Migration application is handled automatically by GitHub Actions on `master`** (see `.github/workflows/apply-migrations.yml`). The workflow requires `DIRECT_DATABASE_URL` as a repository secret.
+
+If you need to test migrations locally against a **local** database (e.g. Docker PostgreSQL), use `db:push` instead — it is schema-only and does not touch the journal.
 
 ### Setup & Seeding Quirks
 
@@ -168,4 +181,18 @@ bun run vercel:build    # db:generate + next build
 bun run vercel:deploy   # db:migrate + vercel --prod
 ```
 
-Migrations auto-run during build via `vercel:build`.
+Migrations are **NOT** auto-run during Vercel builds (`vercel:build` only runs `db:generate`).
+Migrations are applied by the GitHub Actions workflow (`.github/workflows/apply-migrations.yml`) on every push to `master`.
+
+> **Vercel re-runs `db:migrate` during `vercel:deploy`** as a safety net, but by that point the migrations should already be applied by the workflow.
+
+### GitHub Secrets Required
+
+The following secrets must be configured in GitHub → Settings → Secrets and variables → Actions:
+
+| Secret | Description |
+|--------|-------------|
+| `DIRECT_DATABASE_URL` | Direct PostgreSQL connection string (Neon: no `-pooler` suffix). Used by `apply-migrations.yml` to run `drizzle-kit migrate` on `master` pushes. |
+| `DATABASE_URL` | Pooled connection (Neon: `-pooler` suffix). Used by the running app. (Also in Vercel env vars) |
+
+Do **NOT** commit `.env` files to the repo.
