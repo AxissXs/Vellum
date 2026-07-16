@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare } from "lucide-react";
+import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare, Plus } from "lucide-react";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -30,6 +30,85 @@ type SettingsPayload = {
   templates: Record<string, string | null>;
   webhookUrl: string | null;
 };
+
+function TopicCreator({
+  existingId,
+  onCreated,
+}: {
+  existingId: string;
+  onCreated: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [topicName, setTopicName] = useState("");
+  const [iconColor, setIconColor] = useState("");
+
+  const createTopic = useMutation({
+    mutationFn: async (body: { name: string; iconColor?: number }) => {
+      const res = await api.post<{
+        ok: boolean;
+        topic?: { messageThreadId: number; name: string };
+        error?: string;
+      }>("/api/super-admin/telegram/topics", body);
+      return res;
+    },
+    onSuccess: (data) => {
+      if (data.ok && data.topic) {
+        toast.success(`Created topic "${data.topic.name}"`);
+        onCreated(String(data.topic.messageThreadId));
+        setOpen(false);
+        setTopicName("");
+      } else {
+        toast.error(data.error || "Failed to create topic");
+      }
+    },
+    onError: () => {
+      toast.error("Failed to create topic");
+    },
+  });
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-xs text-slate-400 hover:text-brand-400 transition flex items-center gap-1"
+      >
+        <Plus size={12} />
+        Create topic
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 space-y-2 bg-slate-900 border border-white/10 rounded-lg p-3">
+      <input
+        type="text"
+        value={topicName}
+        onChange={(e) => setTopicName(e.target.value)}
+        placeholder="Topic name"
+        className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+      />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => createTopic.mutate({
+            name: topicName,
+            iconColor: iconColor ? Number(iconColor) : undefined,
+          })}
+          disabled={createTopic.isPending || !topicName.trim()}
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-md transition flex items-center gap-1"
+        >
+          {createTopic.isPending && <Loader2 size={12} className="animate-spin" />}
+          Create
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          className="text-xs text-slate-400 hover:text-white transition"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function TelegramConfigForm({
   initialData,
@@ -195,21 +274,29 @@ function TelegramConfigForm({
           </h3>
         </div>
         <p className="text-sm text-slate-400">
-          Map each notification category to a forum topic ID in the supergroup. Leave blank to send to the general chat.
+          Map each notification category to a forum topic ID in the supergroup. Leave blank to send to the general chat. Use "Create topic" to create a new forum topic directly.
         </p>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {eventTypes.map((ev) => (
-            <div key={ev} className="grid grid-cols-2 gap-4 items-center">
-              <div className="text-sm text-white">{eventLabels[ev]}</div>
-              <input
-                type="text"
-                value={topics[ev] ?? ""}
-                onChange={(e) =>
-                  setTopics((prev) => ({ ...prev, [ev]: e.target.value }))
-                }
-                placeholder="Topic ID (optional)"
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-              />
+            <div key={ev} className="bg-slate-900/30 border border-white/5 rounded-lg p-3 space-y-2">
+              <div className="text-sm text-white font-medium">{eventLabels[ev]}</div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={topics[ev] ?? ""}
+                  onChange={(e) =>
+                    setTopics((prev) => ({ ...prev, [ev]: e.target.value }))
+                  }
+                  placeholder="Topic ID (optional)"
+                  className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+                />
+                <TopicCreator
+                  existingId={topics[ev] ?? ""}
+                  onCreated={(id) =>
+                    setTopics((prev) => ({ ...prev, [ev]: id }))
+                  }
+                />
+              </div>
             </div>
           ))}
         </div>

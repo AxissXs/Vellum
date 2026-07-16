@@ -145,9 +145,10 @@ src/
 │           ├── audit/route.ts      # GET - Filtered audit logs with pagination
 │           ├── audit/export/route.ts  # GET - CSV export of audit logs
 │           └── telegram/
-│               ├── settings/route.ts  # GET, PATCH - Bot settings
+│               ├── settings/route.ts  # GET, PATCH - Bot settings + topics + channel events + templates
 │               ├── test/route.ts      # POST - Test bot connectivity
-│               └── stats/route.ts     # GET - Paired user count
+│               ├── stats/route.ts     # GET - Paired user count
+│               └── topics/route.ts    # POST - Create forum topic in supergroup
 ├── components/             # Shared React Components
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── PushNotificationToggle.tsx  # UI toggle for browser push notifications
@@ -355,9 +356,13 @@ src/
 **Exports**: `SuperAdminTelegramPanel()` - Client component
 
 - Bot token input (masked), supergroup ID, channel ID
-- Test connectivity button
+- Webhook URL display with copy button; auto-sets webhook on save
+- Test connectivity with optional token override
+- Topic mapping: per-event forum topic ID inputs with inline "Create topic" buttons
+- Channel broadcast events: checkboxes per notification type
+- Message templates: per-event customizable HTML with `{title}`, `{content}`, `{url}` variables
 - Paired user count stat card
-- Save settings with optimistic updates
+- Save settings with mutation
 
 ### `src/app/dashboard/projects/page.tsx`
 
@@ -792,6 +797,14 @@ src/
 **Functions**:
 
 - `GET()` - Returns `{ pairedUsers: number }`
+
+#### `src/app/api/super-admin/telegram/topics/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Create a new forum topic in the configured supergroup
+**Functions**:
+
+- `POST(req)` - Body: `{ name, iconColor?, iconCustomEmojiId? }`. Calls Telegram's `createForumTopic`. Returns `{ ok, topic: { messageThreadId, name, iconColor, iconCustomEmojiId } }`
 
 ---
 
