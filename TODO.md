@@ -140,7 +140,7 @@
   - Superadmin can test bot connectivity and see paired user count in super admin panel
   - Acceptance criteria: Superadmin can configure bot token, users can pair via code, notifications arrive in Telegram per user preferences, supergroup topics receive typed notifications
 
-- [ ] **Telegram webhook security** - Validate incoming Telegram webhook requests
+- [x] **Telegram webhook security** - Validate incoming Telegram webhook requests
   - Verify webhook requests originate from Telegram (IP allowlist or signature verification if available)
   - Validate `chat_id` or `bot_id` matches the configured bot
   - Or: generate a unique token per bot connection and require it as a webhook URL parameter (e.g. `?token=...`) to confirm requests come only from our bot

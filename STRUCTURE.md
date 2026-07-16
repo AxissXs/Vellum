@@ -771,7 +771,7 @@ src/
 **Purpose**: Receive Telegram Bot API updates
 **Functions**:
 
-- `POST(req)` - Parses update JSON; handles `/start <code>` to link accounts
+- `POST(req)` - Verifies `X-Telegram-Bot-Api-Secret-Token` header, then parses update JSON; handles `/start <code>` to link accounts
 
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
@@ -1135,7 +1135,8 @@ src/
 - `getPlatformSetting(key)` / `setPlatformSetting(key, value)` - Read/write `platform_settings`
 - `getBotToken()` / `isTelegramConfigured()` - Bot token helpers
 - `getTelegramBotInfo()` - Returns bot username/first name from `getMe`
-- `setTelegramWebhook(webhookUrl)` - Registers webhook with Telegram
+- `setTelegramWebhook(webhookUrl, token?)` - Registers webhook with Telegram (includes `secret_token` for request verification)
+- `getWebhookSecretToken()` - Returns or auto-generates the webhook secret token (stored in `platform_settings`)
 - `sendTelegramMessage(chatId, text, options)` - Raw `sendMessage` API call
 - `sendTelegramNotification({ userId, eventType, title, content, url })` - Sends DM if user has enabled Telegram for event type
 - `broadcastToSupergroup(text, topicId?)` - Posts to configured supergroup

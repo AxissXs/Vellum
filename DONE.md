@@ -92,6 +92,20 @@ This document tracks features and tasks that have been fully implemented, tested
 - API: `GET /api/notifications`, `PATCH /api/notifications/[id]`, `POST /api/notifications/mark-all-read`
 - Components: `NotificationBell.tsx`, `useNotifications.ts`
 - Utilities: `sendInAppNotification()` in `src/lib/notifications.ts`
+
+### Telegram Bot Integration (July 2026)
+> Full Telegram Bot API integration for notifications, pairing, and supergroup topic routing.
+
+- Superadmin configures bot token, supergroup ID, channel ID in platform settings
+- Webhook auto-set on token save with `secret_token` verification (`X-Telegram-Bot-Api-Secret-Token` header)
+- Users pair via single-use code: `/start <code>` in bot DMs links Telegram to Vellum account
+- Per-event notification preferences with Telegram channel toggle
+- Supergroup topic mapping per notification event type
+- Channel broadcast for selected event types
+- Customizable HTML message templates with `{title}`, `{content}`, `{url}` variables
+- API routes: `/api/telegram/webhook`, `/api/telegram/config`, `/api/telegram/pairing-code`, `/api/telegram/unlink`, `/api/telegram/status`
+- Superadmin API routes: `/api/super-admin/telegram/settings`, `/api/super-admin/telegram/test`, `/api/super-admin/telegram/stats`, `/api/super-admin/telegram/topics`
+- Components: `SuperAdminTelegramPanel.tsx`, `useTelegram.ts` hook
 ---
 
 ## Admin & Super Admin
