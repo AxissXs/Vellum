@@ -24,7 +24,7 @@ export default async function SprintsPage() {
         </p>
       </div>
 
-      <SprintsClient projects={projectRows} currentUserId={user?.id || ""} />
+      <SprintsClient projects={projectRows} userRole={user?.role || "member"} />
     </div>
   );
 }

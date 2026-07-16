@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { sprints } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { hasPermission } from "@/lib/permissions";
 import { eq, asc } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
@@ -26,6 +27,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "create_sprints")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json();
   const { projectId, name, goal, startDate, endDate, status } = body;

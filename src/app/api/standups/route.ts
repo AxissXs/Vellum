@@ -48,9 +48,10 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { userId, sprintId, yesterday, today, blockers, date } = body;
+  const { sprintId, yesterday, today, blockers, date } = body;
 
-  const targetUserId = userId || user.id;
+  // Always write as the authenticated user — no impersonation.
+  const targetUserId = user.id;
 
   if (!yesterday && !today && !blockers) {
     return NextResponse.json(

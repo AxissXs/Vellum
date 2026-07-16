@@ -6,6 +6,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { clsx } from "clsx";
 import { useUpdateTask } from "@/hooks/useTasks";
 import { toast } from "sonner";
+import { hasPermission } from "@/lib/permissions";
 
 type Sprint = {
   id: string;
@@ -37,16 +38,20 @@ export default function ProjectBacklogClient({
   projectId,
   initialTasks,
   sprints,
+  userRole = "member",
 }: {
   projectId: string;
   initialTasks: Task[];
   sprints: Sprint[];
+  userRole?: string;
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
   const [title, setTitle] = useState("");
   const [adding, setAdding] = useState(false);
   const updateTask = useUpdateTask();
+  const canCreate = hasPermission(userRole, "create_tasks");
+  const canAssignToSprint = hasPermission(userRole, "edit_sprints");
 
   const activeSprint = sprints.find((s) => s.status === "active");
   const plannedSprints = sprints.filter((s) => s.status === "planned");
@@ -105,22 +110,24 @@ export default function ProjectBacklogClient({
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleCreate} className="flex gap-2">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add a backlog item..."
-          className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-        <button
-          type="submit"
-          disabled={adding || !title.trim()}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
-        >
-          {adding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-          Add
-        </button>
-      </form>
+      {canCreate && (
+        <form onSubmit={handleCreate} className="flex gap-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add a backlog item..."
+            className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <button
+            type="submit"
+            disabled={adding || !title.trim()}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
+          >
+            {adding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+            Add
+          </button>
+        </form>
+      )}
 
       {tasks.length === 0 ? (
         <div className="border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center">
@@ -157,34 +164,36 @@ export default function ProjectBacklogClient({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {activeSprint && (
-                  <button
-                    onClick={() => assignToSprint(task, activeSprint.id)}
-                    disabled={updateTask.isPending}
-                    className="text-xs rounded-lg bg-emerald-500/10 text-emerald-600 px-3 py-1.5 hover:bg-emerald-500/20 transition disabled:opacity-50"
-                  >
-                    → {activeSprint.name}
-                  </button>
-                )}
-                {plannedSprints.length > 0 && (
-                  <select
-                    defaultValue=""
-                    onChange={(e) => {
-                      if (e.target.value) assignToSprint(task, e.target.value);
-                      e.target.value = "";
-                    }}
-                    className="text-xs rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="">Add to sprint...</option>
-                    {plannedSprints.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
+              {canAssignToSprint && (
+                <div className="flex items-center gap-2">
+                  {activeSprint && (
+                    <button
+                      onClick={() => assignToSprint(task, activeSprint.id)}
+                      disabled={updateTask.isPending}
+                      className="text-xs rounded-lg bg-emerald-500/10 text-emerald-600 px-3 py-1.5 hover:bg-emerald-500/20 transition disabled:opacity-50"
+                    >
+                      → {activeSprint.name}
+                    </button>
+                  )}
+                  {plannedSprints.length > 0 && (
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        if (e.target.value) assignToSprint(task, e.target.value);
+                        e.target.value = "";
+                      }}
+                      className="text-xs rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      <option value="">Add to sprint...</option>
+                      {plannedSprints.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

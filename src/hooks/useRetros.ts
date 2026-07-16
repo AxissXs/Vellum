@@ -58,6 +58,49 @@ export function useCreateRetroItem() {
   });
 }
 
+export function useUpdateRetroItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      sprintId: string;
+      content?: string;
+      category?: RetroItem["category"];
+    }) => {
+      const { id, sprintId: _sprintId, ...data } = input;
+      const res = await api.patch<{ retroItem: RetroItem }>(`/api/retros/${id}`, data);
+      return res.retroItem;
+    },
+    onMutate: async (input) => {
+      const queryKey = getRetroQueryKey(input.sprintId);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<RetroItem[]>(queryKey);
+      queryClient.setQueryData<RetroItem[]>(queryKey, (old) =>
+        old?.map((r) =>
+          r.id === input.id
+            ? {
+                ...r,
+                ...(input.content !== undefined ? { content: input.content } : {}),
+                ...(input.category !== undefined ? { category: input.category } : {}),
+              }
+            : r
+        )
+      );
+      return { previous };
+    },
+    onError: (err, input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(getRetroQueryKey(input.sprintId), context.previous);
+      }
+      toast.error("Failed to update retro item");
+    },
+    onSettled: (_data, _error, input) => {
+      queryClient.invalidateQueries({ queryKey: getRetroQueryKey(input.sprintId) });
+    },
+  });
+}
+
 export function useDeleteRetroItem() {
   const queryClient = useQueryClient();
 

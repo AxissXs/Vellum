@@ -44,6 +44,7 @@ import { clsx } from "clsx";
 import TaskDetailModal from "@/app/dashboard/projects/[id]/TaskDetailModal";
 import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
 import { useRealtime } from "@/hooks/useRealtime";
+import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Project = { id: string; name: string; color: string | null };
@@ -126,6 +127,7 @@ interface KanbanBoardClientProps {
   projects: Project[];
   users: User[];
   currentUserId: string;
+  userRole?: string;
 }
 
 function TaskCardBody({ task }: { task: Task }) {
@@ -364,7 +366,9 @@ export default function KanbanBoardClient({
   projects,
   users,
   currentUserId,
+  userRole = "member",
 }: KanbanBoardClientProps) {
+  const canCreateTasks = hasPermission(userRole, "create_tasks");
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -563,6 +567,7 @@ export default function KanbanBoardClient({
       task={selectedTask}
       users={users}
       currentUserId={currentUserId}
+      userRole={userRole}
       onClose={() => setSelectedTask(null)}
       onChange={() => {}}
     />
@@ -635,7 +640,7 @@ export default function KanbanBoardClient({
           {statusColumns.map((colConfig) => {
             const column = filteredColumns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
             const isAdding = showNewTask === colConfig.key;
-            const taskForm = (
+            const taskForm = canCreateTasks ? (
               <>
                 <button
                   onClick={() => setShowNewTask(isAdding ? null : colConfig.key)}
@@ -724,7 +729,7 @@ export default function KanbanBoardClient({
                   </form>
                 )}
               </>
-            );
+            ) : null;
             return (
               <div key={colConfig.key} className="w-72 flex-shrink-0">
                 <Column

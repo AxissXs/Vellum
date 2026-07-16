@@ -71,6 +71,7 @@ export default async function KanbanPage() {
       projects={allProjects}
       users={allUsers}
       currentUserId={user.id}
+      userRole={user.role}
     />
   );
 }

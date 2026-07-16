@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { projects, tasks, users, projectMilestones } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { hasPermission } from "@/lib/permissions";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
 import ProjectNav from "./ProjectNav";
@@ -146,6 +147,8 @@ export default async function ProjectDetailPage({
         users={allUsers}
         members={Array.from(memberMap.values())}
         completionRate={completionRate}
+        canEdit={hasPermission(user?.role, "edit_projects")}
+        canDelete={hasPermission(user?.role, "delete_projects")}
       />
 
       <ProjectNav projectId={project.id} />
@@ -161,6 +164,7 @@ export default async function ProjectDetailPage({
           users={allUsers}
           allProjects={allProjects}
           currentUserId={user?.id || ""}
+          userRole={user?.role || "member"}
         />
       </div>
     </div>

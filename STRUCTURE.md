@@ -203,6 +203,7 @@ src/
 │   ├── auth.ts             # Authentication utilities (React `cache` + session JOIN)
 │   ├── brand.ts            # Whitelabel brand config (name, logos, colors, email domain)
 │   ├── notifications.ts    # In-app + multi-channel notification dispatch
+│   ├── permissions.ts      # Role permission matrix + hasPermission / requirePermission
 │   ├── push.ts             # Web Push send + preference helpers
 │   ├── pusher.ts           # Pusher server instance
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
@@ -809,10 +810,21 @@ src/
 #### `src/app/api/super-admin/permissions/route.ts`
 
 **Methods**: `GET`
-**Purpose**: Role / permission matrix data
+**Purpose**: Role / permission matrix data (sourced from `src/lib/permissions.ts`)
 **Functions**:
 
-- `GET()` - Predefined permissions per role
+- `GET()` - Roles, permissions, and rolePermissions map (superadmin only)
+
+#### `src/lib/permissions.ts`
+
+**Purpose**: Single source of truth for role → permission matrix; used by APIs and UI
+**Exports**:
+- `PERMISSIONS`, `ROLE_PERMISSIONS`, `ROLES`, `PermissionId`, `RoleId`
+- `hasPermission(role, permission)` - Boolean check
+- `requirePermission(user, permission)` - Asserts auth + permission (throws)
+- `canMutateOwned(user, authorId)` - Author or admin+ may mutate (retros)
+
+**Notes**: Project/task/sprint mutate routes call `hasPermission`. Members may CRUD tasks but not projects/sprints. Retro PATCH/DELETE requires author or admin+.
 
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
@@ -1081,6 +1093,7 @@ src/
 **Exports**:
 - `useRetros(sprintId)` - Fetch retro items for a sprint
 - `useCreateRetroItem()` - Add retro item
+- `useUpdateRetroItem()` - Update retro item content/category
 - `useDeleteRetroItem()` - Delete retro item
 
 #### `src/hooks/useNotifications.ts`
@@ -1153,6 +1166,8 @@ src/
 - `requireRole(user, roles)` - Assert user has role (throws)
 - `SESSION_COOKIE` - Cookie name constant
 - `SESSION_MAX_AGE` - Session duration (7 days)
+
+**Notes**: Prefer `hasPermission` / `requirePermission` from `lib/permissions.ts` for entity CRUD. Use `requireRole` for coarse admin/superadmin gates.
 
 #### `src/lib/activity.ts`
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
+import { clsx } from "clsx";
 import { QueryProvider } from "@/providers/QueryProvider";
 import Sidebar from "@/components/Sidebar";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -21,6 +22,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = mobileNavOpen ? "hidden" : "";
@@ -36,6 +38,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           user={user}
           mobileOpen={mobileNavOpen}
           onClose={() => setMobileNavOpen(false)}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
         />
 
         {/* Mobile backdrop */}
@@ -63,7 +67,12 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           <NotificationBell />
         </header>
 
-        <main className="pl-0 lg:pl-[260px] transition-all duration-200">
+        <main
+          className={clsx(
+            "pl-0 transition-all duration-200",
+            sidebarCollapsed ? "lg:pl-[70px]" : "lg:pl-[260px]"
+          )}
+        >
           <div className="max-w-[1600px] mx-auto">
             <div className="hidden lg:flex items-center justify-end px-6 lg:px-8 pt-4">
               <NotificationBell />

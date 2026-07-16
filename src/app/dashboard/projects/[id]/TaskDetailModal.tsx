@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/useComments";
 import { useRealtime } from "@/hooks/useRealtime";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
+import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Task = {
@@ -54,15 +55,20 @@ export default function TaskDetailModal({
   task: initialTask,
   users,
   currentUserId,
+  userRole = "member",
   onClose,
   onChange,
 }: {
   task: Task;
   users: User[];
   currentUserId: string;
+  userRole?: string;
   onClose: () => void;
   onChange: () => void;
 }) {
+  const canEdit = hasPermission(userRole, "edit_tasks");
+  const canDelete = hasPermission(userRole, "delete_tasks");
+  const canAssign = hasPermission(userRole, "assign_tasks");
   const [task, setTask] = useState(initialTask);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -204,37 +210,41 @@ export default function TaskDetailModal({
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {!editing ? (
-              <button
-                onClick={() => setEditing(true)}
-                className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
-              >
-                Edit
-              </button>
-            ) : (
-              <>
+            {canEdit && (
+              !editing ? (
                 <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                  onClick={() => setEditing(true)}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                 >
-                  {saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+                  Edit
                 </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
-                >
-                  Cancel
-                </button>
-              </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                  >
+                    {saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )
             )}
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
-            >
-              {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            </button>
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              </button>
+            )}
             <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition">
               <X size={18} />
             </button>
@@ -284,7 +294,7 @@ export default function TaskDetailModal({
 
             <div>
               <label className="text-xs text-slate-500 block mb-1">Assignee</label>
-              {editing ? (
+              {editing && canAssign ? (
                 <select
                   value={editAssignee}
                   onChange={(e) => setEditAssignee(e.target.value)}

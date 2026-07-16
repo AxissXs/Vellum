@@ -100,6 +100,7 @@ export default async function SprintDetailPage({
       users={allUsers}
       allProjects={allProjects}
       currentUserId={user?.id || ""}
+      userRole={user?.role || "member"}
     />
   );
 }

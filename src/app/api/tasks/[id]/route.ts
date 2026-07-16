@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { tasks, users, taskStatusHistory } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
+import { hasPermission } from "@/lib/permissions";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification } from "@/lib/notifications";
@@ -13,10 +14,25 @@ export async function PATCH(
 ) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "edit_tasks")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = await req.json();
   const { title, description, status, priority, assigneeId, dueDate, position, sprintId, estimate } = body;
+
+  if (
+    assigneeId !== undefined &&
+    assigneeId !== null &&
+    !hasPermission(user.role, "assign_tasks")
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (sprintId !== undefined && !hasPermission(user.role, "edit_sprints")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const [current] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
   if (!current) {
@@ -151,6 +167,9 @@ export async function DELETE(
 ) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "delete_tasks")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
 

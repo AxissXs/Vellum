@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Plus, Loader2, X, Calendar, Flag, Trash2, CheckCircle2 } from "lucide-react";
 import { clsx } from "clsx";
 import { useCreateSprint, useUpdateSprint, useDeleteSprint } from "@/hooks/useSprints";
 import type { Sprint } from "@/hooks/useSprints";
+import { hasPermission } from "@/lib/permissions";
 
 type Project = { id: string; name: string; color: string | null };
 
@@ -18,18 +18,20 @@ const statusStyles: Record<string, string> = {
 
 export default function SprintsClient({
   projects,
-  currentUserId,
+  userRole,
 }: {
   projects: Project[];
-  currentUserId: string;
+  userRole: string;
 }) {
+  const canCreate = hasPermission(userRole, "create_sprints");
+  const canEdit = hasPermission(userRole, "edit_sprints");
+  const canDelete = hasPermission(userRole, "delete_sprints");
   const [projectId, setProjectId] = useState(projects[0]?.id || "");
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
-  const router = useRouter();
 
   const createSprint = useCreateSprint();
   const updateSprint = useUpdateSprint();
@@ -99,13 +101,15 @@ export default function SprintsClient({
           </select>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition"
-        >
-          <Plus size={16} />
-          New Sprint
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition"
+          >
+            <Plus size={16} />
+            New Sprint
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -115,12 +119,14 @@ export default function SprintsClient({
       ) : sprints.length === 0 ? (
         <div className="border-2 border-dashed border-slate-200 rounded-2xl py-16 text-center">
           <p className="text-slate-500">No sprints yet for this project.</p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="mt-3 text-sm text-brand-600 hover:underline"
-          >
-            Create the first sprint
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-3 text-sm text-brand-600 hover:underline"
+            >
+              Create the first sprint
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -167,30 +173,34 @@ export default function SprintsClient({
                   : "—"}
               </div>
 
-              <div className="mt-4 flex items-center gap-2 pt-3 border-t border-slate-200">
-                {sprint.status !== "active" && (
-                  <button
-                    onClick={() => handleSetActive(sprint)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/20 transition"
-                  >
-                    <CheckCircle2 size={13} />
-                    Set active
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDelete(sprint)}
-                  className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
-                  title="Delete sprint"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              {(canEdit || canDelete) && (
+                <div className="mt-4 flex items-center gap-2 pt-3 border-t border-slate-200">
+                  {canEdit && sprint.status !== "active" && (
+                    <button
+                      onClick={() => handleSetActive(sprint)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500/20 transition"
+                    >
+                      <CheckCircle2 size={13} />
+                      Set active
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(sprint)}
+                      className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
+                      title="Delete sprint"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {showModal && (
+      {showModal && canCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
