@@ -3,7 +3,7 @@ import { notifications, notificationPreferences } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { pusher } from "@/lib/pusher";
 import { sendPushNotification, isPushEnabled } from "@/lib/push";
-import { sendTelegramNotification } from "@/lib/telegram";
+import { sendTelegramNotification, broadcastToSupergroup, maybeBroadcastToChannel } from "@/lib/telegram";
 
 export async function isInAppEnabled(
   userId: string,
@@ -110,6 +110,12 @@ export async function sendNotification({
     }
   }
 
-  // Telegram notification (checks its own preferences internally)
+  // Telegram DM notification (checks its own preferences internally)
   await sendTelegramNotification({ userId, eventType: type, title, content, url });
+
+  // Supergroup broadcast (if configured)
+  await broadcastToSupergroup(type, title + "\n\n" + content);
+
+  // Channel broadcast (if configured and enabled for this event type)
+  await maybeBroadcastToChannel(type, title, content, url);
 }

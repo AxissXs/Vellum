@@ -131,6 +131,7 @@ src/
 │       │   ├── mark-all-read/route.ts # POST - Mark all as read
 │       │   └── [id]/route.ts        # PATCH - Mark single as read
 │       ├── telegram/
+│       │   ├── config/route.ts       # GET - Check if bot is configured (public, no auth)
 │       │   ├── pairing-code/route.ts  # GET - Generate pairing code
 │       │   ├── unlink/route.ts        # DELETE - Unlink Telegram account
 │       │   ├── status/route.ts        # GET - Check Telegram link status
@@ -751,6 +752,14 @@ src/
 
 - `GET()` - Returns `{ linked: boolean, telegramUsername: string | null }`
 
+#### `src/app/api/telegram/config/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Public endpoint to check if bot is configured (for conditional UI)
+**Functions**:
+
+- `GET()` - Returns `{ configured: boolean, username: string | null }`
+
 #### `src/app/api/telegram/webhook/route.ts`
 
 **Methods**: `POST`
@@ -762,19 +771,19 @@ src/
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
 **Methods**: `GET`, `PATCH`
-**Purpose**: Manage Telegram bot configuration
+**Purpose**: Manage Telegram bot configuration, topic mappings, channel events, and message templates
 **Functions**:
 
-- `GET()` - Returns `{ settings: { telegram_bot_token, telegram_supergroup_id, telegram_channel_id } }` (token masked)
-- `PATCH(req)` - Updates one or more settings keys
+- `GET()` - Returns `{ settings, topics, channelEvents, templates, webhookUrl }`
+- `PATCH(req)` - Updates settings/topics/channelEvents/templates; auto-sets webhook when token changes
 
 #### `src/app/api/super-admin/telegram/test/route.ts`
 
 **Methods**: `POST`
-**Purpose**: Test bot connectivity
+**Purpose**: Test bot connectivity (with optional token override)
 **Functions**:
 
-- `POST()` - Calls `getMe` via Bot API, returns `{ ok, username, firstName }`
+- `POST(req)` - Body: `{ token?: string }`. Tests provided token or saved one via `getMe`. Returns `{ ok, username, firstName }`
 
 #### `src/app/api/super-admin/telegram/stats/route.ts`
 
