@@ -5,6 +5,7 @@ import { Menu } from "lucide-react";
 import { QueryProvider } from "@/providers/QueryProvider";
 import Sidebar from "@/components/Sidebar";
 import { BrandLogo } from "@/components/BrandLogo";
+import NotificationBell from "@/components/NotificationBell";
 import { brand } from "@/lib/brand";
 
 interface DashboardLayoutProps {
@@ -55,14 +56,22 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           >
             <Menu size={20} />
           </button>
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-1 items-center gap-2 min-w-0">
             <BrandLogo variant="light" className="h-5 w-auto max-w-[120px]" />
             <span className="sr-only">{brand.name}</span>
           </div>
+          <NotificationBell />
         </header>
 
         <main className="pl-0 lg:pl-[260px] transition-all duration-200">
-          <div className="p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8 max-w-[1600px] mx-auto">{children}</div>
+          <div className="max-w-[1600px] mx-auto">
+            <div className="hidden lg:flex items-center justify-end px-6 lg:px-8 pt-4">
+              <NotificationBell />
+            </div>
+            <div className="p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8 lg:pt-2">
+              {children}
+            </div>
+          </div>
         </main>
       </div>
     </QueryProvider>

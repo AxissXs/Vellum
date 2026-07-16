@@ -52,7 +52,7 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - Move the Add task button from the bottom of the column to the top (next to the column header)
   - Acceptance criteria: Clicking Add task actually creates a task; button is at the top of each column
 
-- [ ] **Notifications bell** - Add in-app notification centre
+- [x] **Notifications bell** - Add in-app notification centre
   - Add a bell icon with unread badge in the top header / sidebar
   - Dropdown panel showing recent notifications (task assignments, mentions, status changes, comments)
   - Mark individual / all notifications as read
@@ -94,7 +94,7 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - Notification preferences per user
   - Template system for emails
 
-- [ ] **Push notifications** - Send push notifications for events and add user settings
+- [x] **Push notifications** - Send push notifications for events and add user settings
   - Integrate Web Push API (VAPID) or Push API service (e.g., Web Push, OneSignal)
   - Support events: task assigned, mentioned, due date approaching, status changed, comments, mentions
   - User notification preferences page (per event type, per channel: push/email/in-app)
@@ -102,6 +102,8 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - VAPID key management for Web Push
   - Service worker for receiving push notifications
   - Acceptance criteria: Users can enable/disable push per event type, receive push notifications, manage preferences in settings page
+
+- [x] **Telegram notifications** - Bot pairing, webhook, prefs channel, super-admin panel
 
 - [ ] **Actions without notifications** - Add options to perform actions without sending notifications
   - "Update without notifying" checkbox/toggle on task updates, assignments, status changes
@@ -211,31 +213,31 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - [x] Optimistic updates via React Query + rollback on error
 
   **Part 3 — Real-time User Activity Monitoring**
-  - [ ] Create `SuperAdminActivityPanel` component
-  - [ ] API: `GET /api/super-admin/activity` — activity logs enriched with IP from `user_sessions`
-  - [ ] UI: Live feed (polling 5s) of logins, failed attempts, user actions
-  - [ ] Show sparklines / mini stats for: logins last 24h, failed attempts, active right now
+  - [x] Create `SuperAdminActivityPanel` component
+  - [x] API: `GET /api/super-admin/activity` — activity logs enriched with IP from `user_sessions`
+  - [x] UI: Live feed (polling 5s) of logins, failed attempts, user actions
+  - [x] Show sparklines / mini stats for: logins last 24h, failed attempts, active right now
 
   **Part 4 — Session Management**
-  - [ ] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
-  - [ ] API: `DELETE /api/super-admin/sessions/[id]` — revoke a session
-  - [ ] UI: Table view of active sessions with Revoke button
+  - [x] API: `GET /api/super-admin/sessions` — list all active sessions with user name, IP, last seen
+  - [x] API: `DELETE /api/super-admin/sessions/[id]` — revoke a session
+  - [x] UI: Table view of active sessions with Revoke button
 
   **Part 5 — Enhanced Audit Logs**
-  - [ ] Extend `activity_logs` schema to include `ipAddress` column
-  - [ ] API: `GET /api/super-admin/audit` with filters (user, action, date range, IP)
-  - [ ] UI: Filterable audit log table with date-range picker and user dropdown
-  - [ ] API: `GET /api/super-admin/audit/export?format=csv|pdf` — export filtered results
+  - [x] Extend `activity_logs` schema to include `ipAddress` column
+  - [x] API: `GET /api/super-admin/audit` with filters (user, action, date range, IP)
+  - [x] UI: Filterable audit log table with date-range picker and user dropdown
+  - [x] API: `GET /api/super-admin/audit/export?format=csv|pdf` — export filtered results
 
   **Part 6 — System Health Metrics**
-  - [ ] Create `SuperAdminHealthPanel` component
-  - [ ] API: `GET /api/super-admin/health` — DB connection stats, recent API latency, error rate (last 24h)
-  - [ ] UI: Cards / charts: DB pool size, avg response time, 5xx count, active sessions
+  - [x] Create `SuperAdminHealthPanel` component
+  - [x] API: `GET /api/super-admin/health` — DB connection stats, recent API latency, error rate (last 24h)
+  - [x] UI: Cards / charts: DB pool size, avg response time, 5xx count, active sessions
 
   **Part 7 — Role / Permission Matrix**
-  - [ ] Create `SuperAdminRolesPanel` component
-  - [ ] UI: Matrix table (roles × permissions) showing what each role can do
-  - [ ] API: `GET /api/super-admin/permissions` — list predefined permissions per role
+  - [x] Create `SuperAdminRolesPanel` component
+  - [x] UI: Matrix table (roles × permissions) showing what each role can do
+  - [x] API: `GET /api/super-admin/permissions` — list predefined permissions per role
 
   **Acceptance criteria (overall)**
   - Super admin can view all users with last login/IP and status

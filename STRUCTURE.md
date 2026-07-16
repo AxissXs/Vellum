@@ -22,6 +22,7 @@ Vellum/
 │   ├── logo.svg            # Brand wordmark (light / colored)
 │   ├── logo-white.svg      # Brand wordmark (dark backgrounds)
 │   ├── icon.svg            # Favicon
+│   ├── sw.js               # Service worker (Web Push)
 │   └── deploy/             # Deploy migrations copied at build
 ├── tsconfig.json           # TypeScript config
 ├── next.config.ts          # Next.js config
@@ -32,6 +33,7 @@ Vellum/
 │   └── check-db-colocation.ts  # Edge vs PG latency probe
 └── drizzle/                # Drizzle migrations (committed)
     ├── 0000_faithful_the_twelve.sql
+    ├── 0005_even_dreadnoughts.sql  # Notifications, push, telegram, audit IP
     └── meta/
         ├── 0000_snapshot.json
         └── _journal.json
@@ -81,6 +83,18 @@ src/
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx                # Sprint detail (server)
 │   │   │       └── SprintDetailClient.tsx  # Tabs: KanbanBoard (shared), burndown, planning, standup, retro
+│   │   ├── settings/
+│   │   │   └── page.tsx              # Notification prefs, push toggle, Telegram pairing
+│   │   ├── super-admin/
+│   │   │   ├── page.tsx                    # Super-admin page (server)
+│   │   │   ├── SuperAdminClient.tsx        # Tabbed super-admin shell
+│   │   │   ├── SuperAdminUsersPanel.tsx    # Users management
+│   │   │   ├── SuperAdminActivityPanel.tsx # Live activity feed
+│   │   │   ├── SuperAdminSessionsPanel.tsx # Session revoke
+│   │   │   ├── SuperAdminAuditPanel.tsx    # Filterable audit logs
+│   │   │   ├── SuperAdminHealthPanel.tsx   # System health metrics
+│   │   │   ├── SuperAdminRolesPanel.tsx    # Role/permission matrix
+│   │   │   └── SuperAdminTelegramPanel.tsx # Telegram bot settings
 │   │   └── teams/
 │   │       ├── page.tsx              # Teams page
 │   │       └── TeamManagementClient.tsx
@@ -120,6 +134,32 @@ src/
 │       ├── comments/
 │       │   ├── route.ts            # GET, POST - Task comments
 │       │   └── [id]/route.ts       # PATCH, DELETE - Comment CRUD
+│       ├── notifications/
+│       │   ├── route.ts            # GET - List notifications
+│       │   ├── mark-all-read/route.ts  # POST - Mark all read
+│       │   └── [id]/route.ts       # PATCH - Mark one read
+│       ├── push/
+│       │   ├── subscribe/route.ts  # POST, DELETE - Web Push subscription
+│       │   └── preferences/route.ts # GET, PATCH - Channel prefs
+│       ├── telegram/
+│       │   ├── status/route.ts     # GET - Link status
+│       │   ├── pairing-code/route.ts  # GET - Generate pairing code
+│       │   ├── unlink/route.ts     # DELETE - Unlink account
+│       │   └── webhook/route.ts    # POST - Bot webhook
+│       ├── super-admin/
+│       │   ├── users/route.ts      # GET - List users
+│       │   ├── users/[id]/route.ts # PATCH - Update status/role
+│       │   ├── activity/route.ts   # GET - Activity feed
+│       │   ├── sessions/route.ts   # GET - Active sessions
+│       │   ├── sessions/[id]/route.ts  # DELETE - Revoke session
+│       │   ├── audit/route.ts      # GET - Audit logs
+│       │   ├── audit/export/route.ts   # GET - Export csv/pdf
+│       │   ├── health/route.ts     # GET - Health metrics
+│       │   ├── permissions/route.ts # GET - Role matrix
+│       │   └── telegram/
+│       │       ├── settings/route.ts  # GET, PATCH - Bot settings
+│       │       ├── stats/route.ts     # GET - Usage stats
+│       │       └── test/route.ts      # POST - Test message
 │       ├── activity/
 │       │   └── route.ts            # GET - Activity logs
 │       ├── stats/
@@ -130,8 +170,12 @@ src/
 │   ├── BrandLogo.tsx       # Whitelabel logo from brand config
 │   ├── BrandVars.tsx       # Runtime CSS brand color scale injection
 │   ├── LoginForm.tsx       # Login form (client)
+│   ├── NotificationBell.tsx # In-app notification centre (client)
+│   ├── PushNotificationToggle.tsx # Web Push enable/disable (client)
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
-│   └── Sidebar.tsx         # Navigation sidebar (client)
+│   ├── Sidebar.tsx         # Navigation sidebar (client)
+│   └── ui/
+│       └── Switch.tsx      # Toggle switch primitive
 ├── db/                     # Database Layer
 │   ├── index.ts            # Drizzle client export
 │   ├── schema.ts           # Database schema (tables, enums, relations)
@@ -140,23 +184,31 @@ src/
 ├── hooks/                  # React Query Hooks
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
+│   ├── useNotificationPreferences.ts # Notification channel prefs
+│   ├── useNotifications.ts # In-app notifications + mark read
 │   ├── useProjects.ts      # Project mutations with optimistic updates
+│   ├── usePushNotifications.ts # Web Push subscribe/unsubscribe
 │   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
 │   ├── useRetros.ts        # Retro item mutations with optimistic updates
 │   ├── useSprints.ts       # Sprint mutations with optimistic updates
 │   ├── useStandups.ts      # Standup queries and upsert mutations
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
+│   ├── useTelegram.ts      # Telegram status, pairing, unlink
 │   └── useUsers.ts         # User mutations with optimistic updates
 ├── lib/                    # Utilities
 │   ├── activity.ts         # Deferred activity-log writes (`after()`)
 │   ├── api.ts              # API client helpers
+│   ├── audit.ts            # Client IP helper for audit logs
 │   ├── auth.ts             # Authentication utilities (React `cache` + session JOIN)
 │   ├── brand.ts            # Whitelabel brand config (name, logos, colors, email domain)
+│   ├── notifications.ts    # In-app + multi-channel notification dispatch
+│   ├── push.ts             # Web Push send + preference helpers
 │   ├── pusher.ts           # Pusher server instance
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
-│   └── pusher-client.ts    # Pusher client singleton + ref counting
+│   ├── pusher-client.ts    # Pusher client singleton + ref counting
+│   └── telegram.ts         # Telegram bot API + pairing helpers
 └── providers/              # React Context Providers
     └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
 ```
@@ -206,6 +258,7 @@ src/
 - Renders a click-to-close backdrop when the drawer is open (`lg:hidden`)
 - Locks body scroll while the drawer is open
 - Main content: `pl-0 lg:pl-[260px]` so the sidebar only offsets content at `lg+`
+- Renders `NotificationBell` in the mobile top bar and desktop header
 
 ### `src/app/dashboard/layout.tsx`
 
@@ -373,6 +426,52 @@ src/
 
 **Purpose**: Client component for team CRUD
 **Exports**: `TeamManagementClient({ teams, users })` - Client component
+
+### `src/app/dashboard/settings/page.tsx`
+
+**Purpose**: User notification settings (in-app / push / email / Telegram prefs, push toggle, Telegram pairing)
+**Exports**: `SettingsPage()` - Client component
+
+### `src/app/dashboard/super-admin/page.tsx`
+
+**Purpose**: Super-admin dashboard (server); requires `superadmin` role
+**Exports**: `SuperAdminPage()` - Server component
+
+### `src/app/dashboard/super-admin/SuperAdminClient.tsx`
+
+**Purpose**: Tabbed shell for super-admin panels
+**Exports**: `SuperAdminClient()` - Client component
+**Tabs**: Users, Activity, Sessions, Audit, Health, Roles, Telegram
+
+### `src/app/dashboard/super-admin/SuperAdminActivityPanel.tsx`
+
+**Purpose**: Live user activity feed (polling)
+**Exports**: `SuperAdminActivityPanel()` - Client component
+
+### `src/app/dashboard/super-admin/SuperAdminSessionsPanel.tsx`
+
+**Purpose**: Active session list with revoke
+**Exports**: `SuperAdminSessionsPanel()` - Client component
+
+### `src/app/dashboard/super-admin/SuperAdminAuditPanel.tsx`
+
+**Purpose**: Filterable audit logs + export
+**Exports**: `SuperAdminAuditPanel()` - Client component
+
+### `src/app/dashboard/super-admin/SuperAdminHealthPanel.tsx`
+
+**Purpose**: System health metrics cards
+**Exports**: `SuperAdminHealthPanel()` - Client component
+
+### `src/app/dashboard/super-admin/SuperAdminRolesPanel.tsx`
+
+**Purpose**: Role × permission matrix
+**Exports**: `SuperAdminRolesPanel()` - Client component
+
+### `src/app/dashboard/super-admin/SuperAdminTelegramPanel.tsx`
+
+**Purpose**: Telegram bot token/webhook settings and test send
+**Exports**: `SuperAdminTelegramPanel()` - Client component
 
 ---
 
@@ -585,6 +684,161 @@ src/
 - `GET(req)` - List comments (query: `taskId`)
 - `POST(req)` - Create comment
 
+#### `src/app/api/notifications/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List in-app notifications for current user
+**Functions**:
+
+- `GET(req)` - Returns notifications (optional unread filter)
+
+#### `src/app/api/notifications/[id]/route.ts`
+
+**Methods**: `PATCH`
+**Purpose**: Mark a notification as read
+**Functions**:
+
+- `PATCH(req, { params })` - Mark notification read
+
+#### `src/app/api/notifications/mark-all-read/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Mark all notifications as read for current user
+**Functions**:
+
+- `POST(req)` - Mark all read
+
+#### `src/app/api/push/subscribe/route.ts`
+
+**Methods**: `POST`, `DELETE`
+**Purpose**: Web Push subscription management
+**Functions**:
+
+- `POST(req)` - Store push subscription
+- `DELETE(req)` - Remove push subscription
+
+#### `src/app/api/push/preferences/route.ts`
+
+**Methods**: `GET`, `PATCH`
+**Purpose**: Per-event notification channel preferences
+**Functions**:
+
+- `GET()` - List preferences (creates defaults if missing)
+- `PATCH(req)` - Update preference for an event type/channel
+
+#### `src/app/api/telegram/status/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Current user's Telegram link status
+**Functions**:
+
+- `GET()` - Returns linked status / username
+
+#### `src/app/api/telegram/pairing-code/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Generate a one-time Telegram pairing code
+**Functions**:
+
+- `GET()` - Returns pairing code + expiry
+
+#### `src/app/api/telegram/unlink/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Unlink Telegram from current user
+**Functions**:
+
+- `DELETE()` - Clears `telegramChatId` / `telegramUsername`
+
+#### `src/app/api/telegram/webhook/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Telegram bot webhook (pairing commands)
+**Functions**:
+
+- `POST(req)` - Handle Telegram updates
+
+#### `src/app/api/super-admin/activity/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Super-admin live activity feed (requires `superadmin`)
+**Functions**:
+
+- `GET()` - Recent activity + login stats
+
+#### `src/app/api/super-admin/sessions/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List active auth sessions
+**Functions**:
+
+- `GET()` - Sessions with user name / IP
+
+#### `src/app/api/super-admin/sessions/[id]/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Revoke a session
+**Functions**:
+
+- `DELETE(req, { params })` - Delete session by ID
+
+#### `src/app/api/super-admin/audit/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Filterable audit logs (`activity_logs` + IP)
+**Functions**:
+
+- `GET(req)` - Filters: user, action, date range, IP
+
+#### `src/app/api/super-admin/audit/export/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Export filtered audit logs
+**Functions**:
+
+- `GET(req)` - Query `format=csv|pdf`
+
+#### `src/app/api/super-admin/health/route.ts`
+
+**Methods**: `GET`
+**Purpose**: System health metrics
+**Functions**:
+
+- `GET()` - DB pool, latency, error counts, active sessions
+
+#### `src/app/api/super-admin/permissions/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Role / permission matrix data
+**Functions**:
+
+- `GET()` - Predefined permissions per role
+
+#### `src/app/api/super-admin/telegram/settings/route.ts`
+
+**Methods**: `GET`, `PATCH`
+**Purpose**: Platform Telegram bot settings
+**Functions**:
+
+- `GET()` - Current bot settings
+- `PATCH(req)` - Update bot token / webhook / channel IDs
+
+#### `src/app/api/super-admin/telegram/stats/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Telegram usage stats
+**Functions**:
+
+- `GET()` - Linked users / recent sends
+
+#### `src/app/api/super-admin/telegram/test/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Send a Telegram test message
+**Functions**:
+
+- `POST()` - Test bot connectivity
+
 #### `src/app/api/activity/route.ts`
 
 **Methods**: `GET`
@@ -631,6 +885,23 @@ src/
 **Props**: None (uses `useRouter`, `useState`)
 **Features**: Form validation, error display, loading state
 
+#### `src/components/NotificationBell.tsx`
+
+**Purpose**: In-app notification centre (bell + unread badge + dropdown)
+**Exports**: `NotificationBell()` - Client component
+**Features**: Polling + Pusher `user-{id}` channel; mark one / all read via `useNotifications`
+
+#### `src/components/PushNotificationToggle.tsx`
+
+**Purpose**: Enable/disable Web Push subscription
+**Exports**: `PushNotificationToggle()` - Client component
+**Features**: Uses `usePushNotifications`; registers `public/sw.js`
+
+#### `src/components/ui/Switch.tsx`
+
+**Purpose**: Accessible toggle switch primitive
+**Exports**: `Switch({ checked, onCheckedChange, disabled })` - Client component
+
 #### `src/components/RichTextEditor.tsx`
 
 **Purpose**: TipTap-based rich text editor
@@ -647,7 +918,7 @@ src/
 - Collapsible icon-rail mode (`lg+` only via chevron toggle)
 - Off-canvas drawer below `lg`: slides in when `mobileOpen`, hidden (`-translate-x-full`) otherwise; always on-canvas at `lg+`
 - Mobile close (`X`) button (below `lg`); nav links call `onClose` to auto-close the drawer
-- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Admin, Super Admin)
+- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Settings, Admin, Super Admin)
 - Role-based Admin / Super Admin links
 - User avatar with initials, role badge
 - Logout button
@@ -670,7 +941,7 @@ src/
 **Purpose**: Complete database schema definition
 **Exports** (Tables):
 
-- `users` - User accounts
+- `users` - User accounts (`telegramChatId`, `telegramUsername`; status enum)
 - `teams` - Teams
 - `teamMembers` - Team membership (indexes: `team_id`, `user_id`)
 - `projects` - Projects
@@ -683,16 +954,24 @@ src/
 - `taskStatusHistory` - Task status change history (burndown)
 - `comments` - Task comments (index: `task_id`)
 - `sessions` - Auth sessions (index: `user_id`)
-- `activityLogs` - Activity audit trail (index: `created_at`)
+- `userSessions` - Login history (IP, userAgent, success/failure)
+- `activityLogs` - Activity audit trail (`ipAddress`; index: `created_at`)
+- `notifications` - In-app notifications
+- `pushSubscriptions` - Web Push subscriptions
+- `notificationPreferences` - Per-event channel prefs (push / in-app / email / telegram)
+- `telegramPairingCodes` - One-time Telegram pairing codes
+- `platformSettings` - Key/value platform config (Telegram bot settings)
 
 **Exports** (Enums):
 
 - `userRoleEnum` - `superadmin` | `admin` | `member`
+- `userStatusEnum` - `active` | `inactive` | `banned`
 - `taskStatusEnum` - `backlog` | `todo` | `in_progress` | `review` | `done`
 - `taskPriorityEnum` - `low` | `medium` | `high` | `urgent`
+- `notificationEventTypeEnum` - `task_assigned` | `task_mentioned` | `due_date_approaching` | `status_changed` | `new_comment` | `comment_mention`
 
 **Relations**: Defined via Drizzle `references()` and foreign keys
-**Migrations**: Hot-path FK/order indexes in `drizzle/0004_flimsy_sauron.sql`
+**Migrations**: Hot-path FK/order indexes in `drizzle/0004_flimsy_sauron.sql`; notifications/push/telegram/audit IP in `drizzle/0005_even_dreadnoughts.sql`
 
 #### `src/db/seed.ts`
 
@@ -804,6 +1083,34 @@ src/
 - `useCreateRetroItem()` - Add retro item
 - `useDeleteRetroItem()` - Delete retro item
 
+#### `src/hooks/useNotifications.ts`
+
+**Purpose**: In-app notifications list, unread count, mark-read mutations
+**Exports**:
+- `getNotificationsQueryKey()` / `getUnreadCountQueryKey()` - Query keys
+- `useNotifications()` - Returns `{ notifications, unreadCount, isLoading, markRead, markAllRead }`; Pusher `user-{id}` for live badge
+
+#### `src/hooks/useNotificationPreferences.ts`
+
+**Purpose**: Per-event notification channel preferences
+**Exports**:
+- `useNotificationPreferences()` - Fetch prefs
+- `useUpdateNotificationPreference()` - Patch event/channel toggle
+
+#### `src/hooks/usePushNotifications.ts`
+
+**Purpose**: Web Push subscribe/unsubscribe via VAPID + service worker
+**Exports**:
+- `usePushNotifications()` - Returns support/subscribed state + subscribe/unsubscribe actions
+
+#### `src/hooks/useTelegram.ts`
+
+**Purpose**: Telegram account linking for the current user
+**Exports**:
+- `useTelegramStatus()` - Link status
+- `useGeneratePairingCode()` - Generate pairing code
+- `useUnlinkTelegram()` - Unlink Telegram
+
 ---
 
 ### Providers (`src/providers/`)
@@ -854,6 +1161,40 @@ src/
 
 - `ActivityLogInput` - Shape for activity rows
 - `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response)
+
+#### `src/lib/audit.ts`
+
+**Purpose**: Client IP extraction for audit / activity logging
+**Exports**:
+
+- `getClientIP(req)` - Resolve IP from request headers
+
+#### `src/lib/notifications.ts`
+
+**Purpose**: Multi-channel notification dispatch (in-app, push, Telegram)
+**Exports**:
+
+- `isInAppEnabled(userId, eventType)` - Check in-app preference
+- `sendInAppNotification(...)` - Insert notification + Pusher badge event
+- `sendNotification(...)` - Fan-out to enabled channels
+
+#### `src/lib/push.ts`
+
+**Purpose**: Web Push send and preference helpers (VAPID)
+**Exports**:
+
+- `sendPushNotification(userId, payload)` - Send via `web-push`
+- `getNotificationPreferences(userId)` / `getDefaultNotificationPreferences()` / `ensureNotificationPreferences(userId)`
+- `updateNotificationPreference(...)` / `isPushEnabled(userId, eventType)`
+
+#### `src/lib/telegram.ts`
+
+**Purpose**: Telegram Bot API helpers, pairing, and notification send
+**Exports**:
+
+- `getPlatformSetting` / `setPlatformSetting` / `getBotToken` / `isTelegramConfigured`
+- `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage`
+- `isTelegramEnabled` / `sendTelegramNotification` / `broadcastToSupergroup` / `broadcastToChannel`
 
 #### `src/lib/api.ts`
 
@@ -911,7 +1252,7 @@ Holds `dependencies`/`devDependencies` only (Deno reads these for `deno install`
 - `db:push` - `node ./node_modules/drizzle-kit/bin.cjs push`
 - `db:studio` - `node ./node_modules/drizzle-kit/bin.cjs studio`
 - `db:seed` - `node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts` (loads `.env` itself via `dotenv/config`)
-- `db:deploy` - `deno run -A --env-file=.env ./migrate.ts` (local); Deno Deploy pre-deploy: `deno run -A public/deploy/migrate.ts` (from `deno.json` deploy config)
+- `db:deploy` - `deno run -A --env-file=.env ./migrate.ts` (local only). On Deno Deploy, migrations run at Next boot via `instrumentation.ts` (no predeploy — the partition lacks node_modules and .next access).
 - `deploy` - `deployctl deploy --include=.next --include=public jsr:@deno/nextjs-start/v16`
 
 > Note: `drizzle.config.ts` already loads `.env` via `dotenv`, and `seed.ts` imports `dotenv/config` — so no `dotenv -e` prefix is needed in the task commands.

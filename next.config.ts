@@ -8,6 +8,17 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Pin tracing to this package so standalone does not nest under a parent
+  // directory when a higher package-lock.json exists (e.g. ~/package-lock.json).
+  outputFileTracingRoot: projectRoot,
+  // Ensure drizzle SQL lands inside standalone for runtime migrations
+  // (Deno Deploy pre-deploy cannot reliably see custom files).
+  outputFileTracingIncludes: {
+    "/*": ["./drizzle/**/*"],
+  },
+  // Keep Node-only packages out of Turbopack page-data bundles (Deno Deploy
+  // builds have hit "module factory is not available" during /_not-found).
+  serverExternalPackages: ["web-push", "pusher"],
   // Do NOT set turbopack.root to projectRoot. Next.js bug:
   // https://github.com/vercel/next.js/issues/90307 — CSS @import then
   // resolves from the *parent* directory and fails to find tailwindcss

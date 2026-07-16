@@ -5,6 +5,7 @@ import { tasks, users, taskStatusHistory } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
 import { eq } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { sendNotification } from "@/lib/notifications";
 
 export async function PATCH(
   req: NextRequest,
@@ -98,6 +99,48 @@ export async function PATCH(
     actorUserId: user.id,
     actorName: user.name || "Someone",
   });
+
+  if (statusChanged && task.assigneeId && task.assigneeId !== user.id) {
+    const label = statusLabels[status] || "updated";
+    await sendNotification({
+      userId: task.assigneeId,
+      type: "status_changed",
+      title: "Task Status Changed",
+      content: `${user.name || "Someone"} ${label} "${task.title}"`,
+      entityType: "task",
+      entityId: task.id,
+      actorUserId: user.id,
+      pushPayload: {
+        title: "Task Status Changed",
+        body: `${user.name || "Someone"} ${label} "${task.title}"`,
+        tag: `task-${task.id}`,
+      },
+      url: `/dashboard/tasks`,
+    });
+  }
+
+  if (
+    assigneeId !== undefined &&
+    assigneeId &&
+    assigneeId !== user.id &&
+    assigneeId !== current.assigneeId
+  ) {
+    await sendNotification({
+      userId: assigneeId,
+      type: "task_assigned",
+      title: "Task Assigned to You",
+      content: `${user.name || "Someone"} assigned you "${task.title}"`,
+      entityType: "task",
+      entityId: task.id,
+      actorUserId: user.id,
+      pushPayload: {
+        title: "Task Assigned to You",
+        body: `${user.name || "Someone"} assigned you "${task.title}"`,
+        tag: `task-${task.id}`,
+      },
+      url: `/dashboard/tasks`,
+    });
+  }
 
   return NextResponse.json({ task });
 }

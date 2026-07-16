@@ -5,6 +5,7 @@ import { comments, users, tasks } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
 import { eq, asc } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { sendNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -52,7 +53,15 @@ export async function POST(req: NextRequest) {
     .values({ content, taskId, authorId: user.id })
     .returning();
 
-  const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  const [task] = await db
+    .select({
+      title: tasks.title,
+      projectId: tasks.projectId,
+      assigneeId: tasks.assigneeId,
+    })
+    .from(tasks)
+    .where(eq(tasks.id, taskId))
+    .limit(1);
 
   logActivity({
     userId: user.id,
@@ -87,6 +96,24 @@ export async function POST(req: NextRequest) {
       taskId,
       actorUserId: user.id,
       actorName: user.name || "Someone",
+    });
+  }
+
+  if (task?.assigneeId && task.assigneeId !== user.id) {
+    await sendNotification({
+      userId: task.assigneeId,
+      type: "new_comment",
+      title: "New Comment",
+      content: `${user.name || "Someone"} commented on "${task.title}"`,
+      entityType: "task",
+      entityId: taskId,
+      actorUserId: user.id,
+      pushPayload: {
+        title: "New Comment",
+        body: `${user.name || "Someone"} commented on "${task.title}"`,
+        tag: `task-${taskId}`,
+      },
+      url: `/dashboard/tasks`,
     });
   }
 
