@@ -119,6 +119,20 @@ This document tracks features and tasks that have been fully implemented, tested
 - UI: `AuditLogDetailModal.tsx` — actor card, severity/tag badges, snapshot diff view, entity timeline
 - UI: `SuperAdminAuditPanel.tsx` — tag/severity filter pills, severity badges, clickable rows opening detail modal
 - Migration: `0007_next_whistler.sql`
+
+### Telegram Bot Integration (July 2026)
+> Full Telegram Bot API integration for notifications, pairing, and supergroup topic routing.
+
+- Superadmin configures bot token, supergroup ID, channel ID in platform settings
+- Webhook auto-set on token save with `secret_token` verification (`X-Telegram-Bot-Api-Secret-Token` header)
+- Users pair via single-use code: `/start <code>` in bot DMs links Telegram to Vellum account
+- Per-event notification preferences with Telegram channel toggle
+- Supergroup topic mapping per notification event type
+- Channel broadcast for selected event types
+- Customizable HTML message templates with `{title}`, `{content}`, `{url}` variables
+- API routes: `/api/telegram/webhook`, `/api/telegram/config`, `/api/telegram/pairing-code`, `/api/telegram/unlink`, `/api/telegram/status`
+- Superadmin API routes: `/api/super-admin/telegram/settings`, `/api/super-admin/telegram/test`, `/api/super-admin/telegram/stats`, `/api/super-admin/telegram/topics`
+- Components: `SuperAdminTelegramPanel.tsx`, `useTelegram.ts` hook
 ---
 
 ## Admin & Super Admin
