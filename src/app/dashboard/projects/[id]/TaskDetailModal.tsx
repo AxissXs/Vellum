@@ -359,7 +359,7 @@ export default function TaskDetailModal({
               )}
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-600 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-600 shrink-0">
                     {getInitials(c.authorName)}
                   </div>
                   <div className="flex-1 min-w-0">

@@ -89,7 +89,7 @@ export default async function ActivityPage() {
               const colorClass = actionColors[log.action] || "bg-slate-500/10 text-slate-500";
               return (
                 <div key={log.id} className="flex items-center gap-4 px-5 py-3.5">
-                  <div className={clsx("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0", colorClass)}>
+                  <div className={clsx("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", colorClass)}>
                     <Icon size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ export default async function ActivityPage() {
                       {log.userName || "Unknown"} · {formatTime(log.createdAt)}
                     </p>
                   </div>
-                  <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
                     {getInitials(log.userName)}
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -128,30 +128,19 @@ export default function SprintDetailClient({
     router.push("/dashboard/sprints");
   }
 
-  const boardTasks = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.sprintId === sprintId)
-        .map((t) => ({ ...t, position: t.position || "0" })),
-    [tasks, sprintId]
-  );
+  const boardTasks = tasks
+    .filter((t) => t.sprintId === sprintId)
+    .map((t) => ({ ...t, position: t.position || "0" }));
 
-  const kanbanColumns = useMemo(
-    () =>
-      statusColumns.map((col) => ({
-        ...col,
-        tasks: boardTasks
-          .filter((t) => t.status === col.key)
-          .sort((a, b) => Number(a.position) - Number(b.position)),
-      })),
-    [boardTasks]
-  );
+  const kanbanColumns = statusColumns.map((col) => ({
+    ...col,
+    tasks: boardTasks
+      .filter((t) => t.status === col.key)
+      .sort((a, b) => Number(a.position) - Number(b.position)),
+  }));
 
   // ---- Planning state ----
-  const backlogForPlanning = useMemo(
-    () => backlogTasks.filter((t) => !t.sprintId),
-    [backlogTasks]
-  );
+  const backlogForPlanning = backlogTasks.filter((t) => !t.sprintId);
 
   async function addToSprint(task: Task) {
     await updateTask.mutateAsync({ id: task.id, projectId: task.projectId, sprintId });
@@ -308,7 +297,7 @@ function TabButton({
     <button
       onClick={() => onClick(tab)}
       className={clsx(
-        "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px whitespace-nowrap flex-shrink-0",
+        "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px whitespace-nowrap shrink-0",
         current === tab
           ? "text-brand-600 border-brand-500"
           : "text-slate-500 border-transparent hover:text-slate-800"
@@ -738,10 +727,10 @@ function RetroPanel({
                 {grouped(c.key).map((item) => (
                   <div
                     key={item.id}
-                    className="group flex items-start justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
+                    className="group relative bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
                   >
                     {editingId === item.id ? (
-                      <div className="flex-1 space-y-2">
+                      <div className="space-y-2">
                         <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
@@ -766,19 +755,21 @@ function RetroPanel({
                       </div>
                     ) : (
                       <>
-                        <span className="text-sm text-slate-800">{item.content}</span>
+                        <span className="block w-full pr-16 text-sm text-slate-800 whitespace-pre-wrap wrap-break-word">
+                          {item.content}
+                        </span>
                         {canMutateItem(item) && (
-                          <div className="flex items-center gap-0.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition">
+                          <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 bg-slate-50/80 rounded-lg px-1 py-0.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               onClick={() => startEdit(item)}
-                              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
+                              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
                               aria-label="Edit retro item"
                             >
                               <Pencil size={14} />
                             </button>
                             <button
                               onClick={() => deleteRetro.mutate({ id: item.id, sprintId })}
-                              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
+                              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
                               aria-label="Delete retro item"
                             >
                               <Trash2 size={16} />

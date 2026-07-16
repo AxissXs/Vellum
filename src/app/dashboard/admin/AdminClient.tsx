@@ -144,7 +144,7 @@ export default function AdminClient({
         <div className="divide-y divide-slate-200">
           {users.map((u) => (
             <div key={u.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition">
-              <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 flex-shrink-0">
+              <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
                 {getInitials(u.name)}
               </div>
               <div className="flex-1 min-w-0">

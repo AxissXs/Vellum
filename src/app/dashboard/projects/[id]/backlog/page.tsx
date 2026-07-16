@@ -53,7 +53,7 @@ export default async function ProjectBacklogPage({
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <div
-          className="h-12 w-12 rounded-xl flex items-center justify-center text-slate-900 text-xl flex-shrink-0"
+          className="h-12 w-12 rounded-xl flex items-center justify-center text-slate-900 text-xl shrink-0"
           style={{ backgroundColor: project.color || "#6366f1" }}
         >
           📁

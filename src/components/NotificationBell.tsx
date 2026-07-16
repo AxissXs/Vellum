@@ -80,7 +80,7 @@ export default function NotificationBell() {
                     <div className="flex items-start gap-3">
                       <div
                         className={clsx(
-                          "mt-0.5 w-2 h-2 rounded-full flex-shrink-0",
+                          "mt-0.5 w-2 h-2 rounded-full shrink-0",
                           n.read ? "bg-transparent" : "bg-brand-400"
                         )}
                       />
@@ -103,7 +103,7 @@ export default function NotificationBell() {
                             e.stopPropagation();
                             markRead(n.id);
                           }}
-                          className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition flex-shrink-0"
+                          className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition shrink-0"
                           title="Mark as read"
                         >
                           <Check size={12} />

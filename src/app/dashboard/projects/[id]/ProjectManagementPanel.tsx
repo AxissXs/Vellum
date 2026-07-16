@@ -361,12 +361,12 @@ export default function ProjectManagementPanel({
                   {canEdit ? (
                     <button
                       onClick={() => updateMilestone(milestone.id, { status: milestone.status === "done" ? "planned" : "done" })}
-                      className={clsx("mt-0.5 h-5 w-5 rounded-full border flex-shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
+                      className={clsx("mt-0.5 h-5 w-5 rounded-full border shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
                       aria-label="Toggle milestone status"
                     />
                   ) : (
                     <div
-                      className={clsx("mt-0.5 h-5 w-5 rounded-full border flex-shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
+                      className={clsx("mt-0.5 h-5 w-5 rounded-full border shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
                     />
                   )}
                   <div className="min-w-0 flex-1">

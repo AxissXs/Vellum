@@ -356,7 +356,7 @@ export default function RichTextEditor({
                   onClick={() => handleMentionSelect(user)}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
                 >
-                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-600 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[11px] font-bold text-brand-600 shrink-0">
                     {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                   </div>
                   <span className="truncate">{user.name}</span>

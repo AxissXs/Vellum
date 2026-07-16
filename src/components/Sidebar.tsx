@@ -112,7 +112,7 @@ export default function Sidebar({
         <div className="flex items-center gap-3 min-w-0">
           {collapsed ? (
             <div
-              className="h-9 w-9 rounded-xl bg-brand-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
+              className="h-9 w-9 rounded-xl bg-brand-500 flex items-center justify-center shrink-0 text-white font-bold text-sm"
               title={brand.name}
             >
               {brand.name.charAt(0).toUpperCase()}
@@ -124,7 +124,7 @@ export default function Sidebar({
         {/* Desktop collapse toggle (lg+) */}
         <button
           onClick={() => onCollapsedChange?.(!collapsed)}
-          className="ml-auto hidden lg:flex p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition flex-shrink-0"
+          className="ml-auto hidden lg:flex p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition shrink-0"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -132,7 +132,7 @@ export default function Sidebar({
         {/* Mobile close button (below lg) */}
         <button
           onClick={onClose}
-          className="ml-auto flex lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition flex-shrink-0"
+          className="ml-auto flex lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition shrink-0"
           aria-label="Close menu"
         >
           <X size={18} />
@@ -156,7 +156,7 @@ export default function Sidebar({
                   : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
               )}
             >
-              <Icon size={18} className="flex-shrink-0" />
+              <Icon size={18} className="shrink-0" />
               <span className={clsx("truncate", collapsed && "lg:hidden")}>{item.label}</span>
               {collapsed && (
                 <span className="absolute left-full ml-2 px-2 py-1 bg-slate-100 text-slate-900 text-xs rounded-md opacity-0 lg:group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50 hidden lg:block">
@@ -171,7 +171,7 @@ export default function Sidebar({
       {/* User */}
       <div className="p-3 border-t border-slate-200">
         <div className={clsx("flex items-center gap-3", collapsed && "lg:justify-center")}>
-          <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-600 text-xs font-bold flex-shrink-0">
+          <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-600 text-xs font-bold shrink-0">
             {getInitials(user.name)}
           </div>
           <div className={clsx("min-w-0 flex-1", collapsed && "lg:hidden")}>
@@ -181,7 +181,7 @@ export default function Sidebar({
           <button
             onClick={handleLogout}
             className={clsx(
-              "p-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition flex-shrink-0",
+              "p-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition shrink-0",
               collapsed && "lg:hidden"
             )}
             title="Sign out"

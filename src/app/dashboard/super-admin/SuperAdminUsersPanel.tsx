@@ -211,7 +211,7 @@ export default function SuperAdminUsersPanel() {
                   <tr key={u.id} className="hover:bg-white/[0.02] transition">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 flex-shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
                           {getInitials(u.name)}
                         </div>
                         <div className="min-w-0">

@@ -200,7 +200,7 @@ export default async function DashboardPage() {
                 <div key={task.id} className="flex items-center gap-3 py-2 border-b border-slate-200 last:border-0">
                   <div
                     className={clsx(
-                      "h-2 w-2 rounded-full flex-shrink-0",
+                      "h-2 w-2 rounded-full shrink-0",
                       task.status === "in_progress" ? "bg-blue-400" : "bg-purple-400"
                     )}
                   />

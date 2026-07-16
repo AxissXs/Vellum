@@ -109,7 +109,7 @@ export default function SuperAdminSessionsPanel() {
                   <tr key={s.id} className="hover:bg-brand-50 transition">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 flex-shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 shrink-0">
                           {s.userName?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) ?? "??"}
                         </div>
                         <div className="min-w-0">

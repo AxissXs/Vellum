@@ -5,7 +5,7 @@ import {
   useCallback,
   useMemo,
   useRef,
-  useEffect,
+  useSyncExternalStore,
 } from "react";
 import {
   DndContext,
@@ -202,7 +202,7 @@ function StaticKanbanBoard({
       {statusColumns.map((colConfig) => {
         const column = columns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
         return (
-          <div key={colConfig.key} className="w-72 flex-shrink-0">
+          <div key={colConfig.key} className="w-72 shrink-0">
             <div className="flex flex-col h-full min-h-[500px]">
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ function TaskCard({
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="flex-shrink-0 min-h-[44px] min-w-[44px] -m-2 flex items-center justify-center text-slate-500 hover:text-slate-600 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch-none cursor-grab active:cursor-grabbing"
+          className="shrink-0 min-h-[44px] min-w-[44px] -m-2 flex items-center justify-center text-slate-500 hover:text-slate-600 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch-none cursor-grab active:cursor-grabbing"
           aria-label="Drag"
         >
           <GripVertical size={16} />
@@ -373,12 +373,15 @@ export default function KanbanBoardClient({
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
-  const [dndReady, setDndReady] = useState(false);
   const boardScrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setDndReady(true);
-  }, []);
+  // Mounted flag: render the static board on the server/first paint, then
+  // mount DndContext on the client to avoid hydration mismatch.
+  const dndReady = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const [newTaskData, setNewTaskData] = useState<Record<string, { title: string; description: string; priority: string; assigneeId: string; dueDate: string; projectId: string }>>({});
 
@@ -731,7 +734,7 @@ export default function KanbanBoardClient({
               </>
             ) : null;
             return (
-              <div key={colConfig.key} className="w-72 flex-shrink-0">
+              <div key={colConfig.key} className="w-72 shrink-0">
                 <Column
                   column={column}
                   onTaskClick={setSelectedTask}

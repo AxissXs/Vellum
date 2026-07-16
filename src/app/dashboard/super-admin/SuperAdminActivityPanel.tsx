@@ -179,7 +179,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     <li className="flex items-start gap-3 px-5 py-3 hover:bg-brand-50 transition">
       <div
         className={clsx(
-          "mt-0.5 h-7 w-7 rounded-full border flex items-center justify-center flex-shrink-0",
+          "mt-0.5 h-7 w-7 rounded-full border flex items-center justify-center shrink-0",
           iconBg
         )}
       >
@@ -199,7 +199,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
           <p className="text-[10px] text-slate-600 mt-0.5">IP: {item.ipAddress}</p>
         )}
       </div>
-      <span className="text-[10px] text-slate-600 whitespace-nowrap flex-shrink-0">
+      <span className="text-[10px] text-slate-600 whitespace-nowrap shrink-0">
         {formatTime(item.createdAt)}
       </span>
     </li>
