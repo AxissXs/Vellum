@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
 
   const url = `${TELEGRAM_API_BASE}/bot${botToken}/createForumTopic`;
   const body: Record<string, unknown> = {
-    chat_id: supergroupId,
+    chat_id: Number(supergroupId),
     name,
   };
-  if (iconColor !== undefined) body.icon_color = iconColor;
+  if (iconColor !== undefined) body.icon_color = Number(iconColor);
   if (iconCustomEmojiId) body.icon_custom_emoji_id = iconCustomEmojiId;
 
   try {
