@@ -92,6 +92,33 @@ This document tracks features and tasks that have been fully implemented, tested
 - API: `GET /api/notifications`, `PATCH /api/notifications/[id]`, `POST /api/notifications/mark-all-read`
 - Components: `NotificationBell.tsx`, `useNotifications.ts`
 - Utilities: `sendInAppNotification()` in `src/lib/notifications.ts`
+
+### Soft Delete System (July 2026)
+> Replace permanent deletion with soft deletes; superadmin Trash UI for recovery.
+
+- DB: `deletedAt`/`deletedBy` columns added to tasks, projects, comments, teams, projectMilestones, projectNotes, teamMembers
+- All read queries filtered with `isNull(deletedAt)` to exclude soft-deleted rows
+- All DELETE routes converted to soft delete (tasks, projects, comments, teams, teamMembers, milestones)
+- API: `PATCH /api/super-admin/restore` — bulk restore with activity logging (superadmin only)
+- API: `GET /api/super-admin/trash` — paginated listing with type/search filters
+- UI: `SuperAdminTrashPanel.tsx` — table with select-all, bulk restore, confirmation modal, pagination
+- Trash tab added to SuperAdminClient dashboard
+- Migration: `0006_powerful_scorpion.sql`
+
+### Audit Log Enhancement (July 2026)
+> Fixed IP capture, added tags/severity, snapshots, and rich detail modals.
+
+- DB: `activity_log_snapshots` table (`logId`, `tableName`, `recordId`, `snapshot` JSON, `snapshotType`)
+- DB: `tag` (text) and `severity` (text, default "info") columns on `activity_logs`
+- Fixed `getClientIP()` — parses multiple headers, validates format, filters private IPs
+- `writeActivityLog()` helper — auto-classifies tag (security/user_action/data_change) and severity (info/warning/critical), writes snapshots
+- All 11 mutation routes updated to use `writeActivityLog` with before/after snapshots
+- API: `GET /api/super-admin/audit/[id]` — full detail with snapshots, actor, entity state, entity timeline
+- API: `GET /api/super-admin/audit` — tag/severity filters added
+- API: CSV export now includes tag and severity columns
+- UI: `AuditLogDetailModal.tsx` — actor card, severity/tag badges, snapshot diff view, entity timeline
+- UI: `SuperAdminAuditPanel.tsx` — tag/severity filter pills, severity badges, clickable rows opening detail modal
+- Migration: `0007_next_whistler.sql`
 ---
 
 ## Admin & Super Admin
@@ -189,6 +216,7 @@ This document tracks features and tasks that have been fully implemented, tested
 | Bun over npm/pnpm | Faster install, native TS support | ✅ Applied |
 | React Query + optimistic updates | Fast UI, easy rollback on error | ✅ Applied |
 | Activity logging on every mutation | Full audit trail, analytics ready | ✅ Applied |
+| Soft deletes over permanent DELETE | Preserves audit trail, recoverable data | ✅ Applied |
 
 ---
 
