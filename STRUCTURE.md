@@ -31,15 +31,20 @@ Vellum/
     ├── 0001_swift_lucky_pierre.sql
     ├── 0002_faulty_groot.sql
     ├── 0003_whole_kang.sql
-    ├── 0004_grey_monster_badoon.sql
-    ├── 0005_melodic_puck.sql
-    └── meta/
-        ├── 0000_snapshot.json
-        ├── 0001_snapshot.json
-        ├── 0002_snapshot.json
-        ├── 0003_snapshot.json
-        ├── 0004_snapshot.json
-        └── _journal.json
+├── 0004_grey_monster_badoon.sql
+├── 0005_melodic_puck.sql
+├── 0006_powerful_scorpion.sql
+├── 0007_next_whistler.sql
+└── meta/
+    ├── 0000_snapshot.json
+    ├── 0001_snapshot.json
+    ├── 0002_snapshot.json
+    ├── 0003_snapshot.json
+    ├── 0004_snapshot.json
+    ├── 0005_snapshot.json
+    ├── 0006_snapshot.json
+    ├── 0007_snapshot.json
+    └── _journal.json
 ```
 
 ## Source Code (`src/`)
@@ -70,6 +75,8 @@ src/
 │   │   │   ├── SuperAdminActivityPanel.tsx   # Real-time activity feed
 │   │   │   ├── SuperAdminSessionsPanel.tsx   # Active sessions table
 │   │   │   ├── SuperAdminAuditPanel.tsx      # Filterable audit log table
+│   │   │   ├── AuditLogDetailModal.tsx       # Rich detail modal for audit log entries
+│   │   │   ├── SuperAdminTrashPanel.tsx      # Trash bin for soft-deleted entities
 │   │   │   ├── SuperAdminHealthPanel.tsx     # System health metrics
 │   │   │   ├── SuperAdminRolesPanel.tsx      # Role / permission matrix
 │   │   │   └── SuperAdminTelegramPanel.tsx   # Telegram bot configuration
@@ -143,7 +150,10 @@ src/
 │           ├── sessions/route.ts   # GET - Active sessions
 │           ├── sessions/[id]/route.ts  # DELETE - Revoke session
 │           ├── audit/route.ts      # GET - Filtered audit logs with pagination
+│           ├── audit/[id]/route.ts  # GET - Single audit log with snapshots + actor + entity
 │           ├── audit/export/route.ts  # GET - CSV export of audit logs
+│           ├── restore/route.ts     # PATCH - Bulk restore soft-deleted entities
+│           ├── trash/route.ts       # GET - List soft-deleted entities with filters
 │           └── telegram/
 │               ├── settings/route.ts  # GET, PATCH - Bot settings + topics + channel events + templates
 │               ├── test/route.ts      # POST - Test bot connectivity
@@ -322,12 +332,38 @@ src/
 
 ### `src/app/dashboard/super-admin/SuperAdminAuditPanel.tsx`
 
-**Purpose**: Filterable audit log viewer with CSV export
+**Purpose**: Filterable audit log viewer with tag/severity filters, severity badges, clickable rows, CSV export
 **Exports**: `SuperAdminAuditPanel()` - Client component
 
+- Tag filter pills: All, Data Change, Security, User Action
+- Severity filter pills: All, Info, Warning, Critical
 - Filters: user ID, action, IP, date range
 - Paginated table (25 per page)
+- Severity badges with colored dots
+- Click any row to open `AuditLogDetailModal`
 - Export CSV button that downloads filtered results
+
+### `src/app/dashboard/super-admin/AuditLogDetailModal.tsx`
+
+**Purpose**: Rich detail modal for a single audit log entry
+**Exports**: `AuditLogDetailModal({ logId, onClose })` - Client component
+
+- Actor section: avatar, name, email, role, IP, timestamp
+- Event summary: action, severity badge, tag badge, details, entity type + ID
+- Entity card: current state (if exists) with deep links
+- Snapshot diff view: before/after for updates, before for deletes, after for creates
+- Related timeline: all audit logs for the same entity
+
+### `src/app/dashboard/super-admin/SuperAdminTrashPanel.tsx`
+
+**Purpose**: Trash bin for soft-deleted entities with restore functionality
+**Exports**: `SuperAdminTrashPanel()` - Client component
+
+- Paginated table of all soft-deleted items
+- Filter by entity type (task, project, comment, team, milestone) and search
+- Select-all checkbox, bulk restore
+- Confirmation modal before restore
+- Restored items reappear in normal views
 
 ### `src/app/dashboard/super-admin/SuperAdminHealthPanel.tsx`
 
@@ -706,7 +742,20 @@ src/
 **Functions**:
 
 - `GET(req)` - Returns `{ logs, page, pageSize, total, totalPages }`
-- Query params: `userId`, `action`, `ip`, `from`, `to`, `page`, `pageSize`
+- Query params: `userId`, `action`, `ip`, `tag`, `severity`, `from`, `to`, `page`, `pageSize`
+
+#### `src/app/api/super-admin/audit/[id]/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Single audit log entry with full context
+**Functions**:
+
+- `GET(req, { params })` - Returns `{ log, snapshots, actor, entity, timeline }`
+  - `log`: audit log row with tag, severity, IP
+  - `snapshots`: before/after state snapshots from `activity_log_snapshots`
+  - `actor`: enriched user info (name, email, role, avatar, last login, last IP)
+  - `entity`: current entity state (if exists) or `exists: false`
+  - `timeline`: recent audit logs for the same entity
 
 #### `src/app/api/super-admin/audit/export/route.ts`
 
@@ -715,7 +764,8 @@ src/
 **Functions**:
 
 - `GET(req)` - Returns CSV download with headers and all matching rows
-- Query params: `userId`, `action`, `ip`, `from`, `to`
+- Query params: `userId`, `action`, `ip`, `tag`, `severity`, `from`, `to`
+- CSV columns: ID, User, Email, Action, Tag, Severity, Entity, Details, IP, Created At
 
 #### `src/app/api/super-admin/health/route.ts`
 
@@ -732,6 +782,24 @@ src/
 **Functions**:
 
 - `GET()` - Returns `{ roles, permissions, rolePermissions }`
+
+#### `src/app/api/super-admin/restore/route.ts`
+
+**Methods**: `PATCH`
+**Purpose**: Bulk restore soft-deleted entities (superadmin-only)
+**Functions**:
+
+- `PATCH(req)` - Body: `{ ids: string[] }` or `{ ids: string[], type: string }`. Restores soft-deleted rows by clearing `deletedAt`/`deletedBy`. Logs each restore to `activityLogs`.
+
+#### `src/app/api/super-admin/trash/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List all soft-deleted entities with filters
+**Functions**:
+
+- `GET(req)` - Returns `{ items, page, pageSize, total, totalPages }`
+- Query params: `type` (entity type filter), `search` (title/name), `page`, `pageSize`
+- Scans: tasks, projects, comments, teams, milestones, teamMembers where `deletedAt IS NOT NULL`
 
 #### `src/app/api/telegram/pairing-code/route.ts`
 
@@ -894,7 +962,8 @@ src/
 - `comments` - Task comments
 - `sessions` - Auth sessions
 - `userSessions` - Login history (IP, user agent, success/failure)
-- `activityLogs` - Activity audit trail
+- `activityLogs` - Activity audit trail (includes `tag`, `severity`, `deletedAt`, `deletedBy` on entities)
+- `activityLogSnapshots` - Entity state snapshots at time of audit events (`logId`, `tableName`, `recordId`, `snapshot`, `snapshotType`)
 - `pushSubscriptions` - Browser push notification subscriptions
 - `notificationPreferences` - Per-user notification event preferences (includes `telegramEnabled`)
 - `notifications` - In-app notification storage
@@ -1074,10 +1143,11 @@ src/
 
 #### `src/lib/audit.ts`
 
-**Purpose**: Request metadata extraction for audit logging
+**Purpose**: Request metadata extraction and structured activity logging
 **Exports**:
 
-- `getClientIP(req: NextRequest): string` - Extracts IP from `x-forwarded-for`, `x-real-ip`, or returns `"unknown"`
+- `getClientIP(req: NextRequest): string` - Multi-header IP parser (x-forwarded-for, x-real-ip, x-client-ip, cf-connecting-ip); validates format, filters private IPs, falls back to "unknown"
+- `writeActivityLog({ db, userId, action, entityType, entityId, details, ipAddress, req, before?, after? })` - Writes activity log entry with auto-classified `tag` (data_change/security/user_action) and `severity` (info/warning/critical), plus before/after snapshots to `activity_log_snapshots`
 
 #### `src/lib/pusher.ts`
 

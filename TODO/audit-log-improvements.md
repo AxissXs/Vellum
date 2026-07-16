@@ -1,7 +1,7 @@
 # Audit Log — Enhanced Logs & Detail Modals
 
 > **Priority:** High
-> **Status:** Pending
+> **Status:** Done
 > **Estimated complexity:** Large
 > **Depends on:** Soft Delete System
 > **Blocked by:** Soft Delete System (must have soft-deleted entities linkable)
@@ -467,19 +467,19 @@ Not applicable — this task IS the activity logging improvement.
 
 ## Acceptance Criteria
 
-- [ ] IP addresses are parsed correctly from all proxy headers; first valid non-private IP is stored
-- [ ] All mutation API routes include `ipAddress`, `tag`, and `severity` in activity log entries
-- [ ] All mutation API routes write entity snapshots to `activity_log_snapshots`
-- [ ] Update operations have both `before` and `after` snapshots; create has `after`; delete has `before`
-- [ ] Audit log list API supports filtering by `tag` and `severity`
-- [ ] Audit log detail API returns actor info, entity current state, and all snapshots
-- [ ] Audit log UI shows tag and severity badges on every row
-- [ ] Audit log UI has tag and severity filter pills
-- [ ] Clicking any audit log row opens a detail modal
-- [ ] Detail modal shows: actor card, event summary, entity card with deep links, snapshot diff, related timeline
-- [ ] Export CSV includes `tag` and `severity` columns
-- [ ] Soft-deleted entities are still linkable in the detail modal (depends on soft delete system)
-- [ ] `bun run lint`, `bun run typecheck`, `bun run build` all pass
+- [x] IP addresses are parsed correctly from all proxy headers; first valid non-private IP is stored
+- [x] All mutation API routes include `ipAddress`, `tag`, and `severity` in activity log entries
+- [x] All mutation API routes write entity snapshots to `activity_log_snapshots`
+- [x] Update operations have both `before` and `after` snapshots; create has `after`; delete has `before`
+- [x] Audit log list API supports filtering by `tag` and `severity`
+- [x] Audit log detail API returns actor info, entity current state, and all snapshots
+- [x] Audit log UI shows tag and severity badges on every row
+- [x] Audit log UI has tag and severity filter pills
+- [x] Clicking any audit log row opens a detail modal
+- [x] Detail modal shows: actor card, event summary, entity card with deep links, snapshot diff, related timeline
+- [x] Export CSV includes `tag` and `severity` columns
+- [x] Soft-deleted entities are still linkable in the detail modal (depends on soft delete system)
+- [x] `bun run lint`, `bun run typecheck`, `bun run build` all pass
 
 ---
 
