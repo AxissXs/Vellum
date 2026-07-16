@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { teams, teamMembers, users, projects } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, isNull, and } from "drizzle-orm";
 
 export async function GET() {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db.select().from(teams).orderBy(asc(teams.name));
+  const rows = await db.select().from(teams).where(isNull(teams.deletedAt)).orderBy(asc(teams.name));
 
   const teamsWithCounts = await Promise.all(
     rows.map(async (team) => {
@@ -29,7 +29,7 @@ export async function GET() {
         .from(teamMembers)
         .innerJoin(users, eq(teamMembers.userId, users.id))
         .leftJoin(projects, eq(teamMembers.projectId, projects.id))
-        .where(eq(teamMembers.teamId, team.id));
+        .where(and(eq(teamMembers.teamId, team.id), isNull(teamMembers.deletedAt)));
 
       const lead = team.leadId
         ? members.find((member) => member.userId === team.leadId) || null

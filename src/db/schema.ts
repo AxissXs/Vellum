@@ -66,6 +66,8 @@ export const projects = pgTable("projects", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   archived: boolean("archived").default(false).notNull(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -76,6 +78,8 @@ export const teams = pgTable("teams", {
   description: text("description"),
   leadId: uuid("lead_id").references(() => users.id, { onDelete: "set null" }),
   focus: text("focus"),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -94,6 +98,8 @@ export const teamMembers = pgTable("team_members", {
   teamRole: text("team_role").default("contributor").notNull(),
   allocation: text("allocation").default("100").notNull(),
   responsibilities: text("responsibilities"),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -107,6 +113,8 @@ export const projectMilestones = pgTable("project_milestones", {
   status: text("status").default("planned").notNull(),
   dueDate: timestamp("due_date"),
   ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -121,6 +129,8 @@ export const projectNotes = pgTable("project_notes", {
   authorId: uuid("author_id")
     .references(() => users.id, { onDelete: "set null" })
     .notNull(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -142,6 +152,8 @@ export const tasks = pgTable("tasks", {
     .notNull(),
   dueDate: timestamp("due_date"),
   position: text("position").default("0").notNull(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -155,6 +167,8 @@ export const comments = pgTable("comments", {
   authorId: uuid("author_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -189,6 +203,20 @@ export const activityLogs = pgTable("activity_logs", {
   entityId: text("entity_id"),
   details: text("details"),
   ipAddress: text("ip_address"),
+  tag: text("tag"),
+  severity: text("severity").default("info").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const activityLogSnapshots = pgTable("activity_log_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  logId: uuid("log_id")
+    .references(() => activityLogs.id, { onDelete: "cascade" })
+    .notNull(),
+  tableName: text("table_name").notNull(),
+  recordId: text("record_id").notNull(),
+  snapshot: text("snapshot").notNull(),
+  snapshotType: text("snapshot_type").notNull().default("after"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

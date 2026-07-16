@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, teams, users } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, isNull, and } from "drizzle-orm";
 
 export async function GET() {
   const user = await getSession();
@@ -11,20 +11,22 @@ export async function GET() {
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projects)
-    .where(eq(projects.archived, false));
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)));
 
   const [taskCount] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(tasks);
+    .from(tasks)
+    .where(isNull(tasks.deletedAt));
 
   const [doneCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(tasks)
-    .where(eq(tasks.status, "done"));
+    .where(and(eq(tasks.status, "done"), isNull(tasks.deletedAt)));
 
   const [teamCount] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(teams);
+    .from(teams)
+    .where(isNull(teams.deletedAt));
 
   const [userCount] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -36,6 +38,7 @@ export async function GET() {
       count: sql<number>`count(*)::int`,
     })
     .from(tasks)
+    .where(isNull(tasks.deletedAt))
     .groupBy(tasks.status);
 
   const priorityBreakdown = await db
@@ -44,6 +47,7 @@ export async function GET() {
       count: sql<number>`count(*)::int`,
     })
     .from(tasks)
+    .where(isNull(tasks.deletedAt))
     .groupBy(tasks.priority);
 
   return NextResponse.json({

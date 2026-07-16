@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, teams, users } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, isNull, and } from "drizzle-orm";
 import {
   FolderKanban,
   CheckSquare,
@@ -21,20 +21,22 @@ export default async function DashboardPage() {
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projects)
-    .where(eq(projects.archived, false));
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)));
 
   const [taskCount] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(tasks);
+    .from(tasks)
+    .where(isNull(tasks.deletedAt));
 
   const [doneCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(tasks)
-    .where(eq(tasks.status, "done"));
+    .where(and(eq(tasks.status, "done"), isNull(tasks.deletedAt)));
 
   const [teamCount] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(teams);
+    .from(teams)
+    .where(isNull(teams.deletedAt));
 
   const [userCount] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -51,13 +53,14 @@ export default async function DashboardPage() {
       count: sql<number>`count(*)::int`,
     })
     .from(tasks)
+    .where(isNull(tasks.deletedAt))
     .groupBy(tasks.priority);
 
   // Recent projects
   const recentProjects = await db
     .select()
     .from(projects)
-    .where(eq(projects.archived, false))
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
     .orderBy(projects.createdAt)
     .limit(4);
 
@@ -66,7 +69,10 @@ export default async function DashboardPage() {
     .select()
     .from(tasks)
     .where(
-      sql`${tasks.status} IN ('in_progress', 'review')`
+      and(
+        sql`${tasks.status} IN ('in_progress', 'review')`,
+        isNull(tasks.deletedAt)
+      )
     )
     .orderBy(tasks.updatedAt)
     .limit(5);

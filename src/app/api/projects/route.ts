@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, activityLogs } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { projects } from "@/db/schema";
+import { eq, and, asc, isNull } from "drizzle-orm";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const rows = await db
     .select()
     .from(projects)
-    .where(eq(projects.archived, archived))
+    .where(and(eq(projects.archived, archived), isNull(projects.deletedAt)))
     .orderBy(asc(projects.createdAt));
 
   return NextResponse.json({ projects: rows });
@@ -42,12 +43,14 @@ export async function POST(req: NextRequest) {
     })
     .returning();
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "created_project",
     entityType: "project",
     entityId: project.id,
     details: `Created project: ${project.name}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "projects", recordId: project.id, snapshot: project, snapshotType: "after" }],
   });
 
   return NextResponse.json({ project }, { status: 201 });

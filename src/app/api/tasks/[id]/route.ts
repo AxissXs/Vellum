@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, activityLogs, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { tasks, users } from "@/db/schema";
+import { eq, and, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification } from "@/lib/notifications";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -16,6 +17,8 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const { title, description, status, priority, assigneeId, dueDate, position } = body;
+
+  const [before] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt))).limit(1);
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (title !== undefined) updateData.title = title;
@@ -49,12 +52,17 @@ export async function PATCH(
       ? `${task.title}: ${statusLabels[status]}`
       : `Updated task: ${task.title}`;
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: status !== undefined ? "changed_task_status" : "updated_task",
     entityType: "task",
     entityId: task.id,
     details: actionDetail,
+    ipAddress: getClientIP(req),
+    snapshots: [
+      ...(before ? [{ tableName: "tasks" as const, recordId: task.id, snapshot: before, snapshotType: "before" as const }] : []),
+      { tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "after" },
+    ],
   });
 
   // Look up assignee info for the broadcast payload
@@ -135,21 +143,26 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+  const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt))).limit(1);
   if (!task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
   const projectId = task.projectId;
 
-  await db.delete(tasks).where(eq(tasks.id, id));
+  await db
+    .update(tasks)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(tasks.id, id));
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "deleted_task",
     entityType: "task",
     entityId: id,
-    details: `Deleted task: ${task.title}`,
+    details: `Soft-deleted task: ${task.title}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "before" }],
   });
 
   await broadcastTaskEvent(projectId, {

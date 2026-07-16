@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { projectMilestones, activityLogs } from "@/db/schema";
+import { projectMilestones } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, isNull, and } from "drizzle-orm";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
   const milestones = await db
     .select()
     .from(projectMilestones)
-    .where(eq(projectMilestones.projectId, id))
+    .where(and(eq(projectMilestones.projectId, id), isNull(projectMilestones.deletedAt)))
     .orderBy(asc(projectMilestones.dueDate), asc(projectMilestones.createdAt));
 
   return NextResponse.json({ milestones });
@@ -48,12 +49,14 @@ export async function POST(
     })
     .returning();
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "created_milestone",
     entityType: "milestone",
     entityId: milestone.id,
     details: `Created milestone: ${milestone.title}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "project_milestones", recordId: milestone.id, snapshot: milestone, snapshotType: "after" }],
   });
 
   return NextResponse.json({ milestone }, { status: 201 });

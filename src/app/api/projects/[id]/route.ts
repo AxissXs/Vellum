@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, activityLogs } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { projects } from "@/db/schema";
+import { eq, isNull, and } from "drizzle-orm";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
   const [project] = await db
     .select()
     .from(projects)
-    .where(eq(projects.id, id))
+    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
     .limit(1);
 
   if (!project) {
@@ -50,6 +51,8 @@ export async function PATCH(
     targetDate,
   } = body;
 
+  const [before] = await db.select().from(projects).where(and(eq(projects.id, id), isNull(projects.deletedAt))).limit(1);
+
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (name !== undefined) updateData.name = name;
   if (description !== undefined) updateData.description = description;
@@ -75,12 +78,17 @@ export async function PATCH(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "updated_project",
     entityType: "project",
     entityId: project.id,
     details: `Updated project: ${project.name}`,
+    ipAddress: getClientIP(req),
+    snapshots: [
+      ...(before ? [{ tableName: "projects" as const, recordId: project.id, snapshot: before, snapshotType: "before" as const }] : []),
+      { tableName: "projects", recordId: project.id, snapshot: project, snapshotType: "after" },
+    ],
   });
 
   return NextResponse.json({ project });
@@ -98,21 +106,26 @@ export async function DELETE(
   const [project] = await db
     .select()
     .from(projects)
-    .where(eq(projects.id, id))
+    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
     .limit(1);
 
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  await db.delete(projects).where(eq(projects.id, id));
+  await db
+    .update(projects)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(projects.id, id));
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "deleted_project",
     entityType: "project",
     entityId: id,
-    details: `Deleted project: ${project.name}`,
+    details: `Soft-deleted project: ${project.name}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "projects", recordId: project.id, snapshot: project, snapshotType: "before" }],
   });
 
   return NextResponse.json({ success: true });
