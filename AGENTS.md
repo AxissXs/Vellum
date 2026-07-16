@@ -131,6 +131,7 @@ Web Push (VAPID) — optional; push no-ops when unset:
 - **API Routes**: `route.ts` in `src/app/api/...`
 - **Database**: Schema in `src/db/schema.ts`, migrations in `drizzle/`
 - **Auth**: Use `getSession()` from `src/lib/auth.ts` in server components
+- **Permissions**: Use `hasPermission` / `requirePermission` from `src/lib/permissions.ts` for entity CRUD (projects, tasks, sprints). Matrix is also shown in Super Admin → Roles.
 - **Imports**: Use `@/` path alias for `src/`
 
 ### Common Patterns

@@ -3,46 +3,52 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, X } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
+import { useCreateProject } from "@/hooks/useProjects";
 
-export default function ProjectListClient({ userRole }: { userRole: string }) {
+export default function ProjectListClient({
+  userRole,
+  currentUserId,
+}: {
+  userRole: string;
+  currentUserId: string;
+}) {
+  const canCreate = hasPermission(userRole, "create_projects");
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#6366f1");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const createProject = useCreateProject();
 
   const colors = [
     "#6366f1", "#ec4899", "#10b981", "#f59e0b",
     "#8b5cf6", "#06b6d4", "#f43f5e", "#84cc16",
   ];
 
+  if (!canCreate) return null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    setLoading(true);
     setError("");
 
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), description: description.trim() || null, color }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Failed to create project");
-      setLoading(false);
-      return;
+    try {
+      await createProject.mutateAsync({
+        name: name.trim(),
+        description: description.trim() || null,
+        color,
+        ownerId: currentUserId,
+      });
+      setShowModal(false);
+      setName("");
+      setDescription("");
+      setColor("#6366f1");
+      router.refresh();
+    } catch {
+      setError("Failed to create project");
     }
-
-    setShowModal(false);
-    setName("");
-    setDescription("");
-    setColor("#6366f1");
-    router.refresh();
-    setLoading(false);
   }
 
   return (
@@ -118,11 +124,11 @@ export default function ProjectListClient({ userRole }: { userRole: string }) {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={createProject.isPending}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
               >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                {loading ? "Creating..." : "Create Project"}
+                {createProject.isPending ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                {createProject.isPending ? "Creating..." : "Create Project"}
               </button>
             </form>
           </div>

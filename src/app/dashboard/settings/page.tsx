@@ -88,7 +88,7 @@ export default function SettingsPage() {
       {/* Telegram Section */}
       <div className="bg-white border border-slate-200 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <LinkIcon size={20} className="text-sky-400" />
+          <LinkIcon size={20} className="text-brand-600" />
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Telegram</h2>
             <p className="text-sm text-slate-500 mt-0.5">
@@ -104,7 +104,7 @@ export default function SettingsPage() {
         ) : telegramStatus?.linked ? (
           <div className="space-y-4">
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-              <p className="text-sm text-emerald-400">
+              <p className="text-sm text-emerald-600">
                 Linked to Telegram{" "}
                 {telegramStatus.telegramUsername
                   ? `@${telegramStatus.telegramUsername}`
@@ -115,7 +115,7 @@ export default function SettingsPage() {
             <button
               onClick={() => unlink()}
               disabled={unlinking}
-              className="bg-slate-100 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-600 disabled:opacity-50 transition"
             >
               {unlinking ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -132,23 +132,23 @@ export default function SettingsPage() {
             </p>
 
             {codeData?.code ? (
-              <div className="bg-slate-800/50 border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
-                <code className="text-sm font-mono text-sky-400">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
+                <code className="text-sm font-mono text-brand-600">
                   /start {codeData.code}
                 </code>
                 <button
                   onClick={() => copyCode(codeData.code)}
-                  className="text-slate-500 hover:text-slate-900 transition"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                   title="Copy"
                 >
-                  {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+                  {copied ? <Check size={18} className="text-emerald-600" /> : <Copy size={18} />}
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => generateCode()}
                 disabled={generatingCode}
-                className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-slate-900 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
               >
                 {generatingCode && <Loader2 size={16} className="animate-spin" />}
                 Generate Pairing Code

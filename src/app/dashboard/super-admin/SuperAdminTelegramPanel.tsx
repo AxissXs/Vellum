@@ -87,9 +87,8 @@ export default function SuperAdminTelegramPanel() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-center gap-3">
-        <Bot size={24} className="text-brand-400" />
+        <Bot size={24} className="text-brand-600" />
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Telegram Bot</h2>
           <p className="text-sm text-slate-500">
@@ -98,11 +97,10 @@ export default function SuperAdminTelegramPanel() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-slate-800/50 border border-slate-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="bg-brand-500/10 p-3 rounded-lg">
-            <Users size={20} className="text-brand-400" />
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4">
+          <div className="bg-brand-500/10 border border-brand-500/20 p-3 rounded-lg">
+            <Users size={20} className="text-brand-600" />
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-900">
@@ -112,9 +110,20 @@ export default function SuperAdminTelegramPanel() {
           </div>
         </div>
 
-        <div className="bg-slate-800/50 border border-slate-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="bg-emerald-500/10 p-3 rounded-lg">
-            <Bot size={20} className="text-emerald-400" />
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4">
+          <div
+            className={
+              settings?.telegram_bot_token
+                ? "bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg"
+                : "bg-slate-100 border border-slate-200 p-3 rounded-lg"
+            }
+          >
+            <Bot
+              size={20}
+              className={
+                settings?.telegram_bot_token ? "text-emerald-600" : "text-slate-500"
+              }
+            />
           </div>
           <div>
             <p className="text-sm font-medium text-slate-900">
@@ -125,8 +134,7 @@ export default function SuperAdminTelegramPanel() {
         </div>
       </div>
 
-      {/* Settings Form */}
-      <div className="bg-slate-800/50 border border-slate-200 rounded-xl p-6 space-y-6">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-6">
         <div className="flex items-center gap-2 mb-2">
           <Settings size={18} className="text-slate-500" />
           <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
@@ -154,7 +162,7 @@ export default function SuperAdminTelegramPanel() {
                       ? maskToken(settings.telegram_bot_token)
                       : "Enter your Telegram bot token"
                   }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Get this from @BotFather on Telegram.
@@ -172,7 +180,7 @@ export default function SuperAdminTelegramPanel() {
                   placeholder={
                     settings?.telegram_supergroup_id ?? "-123456789"
                   }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Numeric ID of the supergroup for typed notifications.
@@ -190,7 +198,7 @@ export default function SuperAdminTelegramPanel() {
                   placeholder={
                     settings?.telegram_channel_id ?? "-1001234567890"
                   }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Numeric ID of the channel for broadcast notifications.
@@ -198,11 +206,11 @@ export default function SuperAdminTelegramPanel() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 onClick={handleSave}
                 disabled={updateSettings.isPending}
-                className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-slate-900 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
               >
                 {updateSettings.isPending && (
                   <Loader2 size={16} className="animate-spin" />
@@ -213,7 +221,7 @@ export default function SuperAdminTelegramPanel() {
               <button
                 onClick={() => testConnection.mutate()}
                 disabled={testConnection.isPending}
-                className="bg-slate-100 hover:bg-white/10 disabled:opacity-50 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 transition"
               >
                 {testConnection.isPending ? (
                   <Loader2 size={16} className="animate-spin" />

@@ -35,6 +35,7 @@ import TaskDetailModal from "./TaskDetailModal";
 import RichTextEditor from "@/components/RichTextEditor";
 import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
 import { useRealtime } from "@/hooks/useRealtime";
+import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Project = { id: string; name: string; color: string | null };
@@ -116,6 +117,7 @@ interface KanbanBoardProps {
   users: User[];
   allProjects: Project[];
   currentUserId: string;
+  userRole?: string;
   sprintId?: string;
 }
 
@@ -349,8 +351,10 @@ export default function KanbanBoard({
   users,
   allProjects,
   currentUserId,
+  userRole = "member",
   sprintId,
 }: KanbanBoardProps) {
+  const canCreateTasks = hasPermission(userRole, "create_tasks");
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -523,6 +527,7 @@ export default function KanbanBoard({
       task={selectedTask}
       users={users}
       currentUserId={currentUserId}
+      userRole={userRole}
       onClose={() => setSelectedTask(null)}
       onChange={() => {}}
     />
@@ -558,7 +563,7 @@ export default function KanbanBoard({
         {statusColumns.map((colConfig) => {
           const column = columns.find((c) => c.key === colConfig.key) || { ...colConfig, tasks: [] };
           const isAdding = showNewTask === colConfig.key;
-          const taskForm = (
+          const taskForm = canCreateTasks ? (
             <>
               <button
                 onClick={() => setShowNewTask(isAdding ? null : colConfig.key)}
@@ -647,7 +652,7 @@ export default function KanbanBoard({
                 </form>
               )}
             </>
-          );
+          ) : null;
           return (
             <div key={colConfig.key} className="w-72 flex-shrink-0">
               <Column

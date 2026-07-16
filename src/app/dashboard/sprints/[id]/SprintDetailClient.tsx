@@ -26,6 +26,7 @@ import {
   Trash2,
   ArrowRight,
   CheckCircle2,
+  Pencil,
 } from "lucide-react";
 import { clsx } from "clsx";
 import KanbanBoard from "@/app/dashboard/projects/[id]/KanbanBoard";
@@ -35,10 +36,12 @@ import { useStandups, useCreateStandup, type Standup } from "@/hooks/useStandups
 import {
   useRetros,
   useCreateRetroItem,
+  useUpdateRetroItem,
   useDeleteRetroItem,
   type RetroItem,
 } from "@/hooks/useRetros";
 import { toast } from "sonner";
+import { canMutateOwned, hasPermission } from "@/lib/permissions";
 
 type Sprint = {
   id: string;
@@ -90,6 +93,7 @@ export default function SprintDetailClient({
   users,
   allProjects,
   currentUserId,
+  userRole,
 }: {
   sprint: Sprint;
   project: { id: string; name: string; color: string | null };
@@ -98,12 +102,16 @@ export default function SprintDetailClient({
   users: User[];
   allProjects: { id: string; name: string; color: string | null }[];
   currentUserId: string;
+  userRole: string;
 }) {
   const [tab, setTab] = useState<Tab>("board");
   const sprintId = sprint.id;
   const updateTask = useUpdateTask();
   const updateSprint = useUpdateSprint();
   const router = useRouter();
+
+  const canComplete = hasPermission(userRole, "complete_sprint");
+  const canManagePlanning = hasPermission(userRole, "edit_sprints");
 
   async function completeSprint() {
     const unfinished = boardTasks.filter((t) => t.status !== "done").length;
@@ -216,7 +224,7 @@ export default function SprintDetailClient({
             <Flag size={14} />
             {donePoints}/{sprintPoints} pts
           </div>
-          {sprint.status !== "completed" && (
+          {canComplete && sprint.status !== "completed" && (
             <button
               onClick={completeSprint}
               disabled={updateSprint.isPending}
@@ -250,6 +258,7 @@ export default function SprintDetailClient({
           users={users}
           allProjects={allProjects}
           currentUserId={currentUserId}
+          userRole={userRole}
           sprintId={sprintId}
         />
       )}
@@ -263,6 +272,7 @@ export default function SprintDetailClient({
           onAdd={addToSprint}
           onRemove={removeFromSprint}
           updating={updateTask.isPending}
+          canManage={canManagePlanning}
         />
       )}
 
@@ -270,7 +280,13 @@ export default function SprintDetailClient({
         <StandupPanel sprintId={sprintId} currentUserId={currentUserId} users={users} />
       )}
 
-      {tab === "retro" && <RetroPanel sprintId={sprintId} />}
+      {tab === "retro" && (
+        <RetroPanel
+          sprintId={sprintId}
+          currentUserId={currentUserId}
+          userRole={userRole}
+        />
+      )}
     </div>
   );
 }
@@ -421,12 +437,14 @@ function PlanningPanel({
   onAdd,
   onRemove,
   updating,
+  canManage,
 }: {
   sprintTasks: Task[];
   backlog: Task[];
   onAdd: (t: Task) => void;
   onRemove: (t: Task) => void;
   updating: boolean;
+  canManage: boolean;
 }) {
   const [filter, setFilter] = useState("");
 
@@ -447,15 +465,17 @@ function PlanningPanel({
               className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
             >
               <span className="text-sm text-slate-900 truncate">{t.title}</span>
-              <button
-                onClick={() => onRemove(t)}
-                disabled={updating}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
-                title="Remove from sprint"
-                aria-label="Remove from sprint"
-              >
-                <X size={16} />
-              </button>
+              {canManage && (
+                <button
+                  onClick={() => onRemove(t)}
+                  disabled={updating}
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
+                  title="Remove from sprint"
+                  aria-label="Remove from sprint"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           ))}
           {sprintTasks.length === 0 && (
@@ -481,14 +501,16 @@ function PlanningPanel({
               className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
             >
               <span className="text-sm text-slate-900 truncate">{t.title}</span>
-              <button
-                onClick={() => onAdd(t)}
-                disabled={updating}
-                className="inline-flex items-center gap-1 text-xs rounded-lg bg-brand-500/10 text-brand-600 px-2 py-1 hover:bg-brand-500/20 transition"
-              >
-                <Plus size={12} />
-                Add
-              </button>
+              {canManage && (
+                <button
+                  onClick={() => onAdd(t)}
+                  disabled={updating}
+                  className="inline-flex items-center gap-1 text-xs rounded-lg bg-brand-500/10 text-brand-600 px-2 py-1 hover:bg-brand-500/20 transition"
+                >
+                  <Plus size={12} />
+                  Add
+                </button>
+              )}
             </div>
           ))}
           {filteredBacklog.length === 0 && (
@@ -617,19 +639,49 @@ const retroCategories: { key: RetroItem["category"]; label: string; color: strin
   { key: "action_item", label: "Action item", color: "border-amber-500/40" },
 ];
 
-function RetroPanel({ sprintId }: { sprintId: string }) {
+function RetroPanel({
+  sprintId,
+  currentUserId,
+  userRole,
+}: {
+  sprintId: string;
+  currentUserId: string;
+  userRole: string;
+}) {
   const { data: items, isLoading } = useRetros(sprintId);
   const createRetro = useCreateRetroItem();
+  const updateRetro = useUpdateRetroItem();
   const deleteRetro = useDeleteRetroItem();
 
   const [category, setCategory] = useState<RetroItem["category"]>("went_well");
   const [content, setContent] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   async function add() {
     if (!content.trim()) return;
     await createRetro.mutateAsync({ sprintId, category, content: content.trim() });
     setContent("");
   }
+
+  function startEdit(item: RetroItem) {
+    setEditingId(item.id);
+    setEditContent(item.content);
+  }
+
+  async function saveEdit(item: RetroItem) {
+    if (!editContent.trim()) return;
+    await updateRetro.mutateAsync({
+      id: item.id,
+      sprintId,
+      content: editContent.trim(),
+    });
+    setEditingId(null);
+    setEditContent("");
+  }
+
+  const canMutateItem = (item: RetroItem) =>
+    canMutateOwned({ id: currentUserId, role: userRole }, item.authorId);
 
   const grouped = (cat: RetroItem["category"]) =>
     (items || []).filter((i) => i.category === cat);
@@ -688,14 +740,53 @@ function RetroPanel({ sprintId }: { sprintId: string }) {
                     key={item.id}
                     className="group flex items-start justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
                   >
-                    <span className="text-sm text-slate-800">{item.content}</span>
-                    <button
-                      onClick={() => deleteRetro.mutate({ id: item.id, sprintId })}
-                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
-                      aria-label="Delete retro item"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {editingId === item.id ? (
+                      <div className="flex-1 space-y-2">
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          rows={2}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveEdit(item)}
+                            disabled={updateRetro.isPending}
+                            className="text-xs px-2 py-1 rounded bg-brand-500 text-white"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm text-slate-800">{item.content}</span>
+                        {canMutateItem(item) && (
+                          <div className="flex items-center gap-0.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition">
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
+                              aria-label="Edit retro item"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => deleteRetro.mutate({ id: item.id, sprintId })}
+                              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
+                              aria-label="Delete retro item"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 ))}
                 {grouped(c.key).length === 0 && (

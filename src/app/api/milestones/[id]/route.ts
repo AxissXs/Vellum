@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { projectMilestones } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { hasPermission } from "@/lib/permissions";
 import { eq } from "drizzle-orm";
 
 export async function PATCH(
@@ -11,6 +12,9 @@ export async function PATCH(
 ) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "edit_projects")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = await req.json();
@@ -50,6 +54,9 @@ export async function DELETE(
 ) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "edit_projects")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const [milestone] = await db

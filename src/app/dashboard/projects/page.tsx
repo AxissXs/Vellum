@@ -43,7 +43,10 @@ export default async function ProjectsPage() {
             {activeProjects.length} active project{activeProjects.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <ProjectListClient userRole={user?.role || "member"} />
+        <ProjectListClient
+          userRole={user?.role || "member"}
+          currentUserId={user?.id || ""}
+        />
       </div>
 
       {projectsWithCounts.length === 0 ? (

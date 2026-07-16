@@ -13,7 +13,7 @@ export default async function ProjectBacklogPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await getSession();
+  const user = await getSession();
   const { id } = await params;
 
   const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
@@ -72,6 +72,7 @@ export default async function ProjectBacklogPage({
         projectId={id}
         initialTasks={serializedTasks}
         sprints={sprintRows}
+        userRole={user?.role || "member"}
       />
     </div>
   );

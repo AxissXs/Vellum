@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { sprints, tasks } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { hasPermission } from "@/lib/permissions";
 import { eq, and, not } from "drizzle-orm";
 
 export async function GET(
@@ -37,13 +38,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Sprint not found" }, { status: 404 });
   }
 
+  const nextStatus = status !== undefined ? status : existing.status;
+  const completing =
+    nextStatus === "completed" && existing.status !== "completed";
+
+  if (completing) {
+    if (!hasPermission(user.role, "complete_sprint")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  } else if (!hasPermission(user.role, "edit_sprints")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (name !== undefined) updateData.name = name;
   if (goal !== undefined) updateData.goal = goal;
   if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
   if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
 
-  const nextStatus = status !== undefined ? status : existing.status;
   updateData.status = nextStatus;
 
   // Only one active sprint per project: deactivate siblings when activating this one.
@@ -55,7 +67,7 @@ export async function PATCH(
   }
 
   // On completion, roll unfinished tasks back to the project backlog.
-  if (nextStatus === "completed" && existing.status !== "completed") {
+  if (completing) {
     await db
       .update(tasks)
       .set({ sprintId: null, updatedAt: new Date() })
@@ -81,6 +93,9 @@ export async function DELETE(
 ) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "delete_sprints")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const [sprint] = await db.select().from(sprints).where(eq(sprints.id, id)).limit(1);

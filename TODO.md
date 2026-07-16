@@ -82,6 +82,12 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - UI: `/dashboard/sprints` list + `/dashboard/sprints/[id]` detail (board, burndown, planning, standup, retro)
   - Acceptance criteria: Create sprint, assign tasks, burndown chart, daily standup upsert, retro CRUD
 
+- [x] **Role-gated CRUD (projects, tasks, sprints)** - Enforce permission matrix on API + UI
+  - Shared `src/lib/permissions.ts` (single source for matrix + `hasPermission`)
+  - API: projects/milestones/tasks/sprints/standups/retros mutate routes return 403 when forbidden
+  - UI: hide create/edit/delete buttons by role (members: tasks + standup/retro; admin+: projects/sprints)
+  - Project delete UI; retro inline edit via `useUpdateRetroItem`
+
 - [ ] **File attachments** - Allow file uploads on tasks/projects
   - Integrate with S3/R2/Cloudinary
   - Add `attachments` table to schema
@@ -238,6 +244,7 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - [x] Create `SuperAdminRolesPanel` component
   - [x] UI: Matrix table (roles × permissions) showing what each role can do
   - [x] API: `GET /api/super-admin/permissions` — list predefined permissions per role
+  - [x] Matrix enforced at runtime via `src/lib/permissions.ts` on project/task/sprint APIs + UI
 
   **Acceptance criteria (overall)**
   - Super admin can view all users with last login/IP and status

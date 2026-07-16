@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { tasks, users } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
+import { hasPermission } from "@/lib/permissions";
 import { eq, and, asc } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification } from "@/lib/notifications";
@@ -53,6 +54,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(user.role, "create_tasks")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json();
   const { title, description, priority, projectId, assigneeId, dueDate, status, sprintId, estimate } = body;
@@ -62,6 +66,10 @@ export async function POST(req: NextRequest) {
       { error: "Title and project are required" },
       { status: 400 }
     );
+  }
+
+  if (assigneeId && !hasPermission(user.role, "assign_tasks")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const [task] = await db

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,7 +12,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Shield,
   ShieldAlert,
   Kanban,
@@ -36,12 +34,15 @@ export default function Sidebar({
   user,
   mobileOpen = false,
   onClose,
+  collapsed = false,
+  onCollapsedChange,
 }: {
   user: User;
   mobileOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -122,7 +123,7 @@ export default function Sidebar({
         </div>
         {/* Desktop collapse toggle (lg+) */}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => onCollapsedChange?.(!collapsed)}
           className="ml-auto hidden lg:flex p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition flex-shrink-0"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >

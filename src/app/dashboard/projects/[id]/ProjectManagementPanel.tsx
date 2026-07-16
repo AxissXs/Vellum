@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { Calendar, Flag, Loader2, Plus, Save, ShieldAlert, Target, Trash2, Users } from "lucide-react";
 import { clsx } from "clsx";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
+import {
+  useUpdateProject,
+  useDeleteProject,
+  useCreateMilestone,
+  useUpdateMilestone,
+  useDeleteMilestone,
+} from "@/hooks/useProjects";
+import { toast } from "sonner";
 
 type Project = {
   id: string;
@@ -58,17 +66,25 @@ export default function ProjectManagementPanel({
   users,
   members,
   completionRate,
+  canEdit = false,
+  canDelete = false,
 }: {
   project: Project;
   initialMilestones: Milestone[];
   users: UserOption[];
   members: Member[];
   completionRate: number;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
   const [milestones, setMilestones] = useState(initialMilestones);
-  const [creatingMilestone, setCreatingMilestone] = useState(false);
+
+  const updateProject = useUpdateProject();
+  const deleteProject = useDeleteProject();
+  const createMilestoneMutation = useCreateMilestone();
+  const updateMilestoneMutation = useUpdateMilestone();
+  const deleteMilestoneMutation = useDeleteMilestone();
 
   const [status, setStatus] = useState(project.status);
   const [health, setHealth] = useState(project.health);
@@ -91,11 +107,10 @@ export default function ProjectManagementPanel({
   }, [milestones]);
 
   async function saveProject() {
-    setSaving(true);
-    await fetch(`/api/projects/${project.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    if (!canEdit) return;
+    try {
+      await updateProject.mutateAsync({
+        id: project.id,
         status,
         health,
         visibility,
@@ -104,54 +119,85 @@ export default function ProjectManagementPanel({
         risks: risks.trim() || null,
         startDate: startDate || null,
         targetDate: targetDate || null,
-      }),
-    });
-    router.refresh();
-    setSaving(false);
+      });
+      toast.success("Project saved");
+      router.refresh();
+    } catch {
+      toast.error("Failed to save project");
+    }
+  }
+
+  async function handleDeleteProject() {
+    if (!canDelete) return;
+    if (!confirm(`Delete project "${project.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteProject.mutateAsync(project.id);
+      toast.success("Project deleted");
+      router.push("/dashboard/projects");
+    } catch {
+      toast.error("Failed to delete project");
+    }
   }
 
   async function createMilestone(e: React.FormEvent) {
     e.preventDefault();
-    if (!milestoneTitle.trim()) return;
-    setCreatingMilestone(true);
+    if (!canEdit || !milestoneTitle.trim()) return;
 
-    const res = await fetch(`/api/projects/${project.id}/milestones`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const milestone = await createMilestoneMutation.mutateAsync({
+        projectId: project.id,
         title: milestoneTitle.trim(),
         description: milestoneDescription.trim() || null,
         dueDate: milestoneDueDate || null,
         ownerId: milestoneOwner || null,
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      setMilestones((prev) => [...prev, { ...data.milestone, dueDate: data.milestone.dueDate || null }]);
+      });
+      setMilestones((prev) => [
+        ...prev,
+        {
+          id: milestone.id,
+          title: milestone.title,
+          description: milestone.description,
+          status: milestone.status,
+          dueDate: milestone.dueDate,
+          ownerId: milestone.ownerId,
+        },
+      ]);
       setMilestoneTitle("");
       setMilestoneDescription("");
       setMilestoneDueDate("");
       setMilestoneOwner("");
       router.refresh();
+    } catch {
+      toast.error("Failed to create milestone");
     }
-    setCreatingMilestone(false);
   }
 
   async function updateMilestone(id: string, patch: Partial<Milestone>) {
+    if (!canEdit) return;
     setMilestones((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
-    await fetch(`/api/milestones/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    router.refresh();
+    try {
+      await updateMilestoneMutation.mutateAsync({
+        id,
+        projectId: project.id,
+        ...patch,
+      });
+      router.refresh();
+    } catch {
+      toast.error("Failed to update milestone");
+      router.refresh();
+    }
   }
 
   async function deleteMilestone(id: string) {
+    if (!canEdit) return;
     setMilestones((prev) => prev.filter((m) => m.id !== id));
-    await fetch(`/api/milestones/${id}`, { method: "DELETE" });
-    router.refresh();
+    try {
+      await deleteMilestoneMutation.mutateAsync(id);
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete milestone");
+      router.refresh();
+    }
   }
 
   function formatDate(value: string | null) {
@@ -164,6 +210,8 @@ export default function ProjectManagementPanel({
     return name.split(" ").map((part) => part[0]).join("").toUpperCase().slice(0, 2);
   }
 
+  const fieldDisabled = !canEdit;
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <div className="xl:col-span-2 space-y-6">
@@ -173,20 +221,34 @@ export default function ProjectManagementPanel({
               <h2 className="text-lg font-semibold text-slate-900">Project Command Center</h2>
               <p className="text-sm text-slate-500">Goals, health, risks, dates, and delivery checkpoints.</p>
             </div>
-            <button
-              onClick={saveProject}
-              disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
-            >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              Save plan
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {canDelete && (
+                <button
+                  onClick={handleDeleteProject}
+                  disabled={deleteProject.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/20 disabled:opacity-50 transition"
+                >
+                  {deleteProject.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                  Delete
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={saveProject}
+                  disabled={updateProject.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                >
+                  {updateProject.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  Save plan
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
             <label className="block">
               <span className="text-xs text-slate-500">Status</span>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} disabled={fieldDisabled} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60">
                 <option value="planning">Planning</option>
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
@@ -195,7 +257,7 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Health</span>
-              <select value={health} onChange={(e) => setHealth(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <select value={health} onChange={(e) => setHealth(e.target.value)} disabled={fieldDisabled} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60">
                 <option value="on_track">On track</option>
                 <option value="watching">Watching</option>
                 <option value="at_risk">At risk</option>
@@ -203,7 +265,7 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Visibility</span>
-              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} disabled={fieldDisabled} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60">
                 <option value="team">Team</option>
                 <option value="company">Company</option>
                 <option value="private">Private</option>
@@ -211,11 +273,11 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Start date</span>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} disabled={fieldDisabled} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60" />
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Target date</span>
-              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} disabled={fieldDisabled} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60" />
             </label>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               <span className="text-xs text-slate-500">Delivery progress</span>
@@ -228,13 +290,32 @@ export default function ProjectManagementPanel({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <RichTextEditor label="Project goal" value={goal} onChange={setGoal} rows={5} placeholder="What outcome should this project deliver?" />
-            <RichTextEditor label="Key results" value={keyResults} onChange={setKeyResults} rows={5} placeholder="- Increase activation by 15%\n- Reduce cycle time by 20%" />
-          </div>
-          <div className="mt-4">
-            <RichTextEditor label="Risks & mitigations" value={risks} onChange={setRisks} rows={4} placeholder="Capture blockers, dependencies, mitigation plans, and decisions." />
-          </div>
+          {canEdit ? (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <RichTextEditor label="Project goal" value={goal} onChange={setGoal} rows={5} placeholder="What outcome should this project deliver?" />
+                <RichTextEditor label="Key results" value={keyResults} onChange={setKeyResults} rows={5} placeholder="- Increase activation by 15%\n- Reduce cycle time by 20%" />
+              </div>
+              <div className="mt-4">
+                <RichTextEditor label="Risks & mitigations" value={risks} onChange={setRisks} rows={4} placeholder="Capture blockers, dependencies, mitigation plans, and decisions." />
+              </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Project goal</p>
+                <RichTextPreview value={goal} empty="No project goal captured yet" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Key results</p>
+                <RichTextPreview value={keyResults} empty="No key results" />
+              </div>
+              <div className="lg:col-span-2">
+                <p className="text-xs text-slate-500 mb-1">Risks & mitigations</p>
+                <RichTextPreview value={risks} empty="No active risks captured" />
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="bg-white border border-slate-200 rounded-xl p-5">
@@ -246,36 +327,48 @@ export default function ProjectManagementPanel({
             <span className="text-xs rounded-full bg-slate-100 px-2 py-1 text-slate-500">{milestones.length} total</span>
           </div>
 
-          <form onSubmit={createMilestone} className="mb-5 rounded-xl border border-slate-200 bg-slate-100 p-4 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input value={milestoneTitle} onChange={(e) => setMilestoneTitle(e.target.value)} placeholder="Milestone title" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <select value={milestoneOwner} onChange={(e) => setMilestoneOwner(e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                <option value="">No owner</option>
-                {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-              </select>
-            </div>
-            <RichTextEditor value={milestoneDescription} onChange={setMilestoneDescription} rows={3} placeholder="Milestone definition of done, scope, or dependencies..." />
-            <button disabled={creatingMilestone || !milestoneTitle.trim()} className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-white/15 disabled:opacity-50 transition">
-              {creatingMilestone ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              Add milestone
-            </button>
-          </form>
+          {canEdit && (
+            <form onSubmit={createMilestone} className="mb-5 rounded-xl border border-slate-200 bg-slate-100 p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input value={milestoneTitle} onChange={(e) => setMilestoneTitle(e.target.value)} placeholder="Milestone title" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <select value={milestoneOwner} onChange={(e) => setMilestoneOwner(e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option value="">No owner</option>
+                  {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+                </select>
+              </div>
+              <RichTextEditor value={milestoneDescription} onChange={setMilestoneDescription} rows={3} placeholder="Milestone definition of done, scope, or dependencies..." />
+              <button disabled={createMilestoneMutation.isPending || !milestoneTitle.trim()} className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-white/15 disabled:opacity-50 transition">
+                {createMilestoneMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                Add milestone
+              </button>
+            </form>
+          )}
 
           <div className="space-y-3">
             {milestones.length === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
                 <Flag className="mx-auto mb-3 text-slate-600" size={28} />
-                <p className="text-sm text-slate-500">No milestones yet. Add the first delivery checkpoint above.</p>
+                <p className="text-sm text-slate-500">
+                  {canEdit
+                    ? "No milestones yet. Add the first delivery checkpoint above."
+                    : "No milestones yet."}
+                </p>
               </div>
             ) : milestones.map((milestone) => (
               <div key={milestone.id} className="rounded-xl border border-slate-200 bg-slate-100 p-4">
                 <div className="flex items-start gap-3">
-                  <button
-                    onClick={() => updateMilestone(milestone.id, { status: milestone.status === "done" ? "planned" : "done" })}
-                    className={clsx("mt-0.5 h-5 w-5 rounded-full border flex-shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
-                    aria-label="Toggle milestone status"
-                  />
+                  {canEdit ? (
+                    <button
+                      onClick={() => updateMilestone(milestone.id, { status: milestone.status === "done" ? "planned" : "done" })}
+                      className={clsx("mt-0.5 h-5 w-5 rounded-full border flex-shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
+                      aria-label="Toggle milestone status"
+                    />
+                  ) : (
+                    <div
+                      className={clsx("mt-0.5 h-5 w-5 rounded-full border flex-shrink-0", milestone.status === "done" ? "bg-emerald-500 border-emerald-500" : "border-slate-600")}
+                    />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className={clsx("text-sm font-semibold", milestone.status === "done" ? "text-slate-500 line-through" : "text-slate-900")}>{milestone.title}</h3>
@@ -289,9 +382,11 @@ export default function ProjectManagementPanel({
                       <span>Owner: {users.find((user) => user.id === milestone.ownerId)?.name || "Unassigned"}</span>
                     </div>
                   </div>
-                  <button onClick={() => deleteMilestone(milestone.id)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-600 transition">
-                    <Trash2 size={14} />
-                  </button>
+                  {canEdit && (
+                    <button onClick={() => deleteMilestone(milestone.id)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-600 transition">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

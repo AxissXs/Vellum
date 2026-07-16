@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { retroItems } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { canMutateOwned } from "@/lib/permissions";
 import { eq } from "drizzle-orm";
 
 export async function PATCH(
@@ -19,6 +20,10 @@ export async function PATCH(
   const [existing] = await db.select().from(retroItems).where(eq(retroItems.id, id)).limit(1);
   if (!existing) {
     return NextResponse.json({ error: "Retro item not found" }, { status: 404 });
+  }
+
+  if (!canMutateOwned(user, existing.authorId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const updateData: Record<string, unknown> = {};
@@ -49,6 +54,10 @@ export async function DELETE(
   const [existing] = await db.select().from(retroItems).where(eq(retroItems.id, id)).limit(1);
   if (!existing) {
     return NextResponse.json({ error: "Retro item not found" }, { status: 404 });
+  }
+
+  if (!canMutateOwned(user, existing.authorId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   await db.delete(retroItems).where(eq(retroItems.id, id));
