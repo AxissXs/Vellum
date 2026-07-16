@@ -1,10 +1,10 @@
+import { after } from "next/server";
 import { pusher } from "@/lib/pusher";
 
 /**
- * Broadcast a task event to all clients viewing the relevant project
- * and the global task-updates channel.
+ * Broadcast a task event after the response is sent (non-blocking for the client).
  */
-export async function broadcastTaskEvent(
+export function broadcastTaskEvent(
   projectId: string,
   payload: {
     type: "created" | "updated" | "deleted" | "reordered";
@@ -15,22 +15,23 @@ export async function broadcastTaskEvent(
     actorName: string;
   }
 ) {
-  try {
-    await pusher.trigger(
-      [`project-${projectId}`, "task-updates"],
-      "task-event",
-      payload
-    );
-  } catch (err) {
-    // Swallow Pusher errors so they don't break the request
-    console.error("Pusher broadcast failed:", err);
-  }
+  after(async () => {
+    try {
+      await pusher.trigger(
+        [`project-${projectId}`, "task-updates"],
+        "task-event",
+        payload
+      );
+    } catch (err) {
+      console.error("Pusher broadcast failed:", err);
+    }
+  });
 }
 
 /**
- * Broadcast a comment event to all clients viewing the task.
+ * Broadcast a comment event after the response is sent (non-blocking for the client).
  */
-export async function broadcastCommentEvent(
+export function broadcastCommentEvent(
   taskId: string,
   payload: {
     type: "created" | "updated" | "deleted";
@@ -40,9 +41,11 @@ export async function broadcastCommentEvent(
     actorName: string;
   }
 ) {
-  try {
-    await pusher.trigger(`task-${taskId}`, "comment-event", payload);
-  } catch (err) {
-    console.error("Pusher broadcast failed:", err);
-  }
+  after(async () => {
+    try {
+      await pusher.trigger(`task-${taskId}`, "comment-event", payload);
+    } catch (err) {
+      console.error("Pusher broadcast failed:", err);
+    }
+  });
 }

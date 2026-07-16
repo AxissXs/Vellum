@@ -11,6 +11,7 @@
     "db:studio": "node ./node_modules/drizzle-kit/bin.cjs studio",
     "db:seed": "node ./node_modules/tsx/dist/cli.mjs src/db/seed.ts",
     "db:deploy": "deno run -A --env-file=.env ./migrate.ts",
+    "db:colocate-check": "deno run -A --env-file=.env scripts/check-db-colocation.ts",
     "deploy": "deno deploy --prod"
   },
   "fmt": {
@@ -22,9 +23,20 @@
   "allowScripts": ["npm:sharp", "npm:unrs-resolver"],
   "deploy": {
     "org": "sofehaus",
-    "app": "vellum"
+    "app": "perfect"
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

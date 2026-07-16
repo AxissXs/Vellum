@@ -53,7 +53,7 @@ export async function PATCH(
     authorAvatar: author?.avatarUrl,
   };
 
-  await broadcastCommentEvent(comment.taskId, {
+  broadcastCommentEvent(comment.taskId, {
     type: "updated",
     comment: {
       ...result,
@@ -66,7 +66,7 @@ export async function PATCH(
 
   // Also notify the project board
   if (task?.projectId) {
-    await broadcastTaskEvent(task.projectId, {
+    broadcastTaskEvent(task.projectId, {
       type: "updated",
       taskId: comment.taskId,
       actorUserId: user.id,
@@ -107,7 +107,7 @@ export async function DELETE(
     details: `Deleted comment on task: ${task?.title || existing.taskId}`,
   });
 
-  await broadcastCommentEvent(existing.taskId, {
+  broadcastCommentEvent(existing.taskId, {
     type: "deleted",
     commentId: id,
     actorUserId: user.id,
@@ -115,7 +115,7 @@ export async function DELETE(
   });
 
   if (task?.projectId) {
-    await broadcastTaskEvent(task.projectId, {
+    broadcastTaskEvent(task.projectId, {
       type: "updated",
       taskId: existing.taskId,
       actorUserId: user.id,

@@ -23,9 +23,8 @@ export const pool =
     const created = databaseUrl
       ? new Pool({ connectionString: databaseUrl, ...poolOptions })
       : new Pool(poolOptions);
-    if (process.env.NODE_ENV !== "production") {
-      globalForDb.__arenaNextJsPostgresqlPool = created;
-    }
+    // Reuse across hot reloads (dev) and isolate reuse (Deno Deploy).
+    globalForDb.__arenaNextJsPostgresqlPool = created;
     return created;
   })();
 

@@ -43,15 +43,26 @@ export async function PATCH(
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
-  // Record status history when status actually changed (powers burndown).
-  if (status !== undefined && status !== current.status) {
-    await db.insert(taskStatusHistory).values({
-      taskId: id,
-      sprintId: task.sprintId,
-      status,
-      changedAt: new Date(),
-    });
-  }
+  const statusChanged = status !== undefined && status !== current.status;
+
+  const [, assignee] = await Promise.all([
+    statusChanged
+      ? db.insert(taskStatusHistory).values({
+          taskId: id,
+          sprintId: task.sprintId,
+          status,
+          changedAt: new Date(),
+        })
+      : Promise.resolve(),
+    task.assigneeId
+      ? db
+          .select({ name: users.name, avatarUrl: users.avatarUrl })
+          .from(users)
+          .where(eq(users.id, task.assigneeId))
+          .limit(1)
+          .then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
+  ]);
 
   const statusLabels: Record<string, string> = {
     backlog: "moved to Backlog",
@@ -74,28 +85,15 @@ export async function PATCH(
     details: actionDetail,
   });
 
-  // Look up assignee info for the broadcast payload
-  let assigneeName: string | null = null;
-  let assigneeAvatar: string | null = null;
-  if (task.assigneeId) {
-    const [assignee] = await db
-      .select({ name: users.name, avatarUrl: users.avatarUrl })
-      .from(users)
-      .where(eq(users.id, task.assigneeId))
-      .limit(1);
-    assigneeName = assignee?.name ?? null;
-    assigneeAvatar = assignee?.avatarUrl ?? null;
-  }
-
-  await broadcastTaskEvent(task.projectId, {
+  broadcastTaskEvent(task.projectId, {
     type: "updated",
     task: {
       ...task,
       dueDate: task.dueDate?.toISOString() || null,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
-      assigneeName,
-      assigneeAvatar,
+      assigneeName: assignee?.name ?? null,
+      assigneeAvatar: assignee?.avatarUrl ?? null,
     },
     actorUserId: user.id,
     actorName: user.name || "Someone",
@@ -113,14 +111,10 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+  const [task] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
   if (!task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
-
-  const projectId = task.projectId;
-
-  await db.delete(tasks).where(eq(tasks.id, id));
 
   logActivity({
     userId: user.id,
@@ -130,7 +124,7 @@ export async function DELETE(
     details: `Deleted task: ${task.title}`,
   });
 
-  await broadcastTaskEvent(projectId, {
+  broadcastTaskEvent(task.projectId, {
     type: "deleted",
     taskId: id,
     actorUserId: user.id,
