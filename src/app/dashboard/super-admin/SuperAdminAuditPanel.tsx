@@ -9,10 +9,10 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   Globe,
 } from "lucide-react";
 import { clsx } from "clsx";
+import AuditLogDetailModal from "./AuditLogDetailModal";
 
 type AuditLogItem = {
   id: string;
@@ -24,6 +24,8 @@ type AuditLogItem = {
   entityId: string | null;
   details: string | null;
   ipAddress: string | null;
+  tag: string | null;
+  severity: string;
   createdAt: string;
 };
 
@@ -33,6 +35,18 @@ type AuditResponse = {
   pageSize: number;
   total: number;
   totalPages: number;
+};
+
+const severityConfig: Record<string, { dot: string; label: string; bg: string }> = {
+  info: { dot: "bg-blue-400", label: "Info", bg: "bg-blue-500/10 text-blue-400" },
+  warning: { dot: "bg-amber-400", label: "Warning", bg: "bg-amber-500/10 text-amber-400" },
+  critical: { dot: "bg-red-400", label: "Critical", bg: "bg-red-500/10 text-red-400" },
+};
+
+const tagLabels: Record<string, string> = {
+  data_change: "Data Change",
+  security: "Security",
+  user_action: "User Action",
 };
 
 function formatDateShort(dateStr: string) {
@@ -48,9 +62,12 @@ export default function SuperAdminAuditPanel() {
   const [userId, setUserId] = useState("");
   const [action, setAction] = useState("");
   const [ip, setIp] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
+  const [detailLogId, setDetailLogId] = useState<string | null>(null);
   const pageSize = 25;
 
   const buildQuery = () => {
@@ -58,6 +75,8 @@ export default function SuperAdminAuditPanel() {
     if (userId) p.set("userId", userId);
     if (action) p.set("action", action);
     if (ip) p.set("ip", ip);
+    if (tagFilter) p.set("tag", tagFilter);
+    if (severityFilter) p.set("severity", severityFilter);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     p.set("page", String(page));
@@ -66,7 +85,7 @@ export default function SuperAdminAuditPanel() {
   };
 
   const { data, isLoading, isError } = useQuery<AuditResponse>({
-    queryKey: ["super-admin", "audit", userId, action, ip, from, to, page],
+    queryKey: ["super-admin", "audit", userId, action, ip, tagFilter, severityFilter, from, to, page],
     queryFn: async () => {
       const res = await fetch(`/api/super-admin/audit?${buildQuery()}`, {
         credentials: "include",
@@ -85,6 +104,8 @@ export default function SuperAdminAuditPanel() {
     if (userId) p.set("userId", userId);
     if (action) p.set("action", action);
     if (ip) p.set("ip", ip);
+    if (tagFilter) p.set("tag", tagFilter);
+    if (severityFilter) p.set("severity", severityFilter);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     p.set("format", "csv");
@@ -93,6 +114,42 @@ export default function SuperAdminAuditPanel() {
 
   return (
     <div className="space-y-4">
+      {/* Tag + Severity Pills */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-xs text-slate-500 self-center mr-1">Tag:</span>
+        {["", "data_change", "security", "user_action"].map((t) => (
+          <button
+            key={t}
+            onClick={() => { setTagFilter(t); setPage(1); }}
+            className={clsx(
+              "text-xs px-2.5 py-1 rounded-full border transition",
+              tagFilter === t
+                ? "bg-brand-500/10 text-brand-400 border-brand-500/30"
+                : "text-slate-400 border-white/10 hover:border-white/20"
+            )}
+          >
+            {t ? tagLabels[t] || t : "All"}
+          </button>
+        ))}
+        <span className="text-slate-600 mx-1">|</span>
+        <span className="text-xs text-slate-500 self-center mr-1">Severity:</span>
+        {["", "info", "warning", "critical"].map((s) => (
+          <button
+            key={s}
+            onClick={() => { setSeverityFilter(s); setPage(1); }}
+            className={clsx(
+              "text-xs px-2.5 py-1 rounded-full border transition flex items-center gap-1",
+              severityFilter === s
+                ? "bg-brand-500/10 text-brand-400 border-brand-500/30"
+                : "text-slate-400 border-white/10 hover:border-white/20"
+            )}
+          >
+            {s && <span className={clsx("w-1.5 h-1.5 rounded-full", severityConfig[s]?.dot || "bg-slate-400")} />}
+            {s ? severityConfig[s]?.label || s : "All"}
+          </button>
+        ))}
+      </div>
+
       {/* Filters */}
       <div className="bg-slate-900 border border-white/5 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2 text-slate-400 mb-2">
@@ -167,6 +224,7 @@ export default function SuperAdminAuditPanel() {
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">
                   <th className="px-5 py-3 font-medium text-slate-400">Action</th>
+                  <th className="px-5 py-3 font-medium text-slate-400">Severity</th>
                   <th className="px-5 py-3 font-medium text-slate-400">User</th>
                   <th className="px-5 py-3 font-medium text-slate-400">Entity</th>
                   <th className="px-5 py-3 font-medium text-slate-400">Details</th>
@@ -175,44 +233,64 @@ export default function SuperAdminAuditPanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-white/[0.02] transition">
-                    <td className="px-5 py-3">
-                      <span className="text-xs text-slate-300 font-medium">{log.action}</span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="text-xs text-slate-300">{log.userName ?? "System"}</div>
-                      <div className="text-[10px] text-slate-600">{log.userEmail}</div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 bg-white/5 px-1.5 py-0.5 rounded">
-                        {log.entityType}
-                      </span>
-                      {log.entityId && (
-                        <div className="text-[10px] text-slate-600 mt-0.5 font-mono">{log.entityId.slice(0, 8)}...</div>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-xs text-slate-400 max-w-xs truncate">
-                      {log.details ?? "—"}
-                    </td>
-                    <td className="px-5 py-3">
-                      {log.ipAddress ? (
-                        <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                          <Globe size={10} />
-                          {log.ipAddress}
+                {logs.map((log) => {
+                  const sev = severityConfig[log.severity] || severityConfig.info;
+                  return (
+                    <tr
+                      key={log.id}
+                      className="hover:bg-white/[0.02] transition cursor-pointer"
+                      onClick={() => setDetailLogId(log.id)}
+                    >
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-300 font-medium">{log.action}</span>
+                          {log.tag && (
+                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 border border-white/5">
+                              {tagLabels[log.tag] || log.tag}
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-[10px] text-slate-600">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">
-                      {formatDateShort(log.createdAt)}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1 w-fit", sev.bg)}>
+                          <span className={clsx("w-1.5 h-1.5 rounded-full", sev.dot)} />
+                          {sev.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="text-xs text-slate-300">{log.userName ?? "System"}</div>
+                        <div className="text-[10px] text-slate-600">{log.userEmail}</div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="text-[10px] uppercase tracking-wider text-slate-500 bg-white/5 px-1.5 py-0.5 rounded">
+                          {log.entityType}
+                        </span>
+                        {log.entityId && (
+                          <div className="text-[10px] text-slate-600 mt-0.5 font-mono">{log.entityId.slice(0, 8)}...</div>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-xs text-slate-400 max-w-xs truncate">
+                        {log.details ?? "—"}
+                      </td>
+                      <td className="px-5 py-3">
+                        {log.ipAddress ? (
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                            <Globe size={10} />
+                            {log.ipAddress}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-600">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">
+                        {formatDateShort(log.createdAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {logs.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={7} className="px-5 py-8 text-center text-slate-500 text-sm">
                       No audit logs match your filters.
                     </td>
                   </tr>
@@ -247,6 +325,14 @@ export default function SuperAdminAuditPanel() {
           </div>
         )}
       </div>
+
+      {/* Detail Modal */}
+      {detailLogId && (
+        <AuditLogDetailModal
+          logId={detailLogId}
+          onClose={() => setDetailLogId(null)}
+        />
+      )}
     </div>
   );
 }

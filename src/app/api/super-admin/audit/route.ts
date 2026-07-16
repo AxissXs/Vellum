@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("userId");
   const action = searchParams.get("action");
   const ip = searchParams.get("ip");
+  const tag = searchParams.get("tag");
+  const severity = searchParams.get("severity");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -33,6 +35,12 @@ export async function GET(req: NextRequest) {
   }
   if (ip) {
     conditions.push(sql`${activityLogs.ipAddress} ILIKE ${`%${ip}%`}`);
+  }
+  if (tag) {
+    conditions.push(eq(activityLogs.tag, tag));
+  }
+  if (severity) {
+    conditions.push(eq(activityLogs.severity, severity));
   }
   if (from) {
     conditions.push(gte(activityLogs.createdAt, new Date(from)));
@@ -63,6 +71,8 @@ export async function GET(req: NextRequest) {
       entityId: activityLogs.entityId,
       details: activityLogs.details,
       ipAddress: activityLogs.ipAddress,
+      tag: activityLogs.tag,
+      severity: activityLogs.severity,
       createdAt: activityLogs.createdAt,
     })
     .from(activityLogs)

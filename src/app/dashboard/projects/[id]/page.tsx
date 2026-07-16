@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, users, projectMilestones } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, isNull, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
@@ -27,7 +27,7 @@ export default async function ProjectDetailPage({
   const [project] = await db
     .select()
     .from(projects)
-    .where(eq(projects.id, id))
+    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
     .limit(1);
 
   if (!project) notFound();
@@ -51,7 +51,7 @@ export default async function ProjectDetailPage({
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
-    .where(eq(tasks.projectId, id))
+    .where(and(eq(tasks.projectId, id), isNull(tasks.deletedAt)))
     .orderBy(tasks.position, tasks.createdAt);
 
   const allUsers = await db
@@ -62,7 +62,7 @@ export default async function ProjectDetailPage({
   const milestoneRows = await db
     .select()
     .from(projectMilestones)
-    .where(eq(projectMilestones.projectId, id))
+    .where(and(eq(projectMilestones.projectId, id), isNull(projectMilestones.deletedAt)))
     .orderBy(asc(projectMilestones.dueDate), asc(projectMilestones.createdAt));
 
   const doneTasks = taskRows.filter((task) => task.status === "done").length;
@@ -85,7 +85,7 @@ export default async function ProjectDetailPage({
   const allProjects = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })
     .from(projects)
-    .where(eq(projects.archived, false))
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
     .orderBy(asc(projects.createdAt));
 
   const columns = statusColumns.map((col) => ({

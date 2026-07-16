@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { comments, users, activityLogs, tasks } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { comments, users, tasks } from "@/db/schema";
+import { eq, isNull, and } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -19,7 +20,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
 
-  const [existing] = await db.select().from(comments).where(eq(comments.id, id)).limit(1);
+  const [existing] = await db.select().from(comments).where(and(eq(comments.id, id), isNull(comments.deletedAt))).limit(1);
   if (!existing) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
@@ -36,12 +37,17 @@ export async function PATCH(
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, comment.taskId)).limit(1);
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "updated_comment",
     entityType: "comment",
     entityId: comment.id,
     details: `Updated comment on task: ${task?.title || comment.taskId}`,
+    ipAddress: getClientIP(req),
+    snapshots: [
+      { tableName: "comments", recordId: comment.id, snapshot: existing, snapshotType: "before" },
+      { tableName: "comments", recordId: comment.id, snapshot: comment, snapshotType: "after" },
+    ],
   });
 
   const [author] = await db.select({ name: users.name, avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, comment.authorId)).limit(1);
@@ -85,7 +91,7 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const [existing] = await db.select().from(comments).where(eq(comments.id, id)).limit(1);
+  const [existing] = await db.select().from(comments).where(and(eq(comments.id, id), isNull(comments.deletedAt))).limit(1);
   if (!existing) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
@@ -96,14 +102,19 @@ export async function DELETE(
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, existing.taskId)).limit(1);
 
-  await db.delete(comments).where(eq(comments.id, id));
+  await db
+    .update(comments)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(comments.id, id));
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "deleted_comment",
     entityType: "comment",
     entityId: id,
-    details: `Deleted comment on task: ${task?.title || existing.taskId}`,
+    details: `Soft-deleted comment on task: ${task?.title || existing.taskId}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "comments", recordId: existing.id, snapshot: existing, snapshotType: "before" }],
   });
 
   await broadcastCommentEvent(existing.taskId, {

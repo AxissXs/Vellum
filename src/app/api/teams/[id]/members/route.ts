@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { teamMembers } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function POST(
   req: NextRequest,
@@ -19,7 +20,7 @@ export async function POST(
   const [existing] = await db
     .select()
     .from(teamMembers)
-    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.userId, userId)))
+    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.userId, userId), isNull(teamMembers.deletedAt)))
     .limit(1);
 
   if (existing) {
@@ -48,6 +49,16 @@ export async function POST(
     })
     .returning();
 
+  await writeActivityLog({
+    userId: user.id,
+    action: "created_team_member",
+    entityType: "teamMember",
+    entityId: member.id,
+    details: `Added member to team`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "team_members", recordId: member.id, snapshot: member, snapshotType: "after" }],
+  });
+
   return NextResponse.json({ member }, { status: 201 });
 }
 
@@ -65,9 +76,24 @@ export async function DELETE(
 
   if (!memberId) return NextResponse.json({ error: "memberId is required" }, { status: 400 });
 
+  const [existing] = await db.select().from(teamMembers).where(and(eq(teamMembers.teamId, id), eq(teamMembers.id, memberId), isNull(teamMembers.deletedAt))).limit(1);
+
   await db
-    .delete(teamMembers)
-    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.id, memberId)));
+    .update(teamMembers)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.id, memberId), isNull(teamMembers.deletedAt)));
+
+  if (existing) {
+    await writeActivityLog({
+      userId: user.id,
+      action: "deleted_team_member",
+      entityType: "teamMember",
+      entityId: memberId,
+      details: `Removed member from team`,
+      ipAddress: getClientIP(req),
+      snapshots: [{ tableName: "team_members", recordId: existing.id, snapshot: existing, snapshotType: "before" }],
+    });
+  }
 
   return NextResponse.json({ success: true });
 }

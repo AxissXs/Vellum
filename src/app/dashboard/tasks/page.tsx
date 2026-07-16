@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { tasks, users, projects } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { CheckSquare } from "lucide-react";
 import { clsx } from "clsx";
@@ -43,6 +43,7 @@ export default async function TasksPage() {
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
     .leftJoin(projects, eq(tasks.projectId, projects.id))
+    .where(isNull(tasks.deletedAt))
     .orderBy(tasks.updatedAt);
 
   const myTasks = taskRows.filter((t) => t.assigneeId === user?.id);

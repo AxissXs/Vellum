@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { projectMilestones, activityLogs } from "@/db/schema";
+import { projectMilestones } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { eq, isNull, and } from "drizzle-orm";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -14,6 +15,8 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const { title, description, status, dueDate, ownerId } = body;
+
+  const [before] = await db.select().from(projectMilestones).where(and(eq(projectMilestones.id, id), isNull(projectMilestones.deletedAt))).limit(1);
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (title !== undefined) updateData.title = title;
@@ -32,12 +35,17 @@ export async function PATCH(
     return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
   }
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "updated_milestone",
     entityType: "milestone",
     entityId: milestone.id,
     details: `Updated milestone: ${milestone.title}`,
+    ipAddress: getClientIP(req),
+    snapshots: [
+      ...(before ? [{ tableName: "project_milestones" as const, recordId: milestone.id, snapshot: before, snapshotType: "before" as const }] : []),
+      { tableName: "project_milestones", recordId: milestone.id, snapshot: milestone, snapshotType: "after" },
+    ],
   });
 
   return NextResponse.json({ milestone });
@@ -54,21 +62,26 @@ export async function DELETE(
   const [milestone] = await db
     .select()
     .from(projectMilestones)
-    .where(eq(projectMilestones.id, id))
+    .where(and(eq(projectMilestones.id, id), isNull(projectMilestones.deletedAt)))
     .limit(1);
 
   if (!milestone) {
     return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
   }
 
-  await db.delete(projectMilestones).where(eq(projectMilestones.id, id));
+  await db
+    .update(projectMilestones)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(projectMilestones.id, id));
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "deleted_milestone",
     entityType: "milestone",
     entityId: id,
-    details: `Deleted milestone: ${milestone.title}`,
+    details: `Soft-deleted milestone: ${milestone.title}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "project_milestones", recordId: milestone.id, snapshot: milestone, snapshotType: "before" }],
   });
 
   return NextResponse.json({ success: true });

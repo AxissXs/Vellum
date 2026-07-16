@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, activityLogs, users } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { tasks, users } from "@/db/schema";
+import { eq, and, asc, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification } from "@/lib/notifications";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get("status");
   const assigneeId = url.searchParams.get("assigneeId");
 
-  let conditions = [];
+  let conditions = [isNull(tasks.deletedAt)];
   if (projectId) conditions.push(eq(tasks.projectId, projectId));
   if (status) conditions.push(eq(tasks.status, status as any));
   if (assigneeId) conditions.push(eq(tasks.assigneeId, assigneeId));
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(asc(tasks.position), asc(tasks.createdAt));
 
   return NextResponse.json({ tasks: rows });
@@ -73,12 +74,14 @@ export async function POST(req: NextRequest) {
     })
     .returning();
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "created_task",
     entityType: "task",
     entityId: task.id,
     details: `Created task: ${task.title}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "after" }],
   });
 
   // Broadcast real-time event

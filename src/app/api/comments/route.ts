@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { comments, users, activityLogs, tasks } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { comments, users, tasks } from "@/db/schema";
+import { eq, asc, isNull, and } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification } from "@/lib/notifications";
+import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     })
     .from(comments)
     .leftJoin(users, eq(comments.authorId, users.id))
-    .where(eq(comments.taskId, taskId))
+    .where(and(eq(comments.taskId, taskId), isNull(comments.deletedAt)))
     .orderBy(asc(comments.createdAt));
 
   return NextResponse.json({ comments: rows });
@@ -54,12 +55,14 @@ export async function POST(req: NextRequest) {
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId, assigneeId: tasks.assigneeId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
 
-  await db.insert(activityLogs).values({
+  await writeActivityLog({
     userId: user.id,
     action: "created_comment",
     entityType: "comment",
     entityId: comment.id,
     details: `Commented on task: ${task?.title || taskId}`,
+    ipAddress: getClientIP(req),
+    snapshots: [{ tableName: "comments", recordId: comment.id, snapshot: comment, snapshotType: "after" }],
   });
 
   const result = {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession, requireRole } from "@/lib/auth";
 import { db } from "@/db";
 import { sessions, users, activityLogs, userSessions, tasks, projects, teams } from "@/db/schema";
-import { gt, gte, sql, eq, and } from "drizzle-orm";
+import { gt, gte, sql, eq, and, isNull } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -47,9 +47,9 @@ export async function GET() {
     .where(and(gte(userSessions.createdAt, oneDayAgo), eq(userSessions.success, false)));
 
   // Total entities
-  const [totalTasksRow] = await db.select({ count: sql<number>`count(*)::int` }).from(tasks);
-  const [totalProjectsRow] = await db.select({ count: sql<number>`count(*)::int` }).from(projects);
-  const [totalTeamsRow] = await db.select({ count: sql<number>`count(*)::int` }).from(teams);
+  const [totalTasksRow] = await db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(isNull(tasks.deletedAt));
+  const [totalProjectsRow] = await db.select({ count: sql<number>`count(*)::int` }).from(projects).where(isNull(projects.deletedAt));
+  const [totalTeamsRow] = await db.select({ count: sql<number>`count(*)::int` }).from(teams).where(isNull(teams.deletedAt));
 
   // Activity breakdown by action (last 24h)
   const actionBreakdown = await db
