@@ -6,13 +6,15 @@ Platform-wide Telegram bot for notifications. Superadmins configure a single bot
 
 ## Current State
 
-- `notificationPreferences` table already has `pushEnabled`, `inAppEnabled`, `emailEnabled` columns.
+- `notificationPreferences` table already has `pushEnabled`, `inAppEnabled`, `emailEnabled`, `telegramEnabled` columns.
 - `notificationEventTypeEnum` exists with 6 event types.
 - `sendInAppNotification()` in `src/lib/notifications.ts` handles in-app notifications + Pusher broadcast.
+- `sendNotification()` wrapper dispatches in-app + push + Telegram DM + supergroup broadcast + channel broadcast.
 - `src/lib/push.ts` handles Web Push notifications.
-- Settings page at `/dashboard/settings` already shows Push / In-App / Email toggles per event type.
-- Superadmin dashboard exists at `/dashboard/super-admin` with tabbed panels.
-- No Telegram-related tables, APIs, or UI exist yet.
+- Settings page at `/dashboard/settings` shows Push / In-App / Email / Telegram toggles per event type.
+- Superadmin dashboard exists at `/dashboard/super-admin` with tabbed panels including Telegram.
+- `src/lib/telegram.ts` fully implemented: bot API wrapper, webhook with `secret_token`, topic mapping, channel events, message templates, `createForumTopic`.
+- All Telegram tables, APIs, and UI exist and are functional.
 
 ## Database Changes
 
@@ -56,6 +58,10 @@ Keys used:
 - `telegram_bot_token`
 - `telegram_supergroup_id`
 - `telegram_channel_id`
+- `telegram_webhook_secret` (auto-generated UUID, used for `setWebhook` `secret_token`)
+- `telegram_topic_{eventType}` (per-event topic ID mapping)
+- `telegram_channel_events` (comma-separated event types for channel broadcast)
+- `telegram_template_{eventType}` (per-event HTML message template)
 
 ## API Routes
 
@@ -65,31 +71,42 @@ Keys used:
 |-------|---------|---------|
 | `GET /api/telegram/pairing-code` | GET | Generate a new pairing code for current user |
 | `DELETE /api/telegram/unlink` | DELETE | Unlink Telegram from current user |
+| `GET /api/telegram/status` | GET | Check if current user has linked Telegram |
+| `GET /api/telegram/config` | GET | Public endpoint — check if bot is configured (no auth) |
 
 ### Superadmin-only
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `GET /api/super-admin/telegram/settings` | GET | Get current Telegram settings (token masked) |
-| `PATCH /api/super-admin/telegram/settings` | PATCH | Update bot token, supergroup ID, channel ID |
-| `POST /api/super-admin/telegram/test` | POST | Test bot connectivity (send a test message) |
+| `GET /api/super-admin/telegram/settings` | GET | Get bot settings, topic mappings, channel events, templates, webhook URL |
+| `PATCH /api/super-admin/telegram/settings` | PATCH | Update bot token, supergroup/channel IDs, topics, channel events, templates; auto-sets webhook on token change |
+| `POST /api/super-admin/telegram/test` | POST | Test bot connectivity with optional token override |
 | `GET /api/super-admin/telegram/stats` | GET | Paired user count |
+| `POST /api/super-admin/telegram/topics` | POST | Create a forum topic in the configured supergroup |
 
-### Webhook (public, secured by bot token)
+### Webhook (public, secured by `secret_token` header)
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `POST /api/telegram/webhook` | POST | Receive Telegram Bot API updates |
+| `POST /api/telegram/webhook` | POST | Receive Telegram Bot API updates; verifies `X-Telegram-Bot-Api-Secret-Token` header |
 
 ## Server Library (`src/lib/telegram.ts`)
 
 Functions:
-- `sendTelegramMessage(chatId: string, text: string, options?)` — raw Bot API `sendMessage`
-- `sendTelegramNotification(userId: string, eventType: string, title: string, content: string)` — check prefs, send if enabled
-- `broadcastToSupergroup(topicId: string | null, text: string)` — send to supergroup, optionally a topic
-- `broadcastToChannel(text: string)` — send to channel
-- `setTelegramWebhook()` — configure webhook on bot startup / settings update
-- `getTelegramBotInfo()` — get bot name / username for UI display
+- `getPlatformSetting(key)` / `setPlatformSetting(key, value)` — read/write `platform_settings`
+- `getBotToken()` / `isTelegramConfigured()` — bot token helpers
+- `getWebhookSecretToken()` — returns or auto-generates the webhook secret token (stored in `platform_settings`)
+- `getTelegramBotInfo(token?)` — get bot name / username via `getMe`
+- `setTelegramWebhook(webhookUrl, token?)` — registers webhook with `secret_token` parameter
+- `sendTelegramMessage(chatId, text, options?, token?)` — raw Bot API `sendMessage`
+- `isTelegramEnabled(userId, eventType)` — check user preference for Telegram channel
+- `sendTelegramNotification({ userId, eventType, title, content, url })` — check prefs, send DM if enabled
+- `broadcastToSupergroup(eventType, text)` — send to configured supergroup with topic routing
+- `maybeBroadcastToChannel(eventType, title, content, url?)` — post to channel if event type is enabled
+- `getTelegramTopicMapping(eventType)` — get topic ID for an event type
+- `getChannelEvents()` / `setChannelEvents(events)` — manage which events broadcast to channel
+- `getTelegramTemplate(eventType)` / `setTelegramTemplate(eventType, template)` — per-event message templates
+- `getDefaultTemplate(eventType)` — default HTML template with `{title}`, `{content}`, `{url}` variables
 
 ## Notification Pipeline Update
 
@@ -110,14 +127,17 @@ All mutation routes that currently call `sendInAppNotification()` should be upda
   - Add "Telegram" toggle column in the notification preferences table
 
 ### Superadmin Dashboard (`/dashboard/super-admin`)
-- New tab: **Telegram**
-  - Bot token input (password field, masked)
+- New tab: **Telegram** (`SuperAdminTelegramPanel.tsx`)
+  - Bot token input (password field, masked on GET)
+  - Webhook URL display with copy button; auto-sets webhook on save
+  - Test connectivity with optional token override
   - Supergroup ID input
   - Channel ID input
-  - "Test Connection" button
-  - Bot info display (name, username)
-  - Paired user count
-  - "Set Webhook" button (manual trigger)
+  - Topic mapping: per-event forum topic ID inputs with inline "Create topic" buttons
+  - Channel broadcast events: checkboxes per notification type
+  - Message templates: per-event customizable HTML with `{title}`, `{content}`, `{url}` variables
+  - Paired user count stat card
+  - Save settings with mutation
 
 ### Sidebar
 - No change needed.
@@ -125,7 +145,7 @@ All mutation routes that currently call `sendInAppNotification()` should be upda
 ## Webhook Handler Flow
 
 `POST /api/telegram/webhook`:
-1. Verify request is from Telegram (no secret needed; route is unguessable + HTTPS)
+1. Verify `X-Telegram-Bot-Api-Secret-Token` header matches the stored `telegram_webhook_secret` (auto-generated, passed to `setWebhook`)
 2. Parse update JSON
 3. If `message.text` starts with `/start <code>`:
    - Look up code in `telegramPairingCodes`
@@ -157,40 +177,51 @@ All mutation routes that currently call `sendInAppNotification()` should be upda
 
 ## Acceptance Criteria
 
-- [ ] Superadmin can configure bot token, supergroup ID, channel ID in superadmin panel
-- [ ] Superadmin can test bot connectivity
-- [ ] Users can generate a pairing code in settings
-- [ ] Users can link Telegram by sending `/ start <code>` to the bot
-- [ ] Users can unlink Telegram account
-- [ ] Users can enable/disable Telegram per event type in notification preferences
-- [ ] Notifications are sent via Telegram when enabled and user is paired
-- [ ] Typed notifications are posted to the configured supergroup (with topic mapping)
-- [ ] Webhook is set automatically when settings change
-- [ ] Paired user count is visible to superadmin
-- [ ] All changes pass `lint` → `typecheck` → `build`
+- [x] Superadmin can configure bot token, supergroup ID, channel ID in superadmin panel
+- [x] Superadmin can test bot connectivity (with optional token override)
+- [x] Users can generate a pairing code in settings
+- [x] Users can link Telegram by sending `/start <code>` to the bot
+- [x] Users can unlink Telegram account
+- [x] Users can enable/disable Telegram per event type in notification preferences
+- [x] Notifications are sent via Telegram when enabled and user is paired
+- [x] Typed notifications are posted to the configured supergroup (with topic mapping)
+- [x] Channel broadcast for selected event types
+- [x] Customizable HTML message templates with `{title}`, `{content}`, `{url}` variables
+- [x] Webhook is set automatically when settings change, secured with `secret_token` header
+- [x] Webhook handler verifies `X-Telegram-Bot-Api-Secret-Token` before processing
+- [x] Superadmin can create forum topics in the supergroup via API
+- [x] Paired user count is visible to superadmin
+- [x] All changes pass `lint` → `typecheck` → `build`
 
 ## Files to Create/Modify
 
 ### Create
 - `TODO/telegram-bot-integration.md` (this file)
 - `src/lib/telegram.ts`
+- `src/app/api/telegram/config/route.ts`
 - `src/app/api/telegram/pairing-code/route.ts`
 - `src/app/api/telegram/unlink/route.ts`
+- `src/app/api/telegram/status/route.ts`
 - `src/app/api/telegram/webhook/route.ts`
 - `src/app/api/super-admin/telegram/settings/route.ts`
 - `src/app/api/super-admin/telegram/test/route.ts`
 - `src/app/api/super-admin/telegram/stats/route.ts`
+- `src/app/api/super-admin/telegram/topics/route.ts`
 - `src/app/dashboard/super-admin/SuperAdminTelegramPanel.tsx`
+- `src/hooks/useTelegram.ts`
 
 ### Modify
-- `src/db/schema.ts`
-- `src/lib/notifications.ts` (extend to unified send)
-- `src/lib/push.ts` (maybe extract common pref checking)
-- `src/app/dashboard/settings/page.tsx`
-- `src/app/dashboard/super-admin/SuperAdminClient.tsx`
-- `src/hooks/useNotificationPreferences.ts`
-- `src/app/api/push/preferences/route.ts`
+- `src/db/schema.ts` (add `telegramEnabled`, `telegramChatId`, `telegramUsername`, `telegramPairingCodes`, `platformSettings`)
+- `src/lib/notifications.ts` (unified `sendNotification()` wrapper)
+- `src/lib/push.ts` (add `telegramEnabled` to defaults and `updateNotificationPreference`)
+- `src/app/dashboard/settings/page.tsx` (Telegram section + 4-column preference grid)
+- `src/app/dashboard/super-admin/SuperAdminClient.tsx` (add Telegram tab)
+- `src/hooks/useNotificationPreferences.ts` (include `telegramEnabled`)
+- `src/app/api/tasks/[id]/route.ts` (use `sendNotification`)
+- `src/app/api/tasks/route.ts` (use `sendNotification`)
+- `src/app/api/comments/route.ts` (use `sendNotification`)
 - `.env.example`
 - `TODO.md`
 - `STRUCTURE.md`
+- `DONE.md`
 - `AGENTS.md` (if new conventions)
