@@ -8,6 +8,7 @@ export type ActivityLogInput = {
   entityType: string;
   entityId?: string | null;
   details?: string | null;
+  ipAddress?: string | null;
 };
 
 /** Insert activity log after the response is sent (non-blocking for the client). */
@@ -19,6 +20,7 @@ export function logActivity(input: ActivityLogInput) {
       entityType: input.entityType,
       entityId: input.entityId ?? null,
       details: input.details ?? null,
+      ipAddress: input.ipAddress ?? null,
     });
   });
 }

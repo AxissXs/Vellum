@@ -17,19 +17,20 @@ export interface BrandConfig {
   fontVar: string;
 }
 
-const env = process.env;
-
+// Direct process.env.NEXT_PUBLIC_* reads only — Next.js webpack inlines those.
+// `const env = process.env` leaves bare `process` in the client bundle →
+// ReferenceError: process is not defined (breaks login + layout).
 export const brand: BrandConfig = {
-  name: env.NEXT_PUBLIC_BRAND_NAME ?? "Perfect",
-  displayName: env.NEXT_PUBLIC_BRAND_DISPLAY ?? "Perfect",
+  name: process.env.NEXT_PUBLIC_BRAND_NAME ?? "Perfect",
+  displayName: process.env.NEXT_PUBLIC_BRAND_DISPLAY ?? "Perfect",
   tagline:
-    env.NEXT_PUBLIC_BRAND_TAGLINE ?? "Team management, simplified.",
-  emailDomain: env.NEXT_PUBLIC_BRAND_EMAIL_DOMAIN ?? "perfect.my",
+    process.env.NEXT_PUBLIC_BRAND_TAGLINE ?? "Team management, simplified.",
+  emailDomain: process.env.NEXT_PUBLIC_BRAND_EMAIL_DOMAIN ?? "perfect.my",
   logo: {
-    light: env.NEXT_PUBLIC_BRAND_LOGO_LIGHT ?? "/logo.svg",
-    dark: env.NEXT_PUBLIC_BRAND_LOGO_DARK ?? "/logo-white.svg",
+    light: process.env.NEXT_PUBLIC_BRAND_LOGO_LIGHT ?? "/logo.svg",
+    dark: process.env.NEXT_PUBLIC_BRAND_LOGO_DARK ?? "/logo-white.svg",
   },
-  primaryColor: env.NEXT_PUBLIC_BRAND_COLOR ?? "#0052cc",
+  primaryColor: process.env.NEXT_PUBLIC_BRAND_COLOR ?? "#0052cc",
   fontVar: "var(--font-open-sans)",
 };
 

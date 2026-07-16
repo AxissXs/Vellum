@@ -44,9 +44,20 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("member"),
   status: userStatusEnum("status").notNull().default("active"),
   avatarUrl: text("avatar_url"),
+  telegramChatId: text("telegram_chat_id"),
+  telegramUsername: text("telegram_username"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const notificationEventTypeEnum = pgEnum("notification_event_type", [
+  "task_assigned",
+  "task_mentioned",
+  "due_date_approaching",
+  "status_changed",
+  "new_comment",
+  "comment_mention",
+]);
 
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -282,7 +293,68 @@ export const activityLogs = pgTable(
     entityType: text("entity_type").notNull(),
     entityId: text("entity_id"),
     details: text("details"),
+    ipAddress: text("ip_address"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("activity_logs_created_at_idx").on(table.createdAt)]
 );
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  type: notificationEventTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  read: boolean("read").default(false).notNull(),
+  entityType: text("entity_type"),
+  entityId: text("entity_id"),
+  actorUserId: uuid("actor_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  eventType: notificationEventTypeEnum("event_type").notNull(),
+  pushEnabled: boolean("push_enabled").default(true).notNull(),
+  inAppEnabled: boolean("in_app_enabled").default(true).notNull(),
+  emailEnabled: boolean("email_enabled").default(false).notNull(),
+  telegramEnabled: boolean("telegram_enabled").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const telegramPairingCodes = pgTable("telegram_pairing_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull().unique(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  used: boolean("used").notNull().default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const platformSettings = pgTable("platform_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

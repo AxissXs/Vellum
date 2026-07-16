@@ -8,9 +8,16 @@ import {
   ClipboardList,
   HeartPulse,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
 import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
+import SuperAdminActivityPanel from "./SuperAdminActivityPanel";
+import SuperAdminSessionsPanel from "./SuperAdminSessionsPanel";
+import SuperAdminAuditPanel from "./SuperAdminAuditPanel";
+import SuperAdminHealthPanel from "./SuperAdminHealthPanel";
+import SuperAdminRolesPanel from "./SuperAdminRolesPanel";
+import SuperAdminTelegramPanel from "./SuperAdminTelegramPanel";
 
 const tabs = [
   { id: "users", label: "Users", icon: Users },
@@ -19,6 +26,7 @@ const tabs = [
   { id: "audit", label: "Audit Logs", icon: ClipboardList },
   { id: "health", label: "System Health", icon: HeartPulse },
   { id: "roles", label: "Role Matrix", icon: ShieldCheck },
+  { id: "telegram", label: "Telegram", icon: MessageCircle },
 ];
 
 export default function SuperAdminClient() {
@@ -26,7 +34,6 @@ export default function SuperAdminClient() {
 
   return (
     <div className="space-y-6">
-      {/* Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -49,59 +56,14 @@ export default function SuperAdminClient() {
         })}
       </div>
 
-      {/* Panels */}
       <div className="bg-white border border-slate-200 rounded-xl p-6">
         {activeTab === "users" && <SuperAdminUsersPanel />}
-
-        {activeTab === "activity" && (
-          <div className="text-center py-12">
-            <Activity size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Live Activity</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Real-time feed of logins, failed attempts, and user actions. Coming in Part 3.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "sessions" && (
-          <div className="text-center py-12">
-            <KeyRound size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Session Management</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              View and revoke active user sessions. Coming in Part 4.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "audit" && (
-          <div className="text-center py-12">
-            <ClipboardList size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Audit Logs</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Filterable and exportable audit trail with IP addresses. Coming in Part 5.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "health" && (
-          <div className="text-center py-12">
-            <HeartPulse size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">System Health</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              DB stats, API latency, and error rates. Coming in Part 6.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "roles" && (
-          <div className="text-center py-12">
-            <ShieldCheck size={40} className="mx-auto text-slate-600 mb-3" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Role Matrix</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Overview of what each role can do across the platform. Coming in Part 7.
-            </p>
-          </div>
-        )}
+        {activeTab === "activity" && <SuperAdminActivityPanel />}
+        {activeTab === "sessions" && <SuperAdminSessionsPanel />}
+        {activeTab === "audit" && <SuperAdminAuditPanel />}
+        {activeTab === "health" && <SuperAdminHealthPanel />}
+        {activeTab === "roles" && <SuperAdminRolesPanel />}
+        {activeTab === "telegram" && <SuperAdminTelegramPanel />}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { pusher } from "@/lib/pusher";
+import { getPusherServer } from "@/lib/pusher";
 
 /**
  * Broadcast a task event after the response is sent (non-blocking for the client).
@@ -17,7 +17,9 @@ export function broadcastTaskEvent(
 ) {
   after(async () => {
     try {
-      await pusher.trigger(
+      const client = getPusherServer();
+      if (!client) return;
+      await client.trigger(
         [`project-${projectId}`, "task-updates"],
         "task-event",
         payload
@@ -43,7 +45,9 @@ export function broadcastCommentEvent(
 ) {
   after(async () => {
     try {
-      await pusher.trigger(`task-${taskId}`, "comment-event", payload);
+      const client = getPusherServer();
+      if (!client) return;
+      await client.trigger(`task-${taskId}`, "comment-event", payload);
     } catch (err) {
       console.error("Pusher broadcast failed:", err);
     }

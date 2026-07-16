@@ -5,6 +5,7 @@ node_modules
 .env.development.local
 
 .next
+src/.next
 public/deploy
 next-env.d.ts
 .vercel

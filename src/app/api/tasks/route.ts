@@ -5,6 +5,7 @@ import { tasks, users } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
 import { eq, and, asc } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
+import { sendNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -87,7 +88,6 @@ export async function POST(req: NextRequest) {
     details: `Created task: ${task.title}`,
   });
 
-  // Broadcast real-time event
   broadcastTaskEvent(projectId, {
     type: "created",
     task: {
@@ -101,6 +101,24 @@ export async function POST(req: NextRequest) {
     actorUserId: user.id,
     actorName: user.name || "Someone",
   });
+
+  if (task.assigneeId && task.assigneeId !== user.id) {
+    await sendNotification({
+      userId: task.assigneeId,
+      type: "task_assigned",
+      title: "New Task Assigned",
+      content: `${user.name || "Someone"} assigned you "${task.title}"`,
+      entityType: "task",
+      entityId: task.id,
+      actorUserId: user.id,
+      pushPayload: {
+        title: "New Task Assigned",
+        body: `${user.name || "Someone"} assigned you "${task.title}"`,
+        tag: `task-${task.id}`,
+      },
+      url: `/dashboard/tasks`,
+    });
+  }
 
   return NextResponse.json({ task }, { status: 201 });
 }

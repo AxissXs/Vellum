@@ -1,12 +1,14 @@
 /**
- * Drizzle migration runner for Deno Deploy pre-deploy.
- * Uses npm: specifiers so Deno can run without node_modules in the deploy partition.
- * Resolves drizzle/ relative to this file (not cwd).
+ * Deno Deploy pre-deploy migrator (no deno.json / node_modules required).
  *
- * Deno Deploy pre-deploy: deno run -A public/deploy/migrate.ts
- * (copied into public/deploy/ during build — public/ is always in the deploy artifact)
+ * Next.js pre-deploy partition: cwd=/app/src, artifact only keeps
+ * `.next/standalone/`. Build copies this file + drizzle/ there.
  *
- * Runtime fallback: src/instrumentation.ts also runs migrations on server start.
+ * Pre-deploy: deno run -A /app/.next/standalone/migrate.ts
+ * (from /app/src: ../.next/standalone/migrate.ts)
+ *
+ * Uses npm: specifiers so Deno fetches deps — drizzle-kit cannot run here
+ * (`node` on Deploy is a Deno shim; ./node_modules is missing).
  */
 import { drizzle } from "npm:drizzle-orm@0.45.2/node-postgres";
 import { migrate } from "npm:drizzle-orm@0.45.2/node-postgres/migrator";
@@ -16,11 +18,16 @@ import { fromFileUrl, join } from "jsr:@std/path@1";
 const root = fromFileUrl(new URL(".", import.meta.url));
 const migrationsFolder = join(root, "drizzle");
 
-const pool = Deno.env.get("DATABASE_URL")
-  ? new Pool({ connectionString: Deno.env.get("DATABASE_URL") })
-  : new Pool();
+const databaseUrl = Deno.env.get("DATABASE_URL");
+if (!databaseUrl) {
+  console.error("DATABASE_URL is not set (needed for pre-deploy migrations)");
+  Deno.exit(1);
+}
+
+const pool = new Pool({ connectionString: databaseUrl });
 
 try {
+  console.log(`cwd=${Deno.cwd()}`);
   console.log(`Running migrations from ${migrationsFolder}`);
   await pool.query("CREATE EXTENSION IF NOT EXISTS pgcrypto");
   const db = drizzle(pool);

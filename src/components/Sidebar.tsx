@@ -53,6 +53,7 @@ export default function Sidebar({
     { href: "/dashboard/teams", label: "Teams", icon: Users },
     { href: "/dashboard/sprints", label: "Sprints", icon: Timer },
     { href: "/dashboard/activity", label: "Activity", icon: Activity },
+    { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ...(user.role === "superadmin" || user.role === "admin"
       ? [{ href: "/dashboard/admin", label: "Admin", icon: Shield }]
       : []),
