@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Broadcast real-time event
-  await broadcastTaskEvent(projectId, {
+  broadcastTaskEvent(projectId, {
     type: "created",
     task: {
       ...task,

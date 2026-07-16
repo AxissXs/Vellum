@@ -28,6 +28,8 @@ Vellum/
 ├── eslint.config.mjs       # ESLint config (flat)
 ├── postcss.config.mjs      # PostCSS config
 ├── drizzle.config.ts       # Drizzle Kit config (TypeScript)
+├── scripts/                # Ops diagnostics (excluded from tsc)
+│   └── check-db-colocation.ts  # Edge vs PG latency probe
 └── drizzle/                # Drizzle migrations (committed)
     ├── 0000_faithful_the_twelve.sql
     └── meta/
@@ -871,8 +873,8 @@ src/
 
 **Purpose**: Broadcast task and comment events to Pusher channels
 **Exports**:
-- `broadcastTaskEvent(projectId, payload)` - Broadcast task changes to `project-${projectId}` and `task-updates`
-- `broadcastCommentEvent(taskId, payload)` - Broadcast comment changes to `task-${taskId}`
+- `broadcastTaskEvent(projectId, payload)` - Schedule task broadcast via Next.js `after()` (non-blocking)
+- `broadcastCommentEvent(taskId, payload)` - Schedule comment broadcast via Next.js `after()` (non-blocking)
 
 #### `src/lib/pusher-channels.ts`
 

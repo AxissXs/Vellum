@@ -39,6 +39,7 @@
   "exclude": [
     "node_modules",
     "migrate.ts",
-    "public/deploy"
+    "public/deploy",
+    "scripts"
   ]
 }

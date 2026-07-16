@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   };
 
   // Broadcast real-time event for comments
-  await broadcastCommentEvent(taskId, {
+  broadcastCommentEvent(taskId, {
     type: "created",
     comment: {
       ...result,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
   // Also broadcast a task update so viewers on the project board see activity
   if (task?.projectId) {
-    await broadcastTaskEvent(task.projectId, {
+    broadcastTaskEvent(task.projectId, {
       type: "updated",
       taskId,
       actorUserId: user.id,

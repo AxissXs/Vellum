@@ -12,3 +12,4 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 bun.lock
 deno.lock
+backups/

@@ -57,7 +57,7 @@ deno task deploy         # CLI deploy via deployctl (GitHub integration is prefe
 Vellum deploys to **Deno Deploy** with a managed **Prisma Postgres** database.
 
 1. Create a Deno Deploy project and link the GitHub repo (Next.js is auto-detected).
-2. Provision Prisma Postgres: `deno deploy database provision vellum-pg --kind prisma --region <region>`, then assign to the app.
+2. Provision Prisma Postgres: `deno deploy database provision vellum-pg --kind prisma --region <region>`, then assign to the app. **Colocate with Deno Deploy app region** (prod edge today: ORD / Chicago). Warm `/api/health` ≫ ~50ms usually means DB is far from the edge — run `deno task db:colocate-check`.
 3. Deno Deploy auto-injects `DATABASE_URL` (plus `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`) per environment — do NOT set `DATABASE_URL` in prod.
 4. App config lives in [`deno.json`](deno.json) `deploy` key (overrides dashboard). Build copies `migrate.ts` + `drizzle/` into `public/deploy/` — `public/` is always in the deploy artifact.
 5. **Pre-Deploy command** (in `deno.json`): `deno run -A public/deploy/migrate.ts`. If configuring in dashboard instead, use `deno run -A /app/public/deploy/migrate.ts`.
