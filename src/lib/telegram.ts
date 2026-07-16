@@ -157,12 +157,23 @@ export async function getTelegramBotInfo(
   };
 }
 
+export async function getWebhookSecretToken(): Promise<string> {
+  let secret = await getPlatformSetting("telegram_webhook_secret");
+  if (!secret) {
+    secret = crypto.randomUUID().replace(/-/g, "");
+    await setPlatformSetting("telegram_webhook_secret", secret);
+  }
+  return secret;
+}
+
 export async function setTelegramWebhook(webhookUrl: string, token?: string) {
+  const secretToken = await getWebhookSecretToken();
   return telegramApi(
     "setWebhook",
     {
       url: webhookUrl,
       allowed_updates: ["message"],
+      secret_token: secretToken,
     },
     token
   );

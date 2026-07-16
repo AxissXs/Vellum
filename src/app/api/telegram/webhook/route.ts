@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { telegramPairingCodes, users } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
-import { getBotToken, sendTelegramMessage } from "@/lib/telegram";
+import {
+  getBotToken,
+  getWebhookSecretToken,
+  sendTelegramMessage,
+} from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
   const token = await getBotToken();
   if (!token) {
     return NextResponse.json({ error: "Bot not configured" }, { status: 400 });
+  }
+
+  const secretToken = await getWebhookSecretToken();
+  const providedSecret = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
+  if (providedSecret !== secretToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let update: any;
