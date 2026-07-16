@@ -727,7 +727,7 @@ function RetroPanel({
                 {grouped(c.key).map((item) => (
                   <div
                     key={item.id}
-                    className="group relative bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"
+                    className="group relative min-h-[48px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-3 overflow-y-visible"
                   >
                     {editingId === item.id ? (
                       <div className="space-y-2">
@@ -755,11 +755,11 @@ function RetroPanel({
                       </div>
                     ) : (
                       <>
-                        <span className="block w-full pr-16 text-sm text-slate-800 whitespace-pre-wrap wrap-break-word">
+                        <span className="block w-full text-sm text-slate-800 whitespace-pre-wrap wrap-break-word">
                           {item.content}
                         </span>
                         {canMutateItem(item) && (
-                          <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 bg-slate-50/80 rounded-lg px-1 py-0.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 bg-slate-50/90 rounded-lg px-1 py-0.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                             <button
                               onClick={() => startEdit(item)}
                               className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
