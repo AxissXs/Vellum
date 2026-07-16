@@ -646,6 +646,7 @@ function RetroPanel({
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [actionItem, setActionItem] = useState<RetroItem | null>(null);
 
   async function add() {
     if (!content.trim()) return;
@@ -656,6 +657,7 @@ function RetroPanel({
   function startEdit(item: RetroItem) {
     setEditingId(item.id);
     setEditContent(item.content);
+    setActionItem(null);
   }
 
   async function saveEdit(item: RetroItem) {
@@ -671,6 +673,14 @@ function RetroPanel({
 
   const canMutateItem = (item: RetroItem) =>
     canMutateOwned({ id: currentUserId, role: userRole }, item.authorId);
+
+  function openMobileActions(item: RetroItem) {
+    if (editingId === item.id || !canMutateItem(item)) return;
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+      return;
+    }
+    setActionItem(item);
+  }
 
   const grouped = (cat: RetroItem["category"]) =>
     (items || []).filter((i) => i.category === cat);
@@ -727,15 +737,27 @@ function RetroPanel({
                 {grouped(c.key).map((item) => (
                   <div
                     key={item.id}
-                    className="group relative min-h-[48px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-3 overflow-y-visible"
+                    role={canMutateItem(item) && editingId !== item.id ? "button" : undefined}
+                    tabIndex={canMutateItem(item) && editingId !== item.id ? 0 : undefined}
+                    onClick={() => openMobileActions(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openMobileActions(item);
+                      }
+                    }}
+                    className={clsx(
+                      "group relative min-h-[48px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-3",
+                      canMutateItem(item) && editingId !== item.id && "cursor-pointer md:cursor-default"
+                    )}
                   >
                     {editingId === item.id ? (
-                      <div className="space-y-2">
+                      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                         <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
                           rows={2}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm leading-normal text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                         />
                         <div className="flex gap-2">
                           <button
@@ -755,20 +777,26 @@ function RetroPanel({
                       </div>
                     ) : (
                       <>
-                        <span className="block w-full text-sm text-slate-800 whitespace-pre-wrap wrap-break-word">
+                        <span className="block w-full text-sm leading-normal text-slate-800 whitespace-pre-wrap wrap-break-word">
                           {item.content}
                         </span>
                         {canMutateItem(item) && (
-                          <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 bg-slate-50/90 rounded-lg px-1 py-0.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <div className="absolute right-1.5 top-1.5 hidden md:flex items-center gap-0.5 bg-slate-50/90 rounded-lg px-1 py-0.5 backdrop-blur-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto transition-opacity">
                             <button
-                              onClick={() => startEdit(item)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEdit(item);
+                              }}
                               className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
                               aria-label="Edit retro item"
                             >
                               <Pencil size={14} />
                             </button>
                             <button
-                              onClick={() => deleteRetro.mutate({ id: item.id, sprintId })}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteRetro.mutate({ id: item.id, sprintId });
+                              }}
                               className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
                               aria-label="Delete retro item"
                             >
@@ -786,6 +814,49 @@ function RetroPanel({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {actionItem && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Retro item actions">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Dismiss"
+            onClick={() => setActionItem(null)}
+          />
+          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-white px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" />
+            <p className="mb-4 text-sm leading-normal text-slate-600 line-clamp-2">{actionItem.content}</p>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => startEdit(actionItem)}
+                className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100"
+              >
+                <Pencil size={16} className="text-brand-600" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteRetro.mutate({ id: actionItem.id, sprintId });
+                  setActionItem(null);
+                }}
+                className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setActionItem(null)}
+                className="flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
