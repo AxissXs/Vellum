@@ -111,17 +111,8 @@
   - Replace existing silent optimistic updates with visible feedback (keep optimistic UI, add toast layer on top)
   - Acceptance criteria: Every mutation shows a toast with appropriate status (loading → success/error), animations feel smooth, no toast spam on rapid actions
 
-- [ ] **Fix select dropdown styling** - Native `<select>` dropdowns show white background with white text
-  - All `<select>` elements in superadmin panels (users, roles, sessions) have unreadable options
-  - Apply dark background + white text to `<option>` elements
-  - Or: replace native selects with custom dropdown components (consistent with design system)
-  - Acceptance criteria: Select dropdown options are readable in both light and dark areas of the UI
-
-- [ ] **Fix select click propagation in users table** - Closing a role/status select triggers the user detail modal
-  - In `SuperAdminUsersPanel`, the `<tr>` has an `onClick` that opens `UserDetailModal`
-  - `<select>` inside the row fires a click event that bubbles to the `<tr>`, opening the modal
-  - Fix: add `e.stopPropagation()` on select elements to prevent bubbling
-  - Acceptance criteria: Changing role/status via select does not open the user detail modal
+- ~~**Fix select dropdown styling**~~ ✅ — Fixed with `color-scheme: dark` in `globals.css`
+- ~~**Fix select click propagation in users table**~~ ✅ — Added `e.stopPropagation()` to role/status selects
 
 - [ ] **Comment replies** - Threaded replies on task comments with notifications
   - Add `parentId` column to `comments` table (nullable, self-referencing FK)

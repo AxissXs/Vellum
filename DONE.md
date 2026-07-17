@@ -244,6 +244,16 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ---
 
+## Super Admin Improvements
+
+### Select Dropdown Fixes (July 2026)
+> Fixed two UI bugs in superadmin panels.
+
+- **Click propagation**: Role/status selects in users table no longer open the user detail modal when clicked — added `e.stopPropagation()` to prevent event bubbling to the `<tr>` row
+- **Dropdown styling**: Native `<select>` dropdowns now render dark options consistently — added `color-scheme: dark` to `globals.css`, fixing all selects across every panel (users, trash, session details)
+
+---
+
 ## How to Update This File
 
 When a task from [TODO.md](TODO.md) is fully completed and merged:

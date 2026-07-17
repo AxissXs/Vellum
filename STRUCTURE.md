@@ -200,7 +200,7 @@ src/
 
 ### `src/app/globals.css`
 
-**Purpose**: Global styles, Tailwind imports, CSS variables for theming
+**Purpose**: Global styles, Tailwind imports, CSS variables, `color-scheme: dark` for native form elements
 **Exports**: None (CSS file)
 
 ### `src/app/layout.tsx`
