@@ -7,12 +7,14 @@ import {
 } from "@/hooks/useNotificationPreferences";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTelegramStatus, useGeneratePairingCode, useUnlinkTelegram } from "@/hooks/useTelegram";
+import { useMySessions, useRevokeSession, useRevokeAllOtherSessions, parseUserAgent } from "@/hooks/useSessions";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 import { Switch } from "@/components/ui/Switch";
-import { Loader2, Link as LinkIcon, Unlink, Copy, Check } from "lucide-react";
+import { Loader2, Link as LinkIcon, Unlink, Copy, Check, Monitor, Smartphone, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -43,6 +45,10 @@ export default function SettingsPage() {
   const { mutate: unlink, isPending: unlinking } = useUnlinkTelegram();
 
   const [copied, setCopied] = useState(false);
+
+  const { data: sessions, isLoading: sessionsLoading } = useMySessions();
+  const { mutate: revokeSession, isPending: revoking } = useRevokeSession();
+  const { mutate: revokeAll, isPending: revokingAll } = useRevokeAllOtherSessions();
 
   const botConfigured = !!telegramConfig?.configured;
 
@@ -249,6 +255,87 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Active Sessions */}
+      <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Active Sessions</h2>
+            <p className="text-sm text-slate-400 mt-1">
+              Manage devices where you are currently logged in.
+            </p>
+          </div>
+          {(sessions?.length ?? 0) > 1 && (
+            <button
+              onClick={() => revokeAll()}
+              disabled={revokingAll}
+              className="bg-white/5 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 text-slate-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+            >
+              {revokingAll ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <LogOut size={16} />
+              )}
+              Revoke All Others
+            </button>
+          )}
+        </div>
+
+        {sessionsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="animate-spin text-slate-400" size={24} />
+          </div>
+        ) : sessions && sessions.length > 0 ? (
+          <div className="space-y-3">
+            {sessions.map((session) => {
+              const { browser, os } = parseUserAgent(session.userAgent);
+              const isMobile = /Android|iPhone|iPad/i.test(session.userAgent || "");
+              return (
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between bg-slate-800/50 border border-white/5 rounded-lg px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    {isMobile ? (
+                      <Smartphone size={18} className="text-slate-400 flex-shrink-0" />
+                    ) : (
+                      <Monitor size={18} className="text-slate-400 flex-shrink-0" />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-white font-medium">
+                          {browser} on {os}
+                        </span>
+                        {session.isCurrent && (
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                        {session.ipAddress && <span>{session.ipAddress}</span>}
+                        {session.ipAddress && <span>·</span>}
+                        <span>Active {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {!session.isCurrent && (
+                    <button
+                      onClick={() => revokeSession(session.id)}
+                      disabled={revoking}
+                      className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 text-xs font-medium px-3 py-1.5 rounded-lg transition"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No active sessions found.</p>
         )}
       </div>
     </div>
