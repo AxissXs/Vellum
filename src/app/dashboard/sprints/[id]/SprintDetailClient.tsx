@@ -106,9 +106,19 @@ export default function SprintDetailClient({
 }) {
   const [tab, setTab] = useState<Tab>("board");
   const sprintId = sprint.id;
+  const [sprintTasks, setSprintTasks] = useState(tasks);
+  const [backlogList, setBacklogList] = useState(backlogTasks);
   const updateTask = useUpdateTask();
   const updateSprint = useUpdateSprint();
   const router = useRouter();
+
+  useEffect(() => {
+    setSprintTasks(tasks);
+  }, [tasks]);
+
+  useEffect(() => {
+    setBacklogList(backlogTasks);
+  }, [backlogTasks]);
 
   const canComplete = hasPermission(userRole, "complete_sprint");
   const canManagePlanning = hasPermission(userRole, "edit_sprints");
@@ -128,7 +138,7 @@ export default function SprintDetailClient({
     router.push("/dashboard/sprints");
   }
 
-  const boardTasks = tasks
+  const boardTasks = sprintTasks
     .filter((t) => t.sprintId === sprintId)
     .map((t) => ({ ...t, position: t.position || "0" }));
 
@@ -140,17 +150,34 @@ export default function SprintDetailClient({
   }));
 
   // ---- Planning state ----
-  const backlogForPlanning = backlogTasks.filter((t) => !t.sprintId);
+  const backlogForPlanning = backlogList.filter((t) => !t.sprintId);
 
   async function addToSprint(task: Task) {
     await updateTask.mutateAsync({ id: task.id, projectId: task.projectId, sprintId });
+    const moved = { ...task, sprintId };
+    setSprintTasks((prev) => [...prev.filter((t) => t.id !== task.id), moved]);
+    setBacklogList((prev) => prev.filter((t) => t.id !== task.id));
     toast.success(`Added "${task.title}" to sprint`);
-    router.refresh();
   }
 
   async function removeFromSprint(task: Task) {
     await updateTask.mutateAsync({ id: task.id, projectId: task.projectId, sprintId: null });
-    router.refresh();
+    const moved = { ...task, sprintId: null };
+    setSprintTasks((prev) => prev.filter((t) => t.id !== task.id));
+    setBacklogList((prev) => [...prev.filter((t) => t.id !== task.id), moved]);
+  }
+
+  function handleBoardTasksChange(next: Omit<Task, "sprintId" | "estimate">[]) {
+    setSprintTasks((prev) =>
+      next.map((t) => {
+        const existing = prev.find((p) => p.id === t.id);
+        return {
+          ...t,
+          sprintId,
+          estimate: existing?.estimate ?? null,
+        };
+      })
+    );
   }
 
   const sprintPoints = boardTasks.reduce((sum, t) => sum + (t.estimate ?? 0), 0);
@@ -241,7 +268,7 @@ export default function SprintDetailClient({
 
       {tab === "board" && (
         <KanbanBoard
-          key={`${sprintId}-${tasks.length}`}
+          key={sprintId}
           projectId={sprint.projectId}
           initialColumns={kanbanColumns}
           users={users}
@@ -249,6 +276,7 @@ export default function SprintDetailClient({
           currentUserId={currentUserId}
           userRole={userRole}
           sprintId={sprintId}
+          onTasksChange={handleBoardTasksChange}
         />
       )}
 
