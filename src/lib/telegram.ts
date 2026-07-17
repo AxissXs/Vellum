@@ -166,6 +166,10 @@ export async function getWebhookSecretToken(): Promise<string> {
   return secret;
 }
 
+export async function readWebhookSecretToken(): Promise<string | null> {
+  return getPlatformSetting("telegram_webhook_secret");
+}
+
 export async function setTelegramWebhook(webhookUrl: string, token?: string) {
   const secretToken = await getWebhookSecretToken();
   return telegramApi(

@@ -280,6 +280,15 @@ export const telegramPairingCodes = pgTable("telegram_pairing_codes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const telegramTopicCodes = pgTable("telegram_topic_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull().unique(),
+  eventType: text("event_type").notNull(),
+  used: boolean("used").notNull().default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const platformSettings = pgTable("platform_settings", {
   id: uuid("id").primaryKey().defaultRandom(),
   key: text("key").notNull().unique(),

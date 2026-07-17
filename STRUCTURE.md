@@ -860,6 +860,14 @@ src/
 
 - `GET()` - Creates a 6-char code in `telegram_pairing_codes`, returns `{ code }`
 
+#### `src/app/api/telegram/topic-code/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Generate a single-use code for binding a forum topic to an event type
+**Functions**:
+
+- `POST(req)` - Requires superadmin auth. Accepts `{ eventType }`, creates a 6-char code in `telegram_topic_codes`, returns `{ code, eventType }`
+
 #### `src/app/api/telegram/unlink/route.ts`
 
 **Methods**: `DELETE`
@@ -890,7 +898,7 @@ src/
 **Purpose**: Receive Telegram Bot API updates
 **Functions**:
 
-- `POST(req)` - Verifies `X-Telegram-Bot-Api-Secret-Token` header, then parses update JSON; handles `/start <code>` to link accounts
+- `POST(req)` - Verifies `X-Telegram-Bot-Api-Secret-Token` header, then parses update JSON; handles `/start <code>` to link accounts, `/bindtopic <code>` to bind a forum topic to an event type
 
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
@@ -1030,6 +1038,7 @@ src/
 - `notificationPreferences` - Per-user notification event preferences (includes `telegramEnabled`)
 - `notifications` - In-app notification storage
 - `telegramPairingCodes` - Single-use codes for Telegram account linking
+- `telegramTopicCodes` - Single-use codes for binding forum topics to event types
 - `platformSettings` - Key-value store for superadmin configuration (e.g. `telegram_bot_token`)
 
 **Exports** (Enums):
