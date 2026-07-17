@@ -46,8 +46,15 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (input: TaskCreateInput) => {
-      const res = await api.post<{ task: Task }>("/api/tasks", input);
-      return res.task;
+      const toastId = toast.loading("Creating task...");
+      try {
+        const res = await api.post<{ task: Task }>("/api/tasks", input);
+        toast.success("Task created", { id: toastId });
+        return res.task;
+      } catch (err) {
+        toast.error("Failed to create task", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newTask) => {
       await queryClient.cancelQueries({ queryKey: getTaskQueryKey(newTask.projectId) });
@@ -81,7 +88,6 @@ export function useCreateTask() {
       if (context?.previousTasks) {
         queryClient.setQueryData(getTaskQueryKey(newTask.projectId), context.previousTasks);
       }
-      toast.error("Failed to create task");
     },
     onSuccess: (data, newTask, context) => {
       queryClient.setQueryData<Task[]>(getTaskQueryKey(newTask.projectId), (old) =>
@@ -99,9 +105,16 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: async (input: TaskUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ task: Task }>(`/api/tasks/${id}`, data);
-      return res.task;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ task: Task }>(`/api/tasks/${id}`, data);
+        toast.success("Task updated", { id: toastId });
+        return res.task;
+      } catch (err) {
+        toast.error("Failed to update task", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedTask) => {
       const projectId = updatedTask.projectId;
@@ -119,7 +132,6 @@ export function useUpdateTask() {
       if (context?.previousTasks) {
         queryClient.setQueryData(getTaskQueryKey(context.projectId), context.previousTasks);
       }
-      toast.error("Failed to update task");
     },
     onSettled: (data, error, updatedTask) => {
       queryClient.invalidateQueries({ queryKey: getTaskQueryKey(updatedTask.projectId) });
@@ -132,8 +144,15 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: async (taskId: string) => {
-      await api.delete(`/api/tasks/${taskId}`);
-      return taskId;
+      const toastId = toast.loading("Deleting task...");
+      try {
+        await api.delete(`/api/tasks/${taskId}`);
+        toast.success("Task deleted", { id: toastId });
+        return taskId;
+      } catch (err) {
+        toast.error("Failed to delete task", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (taskId) => {
       const allQueries = queryClient.getQueryCache().findAll({ queryKey: ["tasks"] });
@@ -156,7 +175,6 @@ export function useDeleteTask() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to delete task");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -169,15 +187,22 @@ export function useReorderTasks() {
 
   return useMutation({
     mutationFn: async (updates: { id: string; position: string; status?: string }[]) => {
-      await Promise.all(
-        updates.map((u) =>
-          api.patch(`/api/tasks/${u.id}`, {
-            position: u.position,
-            status: u.status,
-          })
-        )
-      );
-      return updates;
+      const toastId = toast.loading("Reordering...");
+      try {
+        await Promise.all(
+          updates.map((u) =>
+            api.patch(`/api/tasks/${u.id}`, {
+              position: u.position,
+              status: u.status,
+            })
+          )
+        );
+        toast.success("Tasks reordered", { id: toastId });
+        return updates;
+      } catch (err) {
+        toast.error("Failed to reorder tasks", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updates) => {
       const projectIds = new Set<string>();
@@ -211,7 +236,6 @@ export function useReorderTasks() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to reorder tasks");
     },
     onSettled: (data, error, updates, context) => {
       for (const projectId of context?.projectIds || []) {

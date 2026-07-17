@@ -38,8 +38,15 @@ export function useCreateMilestone() {
 
   return useMutation({
     mutationFn: async (input: MilestoneCreateInput) => {
-      const res = await api.post<{ milestone: Milestone }>(`/api/projects/${input.projectId}/milestones`, input);
-      return res.milestone;
+      const toastId = toast.loading("Creating milestone...");
+      try {
+        const res = await api.post<{ milestone: Milestone }>(`/api/projects/${input.projectId}/milestones`, input);
+        toast.success("Milestone created", { id: toastId });
+        return res.milestone;
+      } catch (err) {
+        toast.error("Failed to create milestone", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newMilestone) => {
       const queryKey = getMilestoneQueryKey(newMilestone.projectId);
@@ -69,7 +76,6 @@ export function useCreateMilestone() {
       if (context?.previousMilestones) {
         queryClient.setQueryData(getMilestoneQueryKey(context.projectId), context.previousMilestones);
       }
-      toast.error("Failed to create milestone");
     },
     onSuccess: (data, newMilestone) => {
       queryClient.setQueryData<Milestone[]>(getMilestoneQueryKey(newMilestone.projectId), (old) =>
@@ -87,9 +93,16 @@ export function useUpdateMilestone() {
 
   return useMutation({
     mutationFn: async (input: MilestoneUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ milestone: Milestone }>(`/api/milestones/${id}`, data);
-      return res.milestone;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ milestone: Milestone }>(`/api/milestones/${id}`, data);
+        toast.success("Milestone updated", { id: toastId });
+        return res.milestone;
+      } catch (err) {
+        toast.error("Failed to update milestone", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedMilestone) => {
       const queryKey = getMilestoneQueryKey(updatedMilestone.projectId);
@@ -107,7 +120,6 @@ export function useUpdateMilestone() {
       if (context?.previousMilestones) {
         queryClient.setQueryData(getMilestoneQueryKey(context.projectId), context.previousMilestones);
       }
-      toast.error("Failed to update milestone");
     },
     onSettled: (data, error, updatedMilestone) => {
       queryClient.invalidateQueries({ queryKey: getMilestoneQueryKey(updatedMilestone.projectId) });
@@ -120,8 +132,15 @@ export function useDeleteMilestone() {
 
   return useMutation({
     mutationFn: async (milestoneId: string) => {
-      await api.delete(`/api/milestones/${milestoneId}`);
-      return milestoneId;
+      const toastId = toast.loading("Deleting milestone...");
+      try {
+        await api.delete(`/api/milestones/${milestoneId}`);
+        toast.success("Milestone deleted", { id: toastId });
+        return milestoneId;
+      } catch (err) {
+        toast.error("Failed to delete milestone", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (milestoneId) => {
       const allQueries = queryClient.getQueryCache().findAll({ queryKey: ["milestones"] });
@@ -144,7 +163,6 @@ export function useDeleteMilestone() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to delete milestone");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["milestones"] });

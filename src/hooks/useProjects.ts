@@ -80,8 +80,15 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: async (input: ProjectCreateInput) => {
-      const res = await api.post<{ project: Project }>("/api/projects", input);
-      return res.project;
+      const toastId = toast.loading("Creating project...");
+      try {
+        const res = await api.post<{ project: Project }>("/api/projects", input);
+        toast.success("Project created", { id: toastId });
+        return res.project;
+      } catch (err) {
+        toast.error("Failed to create project", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newProject) => {
       await queryClient.cancelQueries({ queryKey: getProjectQueryKey() });
@@ -118,7 +125,6 @@ export function useCreateProject() {
       if (context?.previousProjects) {
         queryClient.setQueryData(getProjectQueryKey(), context.previousProjects);
       }
-      toast.error("Failed to create project");
     },
     onSuccess: (data) => {
       queryClient.setQueryData<Project[]>(getProjectQueryKey(), (old) =>
@@ -136,9 +142,16 @@ export function useUpdateProject() {
 
   return useMutation({
     mutationFn: async (input: ProjectUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ project: Project }>(`/api/projects/${id}`, data);
-      return res.project;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ project: Project }>(`/api/projects/${id}`, data);
+        toast.success("Project updated", { id: toastId });
+        return res.project;
+      } catch (err) {
+        toast.error("Failed to update project", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedProject) => {
       await queryClient.cancelQueries({ queryKey: getProjectQueryKey() });
@@ -155,7 +168,6 @@ export function useUpdateProject() {
       if (context?.previousProjects) {
         queryClient.setQueryData(getProjectQueryKey(), context.previousProjects);
       }
-      toast.error("Failed to update project");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getProjectQueryKey() });
@@ -168,8 +180,15 @@ export function useDeleteProject() {
 
   return useMutation({
     mutationFn: async (projectId: string) => {
-      await api.delete(`/api/projects/${projectId}`);
-      return projectId;
+      const toastId = toast.loading("Deleting project...");
+      try {
+        await api.delete(`/api/projects/${projectId}`);
+        toast.success("Project deleted", { id: toastId });
+        return projectId;
+      } catch (err) {
+        toast.error("Failed to delete project", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (projectId) => {
       const previousProjects = queryClient.getQueryData<Project[]>(getProjectQueryKey());
@@ -184,7 +203,6 @@ export function useDeleteProject() {
       if (context?.previousProjects) {
         queryClient.setQueryData(getProjectQueryKey(), context.previousProjects);
       }
-      toast.error("Failed to delete project");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getProjectQueryKey() });
@@ -197,8 +215,15 @@ export function useCreateMilestone() {
 
   return useMutation({
     mutationFn: async (input: MilestoneCreateInput) => {
-      const res = await api.post<{ milestone: Milestone }>(`/api/projects/${input.projectId}/milestones`, input);
-      return res.milestone;
+      const toastId = toast.loading("Creating milestone...");
+      try {
+        const res = await api.post<{ milestone: Milestone }>(`/api/projects/${input.projectId}/milestones`, input);
+        toast.success("Milestone created", { id: toastId });
+        return res.milestone;
+      } catch (err) {
+        toast.error("Failed to create milestone", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newMilestone) => {
       const queryKey = getMilestoneQueryKey(newMilestone.projectId);
@@ -228,7 +253,6 @@ export function useCreateMilestone() {
       if (context?.previousMilestones) {
         queryClient.setQueryData(getMilestoneQueryKey(context.projectId), context.previousMilestones);
       }
-      toast.error("Failed to create milestone");
     },
     onSuccess: (data, newMilestone) => {
       queryClient.setQueryData<Milestone[]>(getMilestoneQueryKey(newMilestone.projectId), (old) =>
@@ -246,9 +270,16 @@ export function useUpdateMilestone() {
 
   return useMutation({
     mutationFn: async (input: MilestoneUpdateInput) => {
-      const { id, projectId, ...data } = input;
-      const res = await api.patch<{ milestone: Milestone }>(`/api/milestones/${id}`, data);
-      return res.milestone;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, projectId, ...data } = input;
+        const res = await api.patch<{ milestone: Milestone }>(`/api/milestones/${id}`, data);
+        toast.success("Milestone updated", { id: toastId });
+        return res.milestone;
+      } catch (err) {
+        toast.error("Failed to update milestone", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedMilestone) => {
       const queryKey = getMilestoneQueryKey(updatedMilestone.projectId);
@@ -266,7 +297,6 @@ export function useUpdateMilestone() {
       if (context?.previousMilestones) {
         queryClient.setQueryData(getMilestoneQueryKey(context.projectId), context.previousMilestones);
       }
-      toast.error("Failed to update milestone");
     },
     onSettled: (data, error, updatedMilestone) => {
       queryClient.invalidateQueries({ queryKey: getMilestoneQueryKey(updatedMilestone.projectId) });
@@ -279,8 +309,15 @@ export function useDeleteMilestone() {
 
   return useMutation({
     mutationFn: async (milestoneId: string) => {
-      await api.delete(`/api/milestones/${milestoneId}`);
-      return milestoneId;
+      const toastId = toast.loading("Deleting milestone...");
+      try {
+        await api.delete(`/api/milestones/${milestoneId}`);
+        toast.success("Milestone deleted", { id: toastId });
+        return milestoneId;
+      } catch (err) {
+        toast.error("Failed to delete milestone", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (milestoneId) => {
       const allQueries = queryClient.getQueryCache().findAll({ queryKey: ["milestones"] });
@@ -303,7 +340,6 @@ export function useDeleteMilestone() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to delete milestone");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["milestones"] });

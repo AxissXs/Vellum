@@ -34,8 +34,15 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: async (input: UserCreateInput) => {
-      const res = await api.post<{ user: User }>("/api/users", input);
-      return res.user;
+      const toastId = toast.loading("Creating user...");
+      try {
+        const res = await api.post<{ user: User }>("/api/users", input);
+        toast.success("User created", { id: toastId });
+        return res.user;
+      } catch (err) {
+        toast.error("Failed to create user", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newUser) => {
       await queryClient.cancelQueries({ queryKey: getUserQueryKey() });
@@ -62,7 +69,6 @@ export function useCreateUser() {
       if (context?.previousUsers) {
         queryClient.setQueryData(getUserQueryKey(), context.previousUsers);
       }
-      toast.error("Failed to create user");
     },
     onSuccess: (data) => {
       queryClient.setQueryData<User[]>(getUserQueryKey(), (old) =>
@@ -80,9 +86,16 @@ export function useUpdateUser() {
 
   return useMutation({
     mutationFn: async (input: UserUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ user: User }>(`/api/users/${id}`, data);
-      return res.user;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ user: User }>(`/api/users/${id}`, data);
+        toast.success("User updated", { id: toastId });
+        return res.user;
+      } catch (err) {
+        toast.error("Failed to update user", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedUser) => {
       await queryClient.cancelQueries({ queryKey: getUserQueryKey() });
@@ -99,7 +112,6 @@ export function useUpdateUser() {
       if (context?.previousUsers) {
         queryClient.setQueryData(getUserQueryKey(), context.previousUsers);
       }
-      toast.error("Failed to update user");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getUserQueryKey() });
@@ -112,8 +124,15 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      await api.delete(`/api/users/${userId}`);
-      return userId;
+      const toastId = toast.loading("Deleting user...");
+      try {
+        await api.delete(`/api/users/${userId}`);
+        toast.success("User deleted", { id: toastId });
+        return userId;
+      } catch (err) {
+        toast.error("Failed to delete user", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (userId) => {
       const previousUsers = queryClient.getQueryData<User[]>(getUserQueryKey());
@@ -128,7 +147,6 @@ export function useDeleteUser() {
       if (context?.previousUsers) {
         queryClient.setQueryData(getUserQueryKey(), context.previousUsers);
       }
-      toast.error("Failed to delete user");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getUserQueryKey() });

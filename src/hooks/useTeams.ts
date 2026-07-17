@@ -66,8 +66,15 @@ export function useCreateTeam() {
 
   return useMutation({
     mutationFn: async (input: TeamCreateInput) => {
-      const res = await api.post<{ team: Team }>("/api/teams", input);
-      return res.team;
+      const toastId = toast.loading("Creating team...");
+      try {
+        const res = await api.post<{ team: Team }>("/api/teams", input);
+        toast.success("Team created", { id: toastId });
+        return res.team;
+      } catch (err) {
+        toast.error("Failed to create team", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newTeam) => {
       await queryClient.cancelQueries({ queryKey: getTeamQueryKey() });
@@ -94,7 +101,6 @@ export function useCreateTeam() {
       if (context?.previousTeams) {
         queryClient.setQueryData(getTeamQueryKey(), context.previousTeams);
       }
-      toast.error("Failed to create team");
     },
     onSuccess: (data) => {
       queryClient.setQueryData<Team[]>(getTeamQueryKey(), (old) =>
@@ -112,9 +118,16 @@ export function useUpdateTeam() {
 
   return useMutation({
     mutationFn: async (input: TeamUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ team: Team }>(`/api/teams/${id}`, data);
-      return res.team;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ team: Team }>(`/api/teams/${id}`, data);
+        toast.success("Team updated", { id: toastId });
+        return res.team;
+      } catch (err) {
+        toast.error("Failed to update team", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedTeam) => {
       await queryClient.cancelQueries({ queryKey: getTeamQueryKey() });
@@ -131,7 +144,6 @@ export function useUpdateTeam() {
       if (context?.previousTeams) {
         queryClient.setQueryData(getTeamQueryKey(), context.previousTeams);
       }
-      toast.error("Failed to update team");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getTeamQueryKey() });
@@ -144,8 +156,15 @@ export function useDeleteTeam() {
 
   return useMutation({
     mutationFn: async (teamId: string) => {
-      await api.delete(`/api/teams/${teamId}`);
-      return teamId;
+      const toastId = toast.loading("Deleting team...");
+      try {
+        await api.delete(`/api/teams/${teamId}`);
+        toast.success("Team deleted", { id: toastId });
+        return teamId;
+      } catch (err) {
+        toast.error("Failed to delete team", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (teamId) => {
       const previousTeams = queryClient.getQueryData<Team[]>(getTeamQueryKey());
@@ -160,7 +179,6 @@ export function useDeleteTeam() {
       if (context?.previousTeams) {
         queryClient.setQueryData(getTeamQueryKey(), context.previousTeams);
       }
-      toast.error("Failed to delete team");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getTeamQueryKey() });
@@ -173,8 +191,15 @@ export function useAddTeamMember() {
 
   return useMutation({
     mutationFn: async (input: TeamMemberCreateInput) => {
-      const res = await api.post<{ member: TeamMember }>("/api/teams/members", input);
-      return res.member;
+      const toastId = toast.loading("Adding member...");
+      try {
+        const res = await api.post<{ member: TeamMember }>("/api/teams/members", input);
+        toast.success("Member added", { id: toastId });
+        return res.member;
+      } catch (err) {
+        toast.error("Failed to add team member", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newMember) => {
       const queryKey = getTeamMemberQueryKey(newMember.teamId);
@@ -203,7 +228,6 @@ export function useAddTeamMember() {
       if (context?.previousMembers) {
         queryClient.setQueryData(getTeamMemberQueryKey(context.teamId), context.previousMembers);
       }
-      toast.error("Failed to add team member");
     },
     onSuccess: (data, newMember) => {
       queryClient.setQueryData<TeamMember[]>(getTeamMemberQueryKey(newMember.teamId), (old) =>
@@ -221,9 +245,16 @@ export function useUpdateTeamMember() {
 
   return useMutation({
     mutationFn: async (input: TeamMemberUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ member: TeamMember }>(`/api/teams/members/${id}`, data);
-      return res.member;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ member: TeamMember }>(`/api/teams/members/${id}`, data);
+        toast.success("Member updated", { id: toastId });
+        return res.member;
+      } catch (err) {
+        toast.error("Failed to update team member", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedMember) => {
       const queryKey = getTeamMemberQueryKey(updatedMember.teamId);
@@ -241,7 +272,6 @@ export function useUpdateTeamMember() {
       if (context?.previousMembers) {
         queryClient.setQueryData(getTeamMemberQueryKey(context.teamId), context.previousMembers);
       }
-      toast.error("Failed to update team member");
     },
     onSettled: (data, error, updatedMember) => {
       queryClient.invalidateQueries({ queryKey: getTeamMemberQueryKey(updatedMember.teamId) });
@@ -254,8 +284,15 @@ export function useRemoveTeamMember() {
 
   return useMutation({
     mutationFn: async (memberId: string) => {
-      await api.delete(`/api/teams/members/${memberId}`);
-      return memberId;
+      const toastId = toast.loading("Removing member...");
+      try {
+        await api.delete(`/api/teams/members/${memberId}`);
+        toast.success("Member removed", { id: toastId });
+        return memberId;
+      } catch (err) {
+        toast.error("Failed to remove team member", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (memberId) => {
       const allQueries = queryClient.getQueryCache().findAll({ queryKey: ["team-members"] });
@@ -278,7 +315,6 @@ export function useRemoveTeamMember() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to remove team member");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["team-members"] });

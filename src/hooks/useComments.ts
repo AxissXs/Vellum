@@ -33,8 +33,15 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: async (input: CommentCreateInput) => {
-      const res = await api.post<{ comment: Comment }>("/api/comments", input);
-      return res.comment;
+      const toastId = toast.loading("Adding comment...");
+      try {
+        const res = await api.post<{ comment: Comment }>("/api/comments", input);
+        toast.success("Comment added", { id: toastId });
+        return res.comment;
+      } catch (err) {
+        toast.error("Failed to add comment", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (newComment) => {
       const queryKey = getCommentQueryKey(newComment.taskId);
@@ -63,7 +70,6 @@ export function useCreateComment() {
       if (context?.previousComments) {
         queryClient.setQueryData(getCommentQueryKey(context.taskId), context.previousComments);
       }
-      toast.error("Failed to add comment");
     },
     onSuccess: (data, newComment) => {
       queryClient.setQueryData<Comment[]>(getCommentQueryKey(newComment.taskId), (old) =>
@@ -81,9 +87,16 @@ export function useUpdateComment() {
 
   return useMutation({
     mutationFn: async (input: CommentUpdateInput) => {
-      const { id, ...data } = input;
-      const res = await api.patch<{ comment: Comment }>(`/api/comments/${id}`, data);
-      return res.comment;
+      const toastId = toast.loading("Saving changes...");
+      try {
+        const { id, ...data } = input;
+        const res = await api.patch<{ comment: Comment }>(`/api/comments/${id}`, data);
+        toast.success("Comment updated", { id: toastId });
+        return res.comment;
+      } catch (err) {
+        toast.error("Failed to update comment", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (updatedComment) => {
       const queryKey = getCommentQueryKey(updatedComment.taskId);
@@ -101,7 +114,6 @@ export function useUpdateComment() {
       if (context?.previousComments) {
         queryClient.setQueryData(getCommentQueryKey(context.taskId), context.previousComments);
       }
-      toast.error("Failed to update comment");
     },
     onSettled: (data, error, updatedComment) => {
       queryClient.invalidateQueries({ queryKey: getCommentQueryKey(updatedComment.taskId) });
@@ -114,8 +126,15 @@ export function useDeleteComment() {
 
   return useMutation({
     mutationFn: async (commentId: string) => {
-      await api.delete(`/api/comments/${commentId}`);
-      return commentId;
+      const toastId = toast.loading("Deleting comment...");
+      try {
+        await api.delete(`/api/comments/${commentId}`);
+        toast.success("Comment deleted", { id: toastId });
+        return commentId;
+      } catch (err) {
+        toast.error("Failed to delete comment", { id: toastId });
+        throw err;
+      }
     },
     onMutate: async (commentId) => {
       const allQueries = queryClient.getQueryCache().findAll({ queryKey: ["comments"] });
@@ -138,7 +157,6 @@ export function useDeleteComment() {
           queryClient.setQueryData(key, data);
         }
       }
-      toast.error("Failed to delete comment");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["comments"] });
