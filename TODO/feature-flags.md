@@ -203,6 +203,7 @@ Add a new tab or section in the superadmin dashboard:
 
 ## Migration Strategy
 
+### Phase 1 — Core infrastructure
 1. Create `feature_flags` table + migration
 2. Seed default flags
 3. Build `src/lib/feature-flags.ts` with caching
@@ -210,21 +211,41 @@ Add a new tab or section in the superadmin dashboard:
 5. Build superadmin API route
 6. Build FeatureFlagsPanel UI
 7. Wire into SuperAdminClient tabs
-8. Update existing features to check flags (one by one)
-9. Update AGENTS.md with convention
-10. Update STRUCTURE.md, TODO.md, DONE.md
-11. Lint, typecheck, build
+8. Update STRUCTURE.md
+9. Lint, typecheck, build → **ship Phase 1**
+
+### Phase 2 — Migrate existing features (one by one)
+10. Telegram notifications → `if (await isFeatureEnabled("notifications.telegram"))`
+11. Push notifications → `if (await isFeatureEnabled("notifications.push"))`
+12. Activity snapshots → `if (await isFeatureEnabled("tracking.activitySnapshots"))`
+13. Audit log snapshots → `if (await isFeatureEnabled("audit.enabled"))`
+14. Last seen tracking → `if (await isFeatureEnabled("tracking.lastSeen"))` (new feature, build alongside)
+
+### Phase 3 — Docs & conventions
+15. Update AGENTS.md: "new optional features must include a feature flag"
+16. Update TODO.md → DONE.md
+17. Final lint, typecheck, build
 
 ## Acceptance Criteria
 
+### Phase 1 (core)
 - [ ] `feature_flags` table exists with seeded flags
 - [ ] `isFeatureEnabled(key)` works with 60s in-memory cache
 - [ ] `GET /api/feature-flags` returns enabled flags (no auth)
 - [ ] `GET/PUT /api/super-admin/feature-flags` works (superadmin only)
 - [ ] Superadmin UI shows toggles grouped by category
-- [ ] Disabling a flag causes all related logic to be skipped
-- [ ] Enabling a flag re-enables the feature within 60s
 - [ ] Cache is invalidated on flag update
-- [ ] AGENTS.md documents the convention for new features
-- [ ] All existing optional features are gated
 - [ ] `bun run lint`, `bun run typecheck`, `bun run build` all pass
+
+### Phase 2 (feature migration)
+- [ ] Telegram checks `notifications.telegram` flag
+- [ ] Push checks `notifications.push` flag
+- [ ] Activity snapshots check `tracking.activitySnapshots` flag
+- [ ] Audit snapshots check `audit.enabled` flag
+- [ ] Each feature is fully skipped when its flag is off
+- [ ] Each feature works normally when its flag is on
+
+### Phase 3 (docs)
+- [ ] AGENTS.md documents the feature flag convention
+- [ ] TODO.md moved to DONE.md
+- [ ] STRUCTURE.md updated

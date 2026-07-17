@@ -163,18 +163,28 @@
 - [ ] **Feature flags system** - Superadmin-controlled enable/disable for platform features
   > Full plan: [`TODO/feature-flags.md`](TODO/feature-flags.md)
 
-  Add a `feature_flags` table and a superadmin UI to toggle features on/off. Every optional feature checks its flag before running. This reduces DB load, keeps the platform simple, and lets admins tailor Vellum to their needs.
+  Add a `feature_flags` table and a superadmin UI to toggle features on/off. Every optional feature checks its flag before running. This reduces DB load, keeps the platform simple, and lets admins tailor Vellum to their needs. Work in 3 phases:
 
+  **Phase 1 — Core infrastructure:**
   - DB: `feature_flags` table (key, enabled, label, description, category, createdAt, updatedAt)
-  - Seed default flags for all toggleable features (last seen tracking, Telegram, push notifications, email notifications, activity snapshots, audit logging, etc.)
-  - API: `GET /api/feature-flags` (public — returns enabled flags for client gating)
-  - API: `GET/PUT /api/super-admin/feature-flags` (superadmin — list and update flags)
-  - Server helper: `isFeatureEnabled(key)` — checks cache, returns boolean (used in API routes, middleware, server components)
-  - Caching: cache flags in memory with 60s TTL (or use `unstable_cache`), invalidate on update
-  - UI: superadmin dashboard section with toggle switches per feature, grouped by category
-  - All existing optional features updated to check their flag (Telegram, push, email, last seen, activity snapshots, etc.)
-  - Document in AGENTS.md: agents must add a feature flag for any new optional feature
-  - Acceptance criteria: Superadmin can toggle features on/off, changes take effect within 60s, disabled features skip all related logic, no performance regression
+  - Server helper: `isFeatureEnabled(key)` — 60s in-memory cache, invalidate on update
+  - API: `GET /api/feature-flags` (public — enabled flags for client gating)
+  - API: `GET/PUT /api/super-admin/feature-flags` (superadmin — list and update)
+  - UI: superadmin dashboard toggle panel, grouped by category
+  - Seed default flags (push, telegram, email, last seen, snapshots, audit, realtime)
+
+  **Phase 2 — Migrate existing features** (one by one):
+  - Telegram notifications → check `notifications.telegram`
+  - Push notifications → check `notifications.push`
+  - Activity snapshots → check `tracking.activitySnapshots`
+  - Audit log snapshots → check `audit.enabled`
+  - Last seen tracking → check `tracking.lastSeen` (new feature, depends on this)
+
+  **Phase 3 — Docs & conventions:**
+  - AGENTS.md: new optional features must include a feature flag
+  - STRUCTURE.md updates
+
+  - Acceptance criteria: Phase 1 shipped, superadmin can toggle features, cache works, disabled features skip logic, no perf regression
 
 - [ ] **Quick task assignment** - Rapidly assign/unassign users to tasks
   - "Assign" button on task cards (kanban hover) and in task detail modal
