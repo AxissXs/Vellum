@@ -15,11 +15,17 @@ High-signal notes you are likely to miss. For routine facts (file lists, schema,
 
 ### Before Any Work
 
-1. `git checkout master && git pull origin master`
+1. `git checkout dev && git pull origin dev`
 2. Read `TODO.md` for available tasks (completed tasks are in `DONE.md`)
 3. **Check for overlaps** — scan `TODO.md`, `DONE.md`, and the codebase before picking a task, in case it's already partially/fully addressed. (Same check applies when you finish a task — see [Documentation Update Rule](#documentation-update-rule).)
-4. Create a feature branch from `master` (never work directly on `master`)
-5. When done, sync `dev` with `master` (`git checkout dev && git pull origin dev && git merge master`), then merge your feature branch into `dev`
+4. Create a feature branch from `dev` (never work directly on `dev` or `master`)
+5. Before merging into `dev`, **bump the version** in `package.json` following semver:
+   - `feat/` branches → bump **minor** (e.g. `1.2.0` → `1.3.0`)
+   - `fix/`, `hotfix/` branches → bump **patch** (e.g. `1.2.3` → `1.2.4`)
+   - Breaking changes → bump **major** (e.g. `1.2.0` → `2.0.0`)
+   - `chore/`, `refactor/`, `docs/` → no bump needed (unless they contain notable changes)
+   - Commit the version bump: `chore(release): bump version to X.Y.Z`
+6. Merge your feature branch into `dev` (`git checkout dev && git merge <branch>`)
 
 **Rules:**
 

@@ -1,5 +1,8 @@
 # Telegram Bot Integration — Full Plan
 
+> **Priority:** High
+> **Status:** Done
+
 ## Overview
 
 Platform-wide Telegram bot for notifications. Superadmins configure a single bot token. Users bind their Telegram account via a pairing code. Notifications are sent per user preferences (push / email / in-app / telegram). The bot also posts typed notifications to a configured Telegram supergroup (with topics) and can broadcast to channels.

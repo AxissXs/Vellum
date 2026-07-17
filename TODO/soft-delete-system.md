@@ -1,7 +1,7 @@
 # Soft Delete System
 
 > **Priority:** High
-> **Status:** Pending
+> **Status:** Done
 > **Estimated complexity:** Large
 > **Depends on:** Nothing
 > **Blocks:** Audit Log — Enhanced Logs & Detail Modals

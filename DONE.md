@@ -6,7 +6,7 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Core Platform
 
-### Optimistic UI Updates
+### Optimistic UI Updates (July 2026)
 > Full optimistic-update pattern across all mutations using React Query.
 
 - **Task CRUD** — create, update, delete, reorder
@@ -18,7 +18,7 @@ This document tracks features and tasks that have been fully implemented, tested
 - **Team members** — invite, remove, role change
 - Pattern: `onMutate` snapshot → apply change → `onError` rollback + toast → `onSuccess` sync → `onSettled` invalidate
 
-### Real-Time Collaboration
+### Real-Time Collaboration (July 2026)
 > Live task updates across all connected clients via Pusher.
 
 - Kanban board updates instantly when tasks change
@@ -27,7 +27,7 @@ This document tracks features and tasks that have been fully implemented, tested
 - Toast notifications for updates from other users (skips self)
 - Architecture: Pusher server channels + client singleton with ref counting
 
-### Drag-and-Drop Kanban
+### Drag-and-Drop Kanban (July 2026)
 > Full task reordering with @dnd-kit.
 
 - Drag tasks between columns (status changes)
@@ -39,7 +39,7 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Kanban & Task Management
 
-### Kanban Board as Dedicated Page
+### Kanban Board as Dedicated Page (July 2026)
 > Full-screen Kanban view accessible via dedicated route.
 
 - Route: `/dashboard/kanban`
@@ -48,14 +48,14 @@ This document tracks features and tasks that have been fully implemented, tested
 - Responsive layout
 - Drag-and-drop with full space
 
-### Kanban Add Task Button UX Fix
+### Kanban Add Task Button UX Fix (July 2026)
 > Fixed broken Add task button and improved placement.
 
 - Root cause identified and fixed: Add task button now successfully creates tasks
 - Added Project dropdown field to new-task form in both Kanban views
 - Moved Add task button from bottom of column to top (next to column header)
 
-### Task Comments
+### Task Comments (July 2026)
 > Full comment system on tasks with optimistic updates.
 
 - API: `GET/POST /api/comments`, `PATCH/DELETE /api/comments/[id]`
@@ -68,7 +68,7 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Notifications
 
-### Push Notifications
+### Push Notifications (July 2026)
 > Browser push notifications via Web Push (VAPID).
 
 - Service worker registration at `/sw.js`
@@ -137,7 +137,7 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Admin & Super Admin
 
-### Super Admin Dashboard
+### Super Admin Dashboard (July 2026)
 > Comprehensive management and monitoring for super admins.
 
 **Prerequisites**
@@ -190,7 +190,7 @@ This document tracks features and tasks that have been fully implemented, tested
 - Matrix table (roles × permissions) showing what each role can do
 - Toggle highlighting per role column
 
-### Bug Fix: Admin User Creation
+### Bug Fix: Admin User Creation (July 2026)
 > Fixed missing UI update and loading state.
 
 - User list now refreshes automatically after creation
@@ -201,7 +201,7 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Documentation
 
-### README.md Storytelling
+### README.md Storytelling (July 2026)
 > Added project context and storytelling sections.
 
 - "Why Vellum?" — explains the problem it solves
@@ -209,7 +209,7 @@ This document tracks features and tasks that have been fully implemented, tested
 - "Name & Meaning" — historical vellum material and project connection
 - "Roadmap" — links to TODO.md for planned features
 
-### CONTRIBUTIONS.md Rewrite
+### CONTRIBUTIONS.md Rewrite (July 2026)
 > Rewritten for human contributors.
 
 - Reduced from 250 to ~100 lines
