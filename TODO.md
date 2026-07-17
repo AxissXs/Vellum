@@ -195,6 +195,22 @@
   - Responsive: full-screen on mobile, centered modal on desktop
   - Acceptance criteria: Modal feels polished, all links work, keyboard shortcuts work, responsive layout
 
+- [ ] **API tokens** - Per-user API key authentication for external integrations
+  > Full plan: [`TODO/api-tokens.md`](TODO/api-tokens.md)
+
+  Allow all authenticated users to create API tokens that grant the same permissions as their account. Tokens enable integrations with external tools (scripts, CI/CD, bots, third-party apps). Provide API documentation (OpenAPI/Swagger) and exportable Postman collections.
+
+  - DB: `api_tokens` table (userId, name, token hash, prefix, scopes, lastUsedAt, expiresAt, createdAt)
+  - Token format: `vellum_<prefix><random>` — prefix is first 8 chars for identification, full token shown only once on creation
+  - Auth middleware: check `Authorization: Bearer vellum_...` header, load user + permissions from token
+  - API: `GET/POST /api/tokens` — list user's tokens, create new token (returns full token once)
+  - API: `DELETE /api/tokens/[id]` — revoke token
+  - UI: "API Tokens" section in user settings — create, name, revoke, see last used
+  - OpenAPI spec auto-generated from route definitions (Swagger UI at `/api/docs`)
+  - Postman collection export endpoint
+  - Documentation page explaining auth flow, rate limits, example requests
+  - Acceptance criteria: Users can create/revoke tokens, tokens inherit user permissions, Swagger UI works, Postman export available
+
 ## Priority: Low
 
 - [ ] **Project notes** - Rich text notes per project
