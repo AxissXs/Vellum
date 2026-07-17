@@ -121,14 +121,6 @@
   - Real-time reply updates via Pusher
   - Acceptance criteria: Users can reply to any comment, replies are visually nested, parent comment author gets notified, real-time works
 
-- [ ] **Superadmin user detail modal** - Rich user detail view with session history
-  - Click any user row in superadmin users table to open a detail modal
-  - Modal shows: full profile (name, email, role, status, avatar), created at, last login, last IP
-  - Login sessions list: IP, user agent (parsed: browser, OS, device), success/failure, timestamp
-  - Session list paginated, sortable by date
-  - Inline actions: change role, change status, ban/unban, impersonate
-  - Acceptance criteria: Superadmin can click a user to see full details and session history in a modal
-
 - [ ] **User impersonation** - Superadmin can impersonate any user
   - "Impersonate" button in user detail modal and inline in users table
   - `POST /api/super-admin/impersonate` — creates a new session as the target user, sets a different cookie

@@ -76,6 +76,7 @@ src/
 │   │   │   ├── SuperAdminSessionsPanel.tsx   # Active sessions table
 │   │   │   ├── SuperAdminAuditPanel.tsx      # Filterable audit log table
 │   │   │   ├── AuditLogDetailModal.tsx       # Rich detail modal for audit log entries
+│   │   │   ├── UserDetailModal.tsx           # User detail modal with sessions and activity
 │   │   │   ├── SuperAdminTrashPanel.tsx      # Trash bin for soft-deleted entities
 │   │   │   ├── SuperAdminHealthPanel.tsx     # System health metrics
 │   │   │   ├── SuperAdminRolesPanel.tsx      # Role / permission matrix
@@ -145,7 +146,7 @@ src/
 │       │   └── webhook/route.ts       # POST - Receive Telegram Bot API updates
 │       └── super-admin/
 │           ├── users/route.ts      # GET - List users with last login / IP
-│           ├── users/[id]/route.ts # PATCH - Update user role / status
+│           ├── users/[id]/route.ts # GET/PATCH - User detail + update
 │           ├── activity/route.ts   # GET - Activity feed + 24h stats
 │           ├── sessions/route.ts   # GET - Active sessions
 │           ├── sessions/[id]/route.ts  # DELETE - Revoke session
@@ -353,6 +354,17 @@ src/
 - Entity card: current state (if exists) with deep links
 - Snapshot diff view: before/after for updates, before for deletes, after for creates
 - Related timeline: all audit logs for the same entity
+
+### `src/app/dashboard/super-admin/UserDetailModal.tsx`
+
+**Purpose**: Rich user detail modal with session history and activity timeline
+**Exports**: `UserDetailModal({ userId, onClose })` - Client component
+
+- Profile card: avatar (or initials), name, email, role/status badges, join date, last login, last IP
+- Quick actions: inline role and status change dropdowns
+- Login sessions table: IP, parsed user agent (browser, OS, device), success/failure, time ago
+- Recent activity timeline: action, entity type, severity dot, details, IP
+- Data fetched from `GET /api/super-admin/users/[id]`
 
 ### `src/app/dashboard/super-admin/SuperAdminTrashPanel.tsx`
 
@@ -703,10 +715,11 @@ src/
 
 #### `src/app/api/super-admin/users/[id]/route.ts`
 
-**Methods**: `PATCH`
-**Purpose**: Update user role/status (superadmin-only)
+**Methods**: `GET`, `PATCH`
+**Purpose**: User detail and update (superadmin-only)
 **Functions**:
 
+- `GET(req, { params })` - Returns user profile, login sessions (last 50), and recent activity (last 30)
 - `PATCH(req, { params })` - Updates name, email, role, status, or password
 - Self-protection: cannot change own role/status
 

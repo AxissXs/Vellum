@@ -197,6 +197,16 @@ This document tracks features and tasks that have been fully implemented, tested
 - Loading spinner shows during creation request
 - Optimistic update pattern applied
 
+### Superadmin User Detail Modal (July 2026)
+> Rich user detail view with session history and activity timeline.
+
+- Click any user row in superadmin users table to open detail modal
+- Profile card with avatar, name, email, role/status badges, join date, last login, last IP
+- Inline role and status change actions within the modal
+- Login sessions table: IP, parsed user agent (browser, OS, device), success/failure, time ago
+- Recent activity timeline: action type, entity, severity dot, details, IP
+- API: `GET /api/super-admin/users/[id]` returns user profile, sessions, and activity
+
 ---
 
 ## Documentation
