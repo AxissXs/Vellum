@@ -102,6 +102,15 @@
   - `n` = new task, `/` = search, `?` = help
   - Kanban navigation (arrows, enter to edit)
 
+- [ ] **Enhanced toast notifications** - Informative, animated toasts for CRUD operations and status feedback
+  - Show loading/progress toasts for ongoing operations (e.g. "Creating task...", "Deleting project...")
+  - Success toasts with confirmation (e.g. "Task created", "Project deleted")
+  - Error toasts with failure details (e.g. "Failed to delete task — try again")
+  - Animated entrance/exit for smooth UX
+  - Apply to: task CRUD, project CRUD, team CRUD, user management, comments, milestones, assignments, status changes, notification preference updates, superadmin operations
+  - Replace existing silent optimistic updates with visible feedback (keep optimistic UI, add toast layer on top)
+  - Acceptance criteria: Every mutation shows a toast with appropriate status (loading → success/error), animations feel smooth, no toast spam on rapid actions
+
 ## Priority: Low
 
 - [ ] **Project notes** - Rich text notes per project

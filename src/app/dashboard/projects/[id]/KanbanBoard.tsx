@@ -487,6 +487,15 @@ export default function KanbanBoard({
           currentUserId={currentUserId}
           onClose={() => setSelectedTask(null)}
           onChange={() => {}}
+          onDelete={(taskId) => {
+            setColumns((prev) =>
+              prev.map((col) => ({
+                ...col,
+                tasks: col.tasks.filter((t) => t.id !== taskId),
+              }))
+            );
+            setSelectedTask(null);
+          }}
         />
       )}
     </DndContext>

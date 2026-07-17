@@ -56,12 +56,14 @@ export default function TaskDetailModal({
   currentUserId,
   onClose,
   onChange,
+  onDelete,
 }: {
   task: Task;
   users: User[];
   currentUserId: string;
   onClose: () => void;
   onChange: () => void;
+  onDelete?: (taskId: string) => void;
 }) {
   const [task, setTask] = useState(initialTask);
   const [editing, setEditing] = useState(false);
@@ -125,6 +127,7 @@ export default function TaskDetailModal({
     setDeleting(true);
     const res = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
     if (res.ok) {
+      onDelete?.(task.id);
       onChange();
       onClose();
     }

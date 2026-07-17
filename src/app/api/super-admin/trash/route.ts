@@ -11,7 +11,7 @@ import {
   teamMembers,
   users,
 } from "@/db/schema";
-import { eq, isNotNull, sql, ilike, gte, lte, and } from "drizzle-orm";
+import { eq, isNotNull, sql, ilike, gte, lte, and, inArray } from "drizzle-orm";
 
 const entityConfig: Record<
   string,
@@ -232,7 +232,7 @@ export async function GET(req: NextRequest) {
     const userRows = await db
       .select({ id: users.id, name: users.name, email: users.email })
       .from(users)
-      .where(sql`${users.id} = ANY(${deletedByIds})`);
+      .where(inArray(users.id, deletedByIds));
     for (const u of userRows) {
       deletedByMap.set(u.id, u);
     }
