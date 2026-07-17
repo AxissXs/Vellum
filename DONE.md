@@ -246,6 +246,15 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Super Admin Improvements
 
+### Enhanced Toast Notifications (July 2026)
+> Loading → success/error toasts for all CRUD mutations.
+
+- Added `toast.loading()` in every `mutationFn` before the API call
+- Loading toast transitions to `toast.success()` on completion or `toast.error()` on failure
+- Applied to all 25 mutations across: `useTasks`, `useProjects`, `useTeams`, `useComments`, `useUsers`, `useMilestones`
+- Optimistic updates and rollback logic preserved in `onMutate`/`onError`
+- Sonner handles animated entrance/exit automatically
+
 ### Application Versioning (July 2026)
 > Semantic versioning with UI display.
 
