@@ -278,6 +278,7 @@ export default function SuperAdminUsersPanel() {
                         <select
                           value={u.role}
                           onChange={(e) => updateUser.mutate({ id: u.id, patch: { role: e.target.value } })}
+                          onClick={(e) => e.stopPropagation()}
                           disabled={updateUser.isPending}
                           className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                           title="Change role"
@@ -291,6 +292,7 @@ export default function SuperAdminUsersPanel() {
                         <select
                           value={u.status}
                           onChange={(e) => updateUser.mutate({ id: u.id, patch: { status: e.target.value } })}
+                          onClick={(e) => e.stopPropagation()}
                           disabled={updateUser.isPending}
                           className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                           title="Change status"
