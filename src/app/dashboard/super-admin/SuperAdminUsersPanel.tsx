@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck, Globe } from "lucide-react";
 import { clsx } from "clsx";
+import UserDetailModal from "./UserDetailModal";
 
 export type SuperAdminUser = {
   id: string;
@@ -53,6 +54,7 @@ export default function SuperAdminUsersPanel() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"name" | "createdAt" | "lastLoginAt">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -234,7 +236,7 @@ export default function SuperAdminUsersPanel() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-white/[0.02] transition">
+                  <tr key={u.id} className="hover:bg-white/[0.02] transition cursor-pointer" onClick={() => setSelectedUserId(u.id)}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 flex-shrink-0">
@@ -317,6 +319,10 @@ export default function SuperAdminUsersPanel() {
           </div>
         )}
       </div>
+
+      {selectedUserId && (
+        <UserDetailModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+      )}
     </div>
   );
 }

@@ -1,10 +1,83 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, requireRole } from "@/lib/auth";
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, userSessions, activityLogs } from "@/db/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const currentUser = await getSession();
+  try {
+    requireRole(currentUser, ["superadmin"]);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      status: users.status,
+      avatarUrl: users.avatarUrl,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    })
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  const sessions = await db
+    .select({
+      id: userSessions.id,
+      ipAddress: userSessions.ipAddress,
+      userAgent: userSessions.userAgent,
+      success: userSessions.success,
+      failedReason: userSessions.failedReason,
+      createdAt: userSessions.createdAt,
+    })
+    .from(userSessions)
+    .where(eq(userSessions.userId, id))
+    .orderBy(desc(userSessions.createdAt))
+    .limit(50);
+
+  const recentActivity = await db
+    .select({
+      id: activityLogs.id,
+      action: activityLogs.action,
+      entityType: activityLogs.entityType,
+      entityId: activityLogs.entityId,
+      details: activityLogs.details,
+      ipAddress: activityLogs.ipAddress,
+      tag: activityLogs.tag,
+      severity: activityLogs.severity,
+      createdAt: activityLogs.createdAt,
+    })
+    .from(activityLogs)
+    .where(eq(activityLogs.userId, id))
+    .orderBy(desc(activityLogs.createdAt))
+    .limit(30);
+
+  const lastLogin = sessions.find((s) => s.success);
+
+  return NextResponse.json({
+    user: {
+      ...user,
+      lastLoginAt: lastLogin?.createdAt ?? null,
+      lastIp: lastLogin?.ipAddress ?? null,
+    },
+    sessions,
+    recentActivity,
+  });
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const currentUser = await getSession();
