@@ -133,6 +133,8 @@ This document tracks features and tasks that have been fully implemented, tested
 - API routes: `/api/telegram/webhook`, `/api/telegram/config`, `/api/telegram/pairing-code`, `/api/telegram/unlink`, `/api/telegram/status`
 - Superadmin API routes: `/api/super-admin/telegram/settings`, `/api/super-admin/telegram/test`, `/api/super-admin/telegram/stats`, `/api/super-admin/telegram/topics`
 - Components: `SuperAdminTelegramPanel.tsx`, `useTelegram.ts` hook
+- **Bug fix:** Webhook handler no longer auto-generates a new secret when the DB row is missing — prevents permanent 401 loop after DB resets. Split `getWebhookSecretToken()` into a setup variant (generates if absent) and `readWebhookSecretToken()` (read-only, returns null if absent).
+- **Topic binding via bot command:** Superadmin can generate a one-time code per event type; anyone sends `/bindtopic <code>` inside a forum topic to bind it. Uses `telegram_topic_codes` table (code, eventType, used, expiresAt). Code expires in 10 minutes. UI button "Bind existing topic" next to each topic input in superadmin panel.
 ---
 
 ## Admin & Super Admin

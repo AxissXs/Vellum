@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare, Plus } from "lucide-react";
+import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare, Plus, Unplug } from "lucide-react";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -107,6 +107,72 @@ function TopicCreator({
         </button>
       </div>
     </div>
+  );
+}
+
+function TopicBinder({ eventType }: { eventType: string }) {
+  const [code, setCode] = useState<string | null>(null);
+
+  const generateCode = useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{ code: string; eventType: string }>(
+        "/api/telegram/topic-code",
+        { eventType }
+      );
+      return res;
+    },
+    onSuccess: (data) => {
+      setCode(data.code);
+    },
+    onError: () => {
+      toast.error("Failed to generate binding code");
+    },
+  });
+
+  if (code) {
+    return (
+      <div className="mt-2 bg-slate-900 border border-white/10 rounded-lg p-3 space-y-1.5">
+        <p className="text-xs text-slate-400">
+          Send this command inside the target forum topic:
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="text-sm text-emerald-400 font-mono bg-slate-800 px-2 py-1 rounded">
+            /bindtopic {code}
+          </code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`/bindtopic ${code}`);
+              toast.success("Copied");
+            }}
+            className="text-slate-400 hover:text-white transition"
+          >
+            <Copy size={14} />
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">Expires in 10 minutes</p>
+        <button
+          onClick={() => setCode(null)}
+          className="text-xs text-slate-400 hover:text-white transition"
+        >
+          Dismiss
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => generateCode.mutate()}
+      disabled={generateCode.isPending}
+      className="text-xs text-slate-400 hover:text-sky-400 transition flex items-center gap-1"
+    >
+      {generateCode.isPending ? (
+        <Loader2 size={12} className="animate-spin" />
+      ) : (
+        <Unplug size={12} />
+      )}
+      Bind existing topic
+    </button>
   );
 }
 
@@ -296,6 +362,7 @@ function TelegramConfigForm({
                     setTopics((prev) => ({ ...prev, [ev]: id }))
                   }
                 />
+                <TopicBinder eventType={ev} />
               </div>
             </div>
           ))}

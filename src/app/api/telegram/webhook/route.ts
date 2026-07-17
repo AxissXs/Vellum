@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { telegramPairingCodes, users } from "@/db/schema";
+import { telegramPairingCodes, telegramTopicCodes, users } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import {
   getBotToken,
-  getWebhookSecretToken,
+  readWebhookSecretToken,
   sendTelegramMessage,
+  setPlatformSetting,
 } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +15,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bot not configured" }, { status: 400 });
   }
 
-  const secretToken = await getWebhookSecretToken();
+  const secretToken = await readWebhookSecretToken();
+  if (!secretToken) {
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+  }
   const providedSecret = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
   if (providedSecret !== secretToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -72,6 +76,48 @@ export async function POST(req: NextRequest) {
     await sendTelegramMessage(
       chatId,
       "Your Telegram has been linked to Vellum. You will now receive notifications here based on your preferences."
+    );
+
+    return NextResponse.json({ ok: true });
+  }
+
+  // Handle /bindtopic <code>
+  if (text.startsWith("/bindtopic ")) {
+    const code = text.slice(11).trim().toUpperCase();
+    const threadId = message.message_thread_id;
+
+    if (!threadId) {
+      await sendTelegramMessage(chatId, "This command must be sent inside a forum topic.");
+      return NextResponse.json({ ok: true });
+    }
+
+    const [topicCode] = await db
+      .select()
+      .from(telegramTopicCodes)
+      .where(
+        and(
+          eq(telegramTopicCodes.code, code),
+          eq(telegramTopicCodes.used, false),
+          gt(telegramTopicCodes.expiresAt, new Date())
+        )
+      )
+      .limit(1);
+
+    if (!topicCode) {
+      await sendTelegramMessage(chatId, "Invalid or expired binding code. Generate a new one in the Vellum super admin panel.");
+      return NextResponse.json({ ok: true });
+    }
+
+    await setPlatformSetting(`telegram_topic_${topicCode.eventType}`, String(threadId));
+
+    await db
+      .update(telegramTopicCodes)
+      .set({ used: true })
+      .where(eq(telegramTopicCodes.id, topicCode.id));
+
+    await sendTelegramMessage(
+      chatId,
+      `This topic is now bound to <b>${topicCode.eventType}</b> notifications.`
     );
 
     return NextResponse.json({ ok: true });
