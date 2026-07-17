@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { compare } from "bcryptjs";
 
 const SESSION_COOKIE = "tf_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -88,6 +87,11 @@ export async function authenticateUser(
     .limit(1);
 
   if (!user) return null;
+
+  // Dynamic import keeps bcryptjs out of the login/page-data webpack graph
+  // (Deno Deploy has failed with "i[a] is not a function" when bcrypt was
+  // statically pulled into /login via getSession's auth module).
+  const { compare } = await import("bcryptjs");
   if (!(await compare(password, user.passwordHash))) return null;
 
   return {

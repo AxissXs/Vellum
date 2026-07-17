@@ -298,7 +298,12 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
 - [ ] **Task dependencies** - Blocking/blocked relationships
 - [ ] **Webhooks** - Outgoing webhooks for integrations
 - [ ] **Slack/Discord integration** - Notifications to channels
-- [ ] **Calendar view** - Tasks with due dates on calendar
+- [x] **Calendar view** - Tasks with due dates on calendar
+  - Team + personal month calendar (`/dashboard/calendar`)
+  - `schedule_events` with admin assign-for-others
+  - Malaysia federal/religious holidays overlay (2025–2027)
+  - Activity + leave/due-date conflict hints
+  - Sidebar mini team calendar
 - [ ] **Export/Import** - JSON/CSV backup and restore
 - [ ] **Multi-language (i18n)** - Translation system
 - [ ] **Public project views** - Shareable read-only links

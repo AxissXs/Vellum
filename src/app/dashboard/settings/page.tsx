@@ -19,6 +19,7 @@ const eventLabels: Record<string, string> = {
   status_changed: "Status Changed",
   new_comment: "New Comment",
   comment_mention: "Comment Mention",
+  schedule_assigned: "Schedule Assigned",
 };
 
 export default function SettingsPage() {

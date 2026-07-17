@@ -268,8 +268,8 @@ See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
 
 See `src/db/schema.ts` for:
 
-- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `activity_logs`, `notifications`, `push_subscriptions`, `notification_preferences`, `telegram_pairing_codes`, `platform_settings`
-- Enums: `user_role`, `task_status`, `task_priority`, `notification_event_type`
+- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `activity_logs`, `notifications`, `push_subscriptions`, `notification_preferences`, `telegram_pairing_codes`, `platform_settings`, `schedule_events`
+- Enums: `user_role`, `task_status`, `task_priority`, `notification_event_type`, `schedule_type`, `schedule_visibility`
 - Relations defined via Drizzle references
 
 ## API Routes Reference
@@ -319,6 +319,9 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/telegram/stats`       | GET                | Telegram usage stats           |
 | `/api/super-admin/telegram/test`        | POST               | Send Telegram test message     |
 | `/api/activity`                         | GET                | Activity logs                  |
+| `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, MY holidays) |
+| `/api/schedules`                        | POST               | Create schedule event          |
+| `/api/schedules/[id]`                   | PATCH, DELETE      | Update/delete schedule         |
 | `/api/stats`                            | GET                | Dashboard statistics           |
 | `/api/health`                           | GET                | Health check                   |
 

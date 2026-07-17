@@ -29,6 +29,9 @@ export type PermissionId =
   | "edit_sprints"
   | "delete_sprints"
   | "complete_sprint"
+  | "view_calendar"
+  | "create_own_schedule"
+  | "manage_schedules"
   | "view_audit_logs"
   | "export_audit_logs"
   | "view_sessions"
@@ -92,6 +95,9 @@ export const PERMISSIONS: Array<{
   { id: "edit_sprints", label: "Edit Sprints", category: "Sprints" },
   { id: "delete_sprints", label: "Delete Sprints", category: "Sprints" },
   { id: "complete_sprint", label: "Complete Sprint", category: "Sprints" },
+  { id: "view_calendar", label: "View Calendar", category: "Calendar" },
+  { id: "create_own_schedule", label: "Create Own Schedule", category: "Calendar" },
+  { id: "manage_schedules", label: "Manage Schedules for Others", category: "Calendar" },
   { id: "view_audit_logs", label: "View Audit Logs", category: "Super Admin" },
   { id: "export_audit_logs", label: "Export Audit Logs", category: "Super Admin" },
   { id: "view_sessions", label: "View Active Sessions", category: "Super Admin" },
@@ -124,6 +130,9 @@ const ADMIN_PERMISSIONS: PermissionId[] = [
   "edit_sprints",
   "delete_sprints",
   "complete_sprint",
+  "view_calendar",
+  "create_own_schedule",
+  "manage_schedules",
 ];
 
 const MEMBER_PERMISSIONS: PermissionId[] = [
@@ -136,6 +145,8 @@ const MEMBER_PERMISSIONS: PermissionId[] = [
   "delete_tasks",
   "assign_tasks",
   "view_sprints",
+  "view_calendar",
+  "create_own_schedule",
 ];
 
 export const ROLE_PERMISSIONS: Record<RoleId, PermissionId[]> = {

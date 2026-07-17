@@ -16,9 +16,14 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./drizzle/**/*"],
   },
-  // Keep Node-only packages out of Turbopack page-data bundles (Deno Deploy
-  // builds have hit "module factory is not available" during /_not-found).
-  serverExternalPackages: ["web-push", "pusher"],
+  // Keep Node-only packages out of page-data bundles (Deno Deploy builds have
+  // hit "module factory is not available" / "i[a] is not a function" when these
+  // are webpack-bundled into server chunks during collect).
+  serverExternalPackages: ["web-push", "pusher", "bcryptjs", "pg"],
+  // Lower peak RAM during webpack compile (Deno Deploy build containers are tight).
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
   // Do NOT set turbopack.root to projectRoot. Next.js bug:
   // https://github.com/vercel/next.js/issues/90307 — CSS @import then
   // resolves from the *parent* directory and fails to find tailwindcss
@@ -43,6 +48,9 @@ const nextConfig: NextConfig = {
       path.join(projectRoot, "node_modules"),
       ...(config.resolve.modules ?? []),
     ];
+    // Do NOT set splitChunks: false for server — that inlines Next runtime into
+    // every server page and OOMs Deno Deploy builds (exit 137 / SIGKILL).
+    // Isolate fragile prerender paths with minimal global-error.tsx instead.
     return config;
   },
 };

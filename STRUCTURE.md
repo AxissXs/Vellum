@@ -57,6 +57,9 @@ src/
 │   │   ├── page.tsx        # Dashboard home
 │   │   ├── activity/
 │   │   │   └── page.tsx    # Activity log page
+│   │   ├── calendar/
+│   │   │   ├── page.tsx              # Calendar page (server)
+│   │   │   └── CalendarClient.tsx    # Month grid My/Team + schedule modal
 │   │   ├── admin/
 │   │   │   ├── page.tsx    # Admin page (server)
 │   │   │   └── AdminClient.tsx  # Admin client component
@@ -162,6 +165,11 @@ src/
 │       │       └── test/route.ts      # POST - Test message
 │       ├── activity/
 │       │   └── route.ts            # GET - Activity logs
+│       ├── calendar/
+│       │   └── route.ts            # GET - Aggregated calendar events
+│       ├── schedules/
+│       │   ├── route.ts            # POST - Create schedule
+│       │   └── [id]/route.ts       # PATCH, DELETE - Schedule CRUD
 │       ├── stats/
 │       │   └── route.ts            # GET - Dashboard statistics
 │       └── health/
@@ -174,6 +182,7 @@ src/
 │   ├── PushNotificationToggle.tsx # Web Push enable/disable (client)
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
 │   ├── Sidebar.tsx         # Navigation sidebar (client)
+│   ├── SidebarMiniCalendar.tsx # Team month density widget in sidebar
 │   └── ui/
 │       └── Switch.tsx      # Toggle switch primitive
 ├── db/                     # Database Layer
@@ -182,6 +191,7 @@ src/
 │   ├── seed.ts             # Full demo data seeding
 │   └── bootstrap.ts        # Auto-seed on first API call
 ├── hooks/                  # React Query Hooks
+│   ├── useCalendar.ts      # Calendar query + schedule mutations
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
 │   ├── useNotificationPreferences.ts # Notification channel prefs
@@ -199,6 +209,8 @@ src/
 ├── lib/                    # Utilities
 │   ├── activity.ts         # Deferred activity-log writes (`after()`)
 │   ├── api.ts              # API client helpers
+│   ├── holidays/
+│   │   └── malaysia.ts     # Curated MY federal/religious holidays 2025–2027
 │   ├── audit.ts            # Client IP helper for audit logs
 │   ├── auth.ts             # Authentication utilities (React `cache` + session JOIN)
 │   ├── brand.ts            # Whitelabel brand config (name, logos, colors, email domain)
@@ -300,6 +312,16 @@ src/
 
 **Purpose**: Activity log page
 **Exports**: `ActivityPage()` - Server component
+
+### `src/app/dashboard/calendar/page.tsx`
+
+**Purpose**: Team/personal calendar page
+**Exports**: `CalendarPage()` - Server component (auth + Suspense)
+
+### `src/app/dashboard/calendar/CalendarClient.tsx`
+
+**Purpose**: Month grid with My/Team scope, layer toggles, day detail, schedule create/edit modal
+**Exports**: `CalendarClient({ userId, userRole })` - Client component
 
 ### `src/app/dashboard/admin/page.tsx`
 
@@ -859,6 +881,31 @@ src/
 
 - `GET(req)` - List activity (pagination, filters)
 
+#### `src/app/api/calendar/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Aggregated calendar feed
+**Functions**:
+
+- `GET(req)` - Query `from`, `to`, `scope=me|team`, `userId`, `layers` → schedules, activity, task due dates, MY holidays, leave conflicts
+
+#### `src/app/api/schedules/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Create schedule event
+**Functions**:
+
+- `POST(req)` - Create schedule (own or any user if `manage_schedules`); notifies assignee; returns leave conflicts
+
+#### `src/app/api/schedules/[id]/route.ts`
+
+**Methods**: `PATCH`, `DELETE`
+**Purpose**: Update/delete schedule
+**Functions**:
+
+- `PATCH(req, { params })` - Update schedule fields
+- `DELETE(req, { params })` - Delete schedule
+
 #### `src/app/api/stats/route.ts`
 
 **Methods**: `GET`
@@ -930,10 +977,17 @@ src/
 - Collapsible icon-rail mode (`lg+` only via chevron toggle)
 - Off-canvas drawer below `lg`: slides in when `mobileOpen`, hidden (`-translate-x-full`) otherwise; always on-canvas at `lg+`
 - Mobile close (`X`) button (below `lg`); nav links call `onClose` to auto-close the drawer
-- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Settings, Admin, Super Admin)
+- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Calendar, Settings, Admin, Super Admin)
 - Role-based Admin / Super Admin links
+- `SidebarMiniCalendar` team density widget (hidden when collapsed on `lg+`)
 - User avatar with initials, role badge
 - Logout button
+
+#### `src/components/SidebarMiniCalendar.tsx`
+
+**Purpose**: Compact current-month team calendar with schedule/holiday dots
+**Exports**: `SidebarMiniCalendar()` - Client component
+**Features**: Links each day to `/dashboard/calendar?date=&scope=team`
 
 ---
 
@@ -973,6 +1027,7 @@ src/
 - `notificationPreferences` - Per-event channel prefs (push / in-app / email / telegram)
 - `telegramPairingCodes` - One-time Telegram pairing codes
 - `platformSettings` - Key/value platform config (Telegram bot settings)
+- `scheduleEvents` - User schedules (work/meeting/leave/training/other) with visibility
 
 **Exports** (Enums):
 
@@ -980,10 +1035,12 @@ src/
 - `userStatusEnum` - `active` | `inactive` | `banned`
 - `taskStatusEnum` - `backlog` | `todo` | `in_progress` | `review` | `done`
 - `taskPriorityEnum` - `low` | `medium` | `high` | `urgent`
-- `notificationEventTypeEnum` - `task_assigned` | `task_mentioned` | `due_date_approaching` | `status_changed` | `new_comment` | `comment_mention`
+- `notificationEventTypeEnum` - `task_assigned` | `task_mentioned` | `due_date_approaching` | `status_changed` | `new_comment` | `comment_mention` | `schedule_assigned`
+- `scheduleTypeEnum` - `work` | `meeting` | `leave` | `training` | `other`
+- `scheduleVisibilityEnum` - `team` | `private`
 
 **Relations**: Defined via Drizzle `references()` and foreign keys
-**Migrations**: Hot-path FK/order indexes in `drizzle/0004_flimsy_sauron.sql`; notifications/push/telegram/audit IP in `drizzle/0005_even_dreadnoughts.sql`
+**Migrations**: Hot-path FK/order indexes in `drizzle/0004_flimsy_sauron.sql`; notifications/push/telegram/audit IP in `drizzle/0005_even_dreadnoughts.sql`; schedule events + `schedule_assigned` in `drizzle/0006_charming_crusher_hogan.sql`
 
 #### `src/db/seed.ts`
 
@@ -1124,6 +1181,14 @@ src/
 - `useGeneratePairingCode()` - Generate pairing code
 - `useUnlinkTelegram()` - Unlink Telegram
 
+#### `src/hooks/useCalendar.ts`
+
+**Purpose**: Calendar aggregate query + schedule CRUD mutations
+**Exports**:
+- `useCalendar(params)` - Fetch schedules/activity/tasks/holidays/conflicts
+- `useCreateSchedule()` / `useUpdateSchedule()` / `useDeleteSchedule()` - Schedule mutations with toast + conflict warnings
+- Types: `ScheduleEvent`, `CalendarData`, `CalendarLayers`, etc.
+
 ---
 
 ### Providers (`src/providers/`)
@@ -1168,6 +1233,14 @@ src/
 - `SESSION_MAX_AGE` - Session duration (7 days)
 
 **Notes**: Prefer `hasPermission` / `requirePermission` from `lib/permissions.ts` for entity CRUD. Use `requireRole` for coarse admin/superadmin gates.
+
+#### `src/lib/holidays/malaysia.ts`
+
+**Purpose**: Curated Malaysia federal and religious public holidays (2025–2027)
+**Exports**:
+- `MalaysiaHoliday` - Holiday shape
+- `getMalaysiaHolidays(year)` - Holidays for a year
+- `getMalaysiaHolidaysInRange(from, to)` - Holidays overlapping a date range
 
 #### `src/lib/activity.ts`
 

@@ -57,6 +57,20 @@ export const notificationEventTypeEnum = pgEnum("notification_event_type", [
   "status_changed",
   "new_comment",
   "comment_mention",
+  "schedule_assigned",
+]);
+
+export const scheduleTypeEnum = pgEnum("schedule_type", [
+  "work",
+  "meeting",
+  "leave",
+  "training",
+  "other",
+]);
+
+export const scheduleVisibilityEnum = pgEnum("schedule_visibility", [
+  "team",
+  "private",
 ]);
 
 export const projects = pgTable("projects", {
@@ -358,3 +372,38 @@ export const platformSettings = pgTable("platform_settings", {
   value: text("value"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const scheduleEvents = pgTable(
+  "schedule_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    createdById: uuid("created_by_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    description: text("description"),
+    type: scheduleTypeEnum("type").notNull().default("work"),
+    startsAt: timestamp("starts_at").notNull(),
+    endsAt: timestamp("ends_at").notNull(),
+    allDay: boolean("all_day").default(false).notNull(),
+    visibility: scheduleVisibilityEnum("visibility").notNull().default("team"),
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("schedule_events_user_id_starts_at_idx").on(
+      table.userId,
+      table.startsAt
+    ),
+    index("schedule_events_starts_at_ends_at_idx").on(
+      table.startsAt,
+      table.endsAt
+    ),
+  ]
+);
