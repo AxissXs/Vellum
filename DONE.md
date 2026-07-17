@@ -281,6 +281,19 @@ This document tracks features and tasks that have been fully implemented, tested
 - **Click propagation**: Role/status selects in users table no longer open the user detail modal when clicked — added `e.stopPropagation()` to prevent event bubbling to the `<tr>` row
 - **Dropdown styling**: Native `<select>` dropdowns now render dark options consistently — added `color-scheme: dark` to `globals.css`, fixing all selects across every panel (users, trash, session details)
 
+### User Impersonation (July 2026)
+> Superadmin can impersonate any non-superadmin user to see the app from their perspective.
+
+- **API**: `POST /api/super-admin/impersonate` — creates a session as target user, stores superadmin's original session in `tf_impersonator` cookie, skips `userSessions` insert (no lastLoginAt update)
+- **API**: `POST /api/super-admin/impersonate/stop` — deletes impersonation session, restores superadmin session from impersonator cookie
+- **Banner**: `ImpersonationBanner` component shows amber bar at top of dashboard with "Stop Impersonating" button
+- **Layout**: Server-side `layout.tsx` detects impersonator cookie and passes `isImpersonating` prop to `ClientLayout`
+- **UI**: "Impersonate" button in `UserDetailModal` (right-aligned, non-superadmin users only)
+- **UI**: Inline impersonate icon button in `SuperAdminUsersPanel` actions column (non-superadmin users only)
+- **Audit**: Impersonation logged with `action: "impersonated_user"`, `tag: "impersonation"`, `severity: "warning"`, and superadmin details in `details` field
+- **Auth**: Exported `IMPERSONATOR_SESSION_COOKIE` constant from `src/lib/auth.ts`
+- **Audit panels**: Added "Impersonation" to `tagLabels` and tag filter in `SuperAdminAuditPanel` and `AuditLogDetailModal`
+
 ---
 
 ## How to Update This File

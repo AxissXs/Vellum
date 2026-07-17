@@ -161,6 +161,7 @@ src/
 │               ├── stats/route.ts     # GET - Paired user count
 │               └── topics/route.ts    # POST - Create forum topic in supergroup
 ├── components/             # Shared React Components
+│   ├── ImpersonationBanner.tsx  # Impersonation banner (amber bar with stop button)
 │   ├── LoginForm.tsx       # Login form (client)
 │   ├── PushNotificationToggle.tsx  # UI toggle for browser push notifications
 │   ├── NotificationBell.tsx        # In-app notification bell with dropdown panel
@@ -235,7 +236,9 @@ src/
 ### `src/app/dashboard/ClientLayout.tsx`
 
 **Purpose**: Dashboard client layout wrapper providing QueryProvider, sidebar, and main content area
-**Exports**: `DashboardLayout({ children, user })` - Client component
+**Exports**: `DashboardLayout({ children, user, isImpersonating })` - Client component
+
+- Renders `ImpersonationBanner` when `isImpersonating` is true
 
 ### `src/app/dashboard/layout.tsx`
 
@@ -244,6 +247,7 @@ src/
 
 - Validates session via `getSession()`
 - Redirects to `/login` if unauthenticated
+- Detects impersonation from `tf_impersonator` cookie, passes `isImpersonating` to `ClientLayout`
 - Renders `Sidebar` with user info
 
 ### `src/app/dashboard/page.tsx`
@@ -822,6 +826,22 @@ src/
 
 - `PATCH(req)` - Body: `{ ids: string[] }` or `{ ids: string[], type: string }`. Restores soft-deleted rows by clearing `deletedAt`/`deletedBy`. Logs each restore to `activityLogs`.
 
+#### `src/app/api/super-admin/impersonate/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Impersonate a user (superadmin-only)
+**Functions**:
+
+- `POST(req)` - Body: `{ userId: string }`. Creates a new session as the target user, stores superadmin's original session in `tf_impersonator` cookie, skips `userSessions` insert (no lastLoginAt update), logs `impersonated_user` action to `activityLogs`. Returns `{ success, targetUser }`.
+
+#### `src/app/api/super-admin/impersonate/stop/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Stop impersonation and revert to superadmin session
+**Functions**:
+
+- `POST(req)` - Deletes impersonation session, clears `tf_impersonator` cookie, restores superadmin's original session from cookie. If original session expired, cleans up and returns 401.
+
 #### `src/app/api/super-admin/trash/route.ts`
 
 **Methods**: `GET`
@@ -959,6 +979,16 @@ src/
 - Uses `usePushNotifications` hook to manage service worker registration
 - Shows browser permission state and subscription status
 - Displays toast feedback for permission errors
+
+#### `src/components/ImpersonationBanner.tsx`
+
+**Purpose**: Amber banner shown at top of dashboard when superadmin is impersonating a user
+**Exports**: `ImpersonationBanner({ targetName })` - Client component
+**Features**:
+- Displays target user name and description text
+- "Stop Impersonating" button calls `POST /api/super-admin/impersonate/stop`
+- Redirects to `/dashboard/super-admin` after stopping
+- Shows loading spinner while stopping
 
 #### `src/components/ui/Switch.tsx`
 
@@ -1161,7 +1191,8 @@ src/
 - `authenticateUser(email, password): Promise<AuthResult>` - Verify credentials, returns `{ ok, user }` or `{ ok: false, reason }` with reasons: `invalid_credentials`, `inactive`, `banned`
 - `requireAuth(user)` - Assert user exists (throws)
 - `requireRole(user, roles)` - Assert user has role (throws)
-- `SESSION_COOKIE` - Cookie name constant
+- `SESSION_COOKIE` - Cookie name constant (`tf_session`)
+- `IMPERSONATOR_SESSION_COOKIE` - Impersonator cookie name constant (`tf_impersonator`)
 - `SESSION_MAX_AGE` - Session duration (7 days)
 
 #### `src/lib/api.ts`

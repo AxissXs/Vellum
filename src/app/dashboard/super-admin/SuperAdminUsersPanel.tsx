@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck, Globe } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck, Globe, Eye } from "lucide-react";
 import { clsx } from "clsx";
 import UserDetailModal from "./UserDetailModal";
 
@@ -55,6 +55,7 @@ export default function SuperAdminUsersPanel() {
   const [sortBy, setSortBy] = useState<"name" | "createdAt" | "lastLoginAt">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -104,6 +105,24 @@ export default function SuperAdminUsersPanel() {
       queryClient.invalidateQueries({ queryKey: ["super-admin", "users"] });
     },
   });
+
+  async function handleImpersonate(userId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setImpersonatingUserId(userId);
+    try {
+      const res = await fetch("/api/super-admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+        credentials: "include",
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      }
+    } finally {
+      setImpersonatingUserId(null);
+    }
+  }
 
   function toggleSort(column: "name" | "createdAt" | "lastLoginAt") {
     if (sortBy === column) {
@@ -304,6 +323,21 @@ export default function SuperAdminUsersPanel() {
 
                         {updateUser.isPending && (
                           <Loader2 size={14} className="animate-spin text-slate-500" />
+                        )}
+
+                        {u.role !== "superadmin" && (
+                          <button
+                            onClick={(e) => handleImpersonate(u.id, e)}
+                            disabled={impersonatingUserId === u.id}
+                            className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-xs text-amber-400 hover:bg-amber-500/20 transition disabled:opacity-50"
+                            title="Impersonate user"
+                          >
+                            {impersonatingUserId === u.id ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <Eye size={12} />
+                            )}
+                          </button>
                         )}
                       </div>
                     </td>

@@ -104,14 +104,13 @@
   - Real-time reply updates via Pusher
   - Acceptance criteria: Users can reply to any comment, replies are visually nested, parent comment author gets notified, real-time works
 
-- [ ] **User impersonation** - Superadmin can impersonate any user
-  - "Impersonate" button in user detail modal and inline in users table
-  - `POST /api/super-admin/impersonate` — creates a new session as the target user, sets a different cookie
-  - Show banner at top of screen: "Impersonating {name} — [Stop Impersonating]"
-  - Stop impersonation reverts to superadmin session
-  - Log impersonation in audit log with `action: "impersonated_user"`
-  - Only superadmin can impersonate; cannot impersonate another superadmin
-  - Acceptance criteria: Superadmin can impersonate any non-superadmin user, see banner, stop to revert; audit log records it
+- ~~**User impersonation**~~ ✅ — Superadmin can impersonate any non-superadmin user, see banner, stop to revert; audit log records it
+  - ~~"Impersonate" button in user detail modal and inline in users table~~
+  - ~~`POST /api/super-admin/impersonate` — creates a new session as the target user, sets a different cookie~~
+  - ~~Show banner at top of screen: "Impersonating {name} — [Stop Impersonating]"~~
+  - ~~Stop impersonation reverts to superadmin session~~
+  - ~~Log impersonation in audit log with `action: "impersonated_user"`~~
+  - ~~Only superadmin can impersonate; cannot impersonate another superadmin~~
 
 - [ ] **Task card assignee avatars** - Show assigned members on task cards
   > Depends on: User profiles (avatar upload)

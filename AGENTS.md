@@ -157,6 +157,20 @@ await sendInAppNotification({
 - Broadcasts to Pusher channel `user-${userId}` for real-time badge updates
 - Always place after the DB mutation succeeds and after the `activityLogs` insert
 
+### User Impersonation
+
+Superadmin can impersonate any non-superadmin user via the Impersonation feature:
+
+- **API**: `POST /api/super-admin/impersonate` — creates a session as target user, stores superadmin session in `tf_impersonator` cookie
+- **API**: `POST /api/super-admin/impersonate/stop` — reverts to superadmin session
+- **Banner**: Amber banner at top of dashboard when impersonating, with "Stop Impersonating" button
+- **Audit**: Impersonation logged with `action: "impersonated_user"`, `tag: "impersonation"`, superadmin details in `details` field
+- **Auth**: Cookie `tf_impersonator` stores superadmin's original session ID; main `tf_session` cookie is set to impersonation session
+- **No lastLoginAt update**: Impersonation skips `userSessions` insert to avoid polluting login history
+- **Cannot impersonate superadmins**: Target user must not have `role === "superadmin"`
+
+Reference implementation: `src/app/api/super-admin/impersonate/route.ts`
+
 ## Documentation Update Rule
 
 **Any file add / remove / rename must update:**

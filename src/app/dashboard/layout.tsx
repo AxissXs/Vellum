@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { getSession, IMPERSONATOR_SESSION_COOKIE } from "@/lib/auth";
 import ClientLayout from "./ClientLayout";
 
 export default async function DashboardLayout({
@@ -13,7 +14,12 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const cookieStore = await cookies();
+  const isImpersonating = !!cookieStore.get(IMPERSONATOR_SESSION_COOKIE)?.value;
+
   return (
-    <ClientLayout user={user}>{children}</ClientLayout>
+    <ClientLayout user={user} isImpersonating={isImpersonating}>
+      {children}
+    </ClientLayout>
   );
 }

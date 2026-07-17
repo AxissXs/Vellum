@@ -71,6 +71,7 @@ const tagLabels: Record<string, string> = {
   data_change: "Data Change",
   security: "Security",
   user_action: "User Action",
+  impersonation: "Impersonation",
 };
 
 function formatDate(dateStr: string) {

@@ -15,7 +15,10 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Eye,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { clsx } from "clsx";
 
 type UserDetail = {
@@ -138,6 +141,8 @@ export default function UserDetailModal({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const [impersonating, setImpersonating] = useState(false);
 
   const { data, isLoading, isError } = useQuery<UserDetail>({
     queryKey: ["super-admin", "user-detail", userId],
@@ -170,6 +175,23 @@ export default function UserDetailModal({
       queryClient.invalidateQueries({ queryKey: ["super-admin", "users"] });
     },
   });
+
+  async function handleImpersonate() {
+    setImpersonating(true);
+    try {
+      const res = await fetch("/api/super-admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+        credentials: "include",
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      }
+    } finally {
+      setImpersonating(false);
+    }
+  }
 
   const user = data?.user;
   const sessions = data?.sessions ?? [];
@@ -268,6 +290,17 @@ export default function UserDetailModal({
               </select>
 
               {updateUser.isPending && <Loader2 size={14} className="animate-spin text-slate-500" />}
+
+              {user.role !== "superadmin" && (
+                <button
+                  onClick={handleImpersonate}
+                  disabled={impersonating}
+                  className="ml-auto flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-sm text-amber-400 hover:bg-amber-500/20 transition disabled:opacity-50"
+                >
+                  {impersonating ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+                  Impersonate
+                </button>
+              )}
             </div>
 
             {/* Login Sessions */}
