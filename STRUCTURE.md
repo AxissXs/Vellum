@@ -786,7 +786,7 @@ src/
 **Purpose**: System health metrics overview
 **Functions**:
 
-- `GET()` - Returns `{ activeSessions, totalUsers, userStatusBreakdown, activity24h, failedLogins24h, totalTasks, totalProjects, totalTeams, actionBreakdown }`
+- `GET()` - Returns `{ appVersion, activeSessions, totalUsers, userStatusBreakdown, activity24h, failedLogins24h, totalTasks, totalProjects, totalTeams, actionBreakdown }`
 
 #### `src/app/api/super-admin/permissions/route.ts`
 
@@ -917,6 +917,7 @@ src/
 - **NotificationBell** integrated in header (only when expanded)
 - User avatar with initials, role badge
 - Logout button
+- **App version** displayed in footer (`NEXT_PUBLIC_APP_VERSION` env var)
 
 #### `src/components/NotificationBell.tsx`
 

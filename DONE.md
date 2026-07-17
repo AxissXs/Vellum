@@ -246,6 +246,15 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Super Admin Improvements
 
+### Application Versioning (July 2026)
+> Semantic versioning with UI display.
+
+- Added `"version": "1.0.0"` to `package.json` as source of truth
+- Added `NEXT_PUBLIC_APP_VERSION` env var for client-side access
+- Version displayed in sidebar footer (visible to all users)
+- Superadmin health panel shows both server version (from `package.json`) and client version (from env)
+- Health API reads `package.json` at runtime
+
 ### Select Dropdown Fixes (July 2026)
 > Fixed two UI bugs in superadmin panels.
 

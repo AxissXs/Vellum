@@ -50,13 +50,7 @@
   - Self-protection: prevent revoking the current session (show disabled state)
   - Acceptance criteria: Users can see all their active sessions, revoke individual or all others, UI updates optimistically
 
-- [ ] **Application versioning** - Semantic versioning with UI display
-  - Maintain `package.json` version as source of truth (semver: `MAJOR.MINOR.PATCH`)
-  - Expose version to client via environment variable (`NEXT_PUBLIC_APP_VERSION`) or build-time injection
-  - Display version in the UI: footer, settings page, or superadmin dashboard
-  - Option: Add version info to superadmin health panel
-  - Consider auto-increment scripts or changelog generation
-  - Acceptance criteria: Version is visible in the UI, updates with each release, follows semver
+- ~~**Application versioning**~~ ✅ — Version in `package.json`, `NEXT_PUBLIC_APP_VERSION` env var, visible in sidebar and superadmin health panel
 
 - [ ] **Email notifications** - Send emails for assignments, mentions, due dates
   - Integrate Resend or SendGrid
