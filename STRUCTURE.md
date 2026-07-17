@@ -181,6 +181,7 @@ src/
 │   ├── useProjects.ts      # Project mutations with optimistic updates
 │   ├── usePushNotifications.ts     # Service worker registration & push subscriptions
 │   ├── useRealtime.ts      # Real-time task/comment updates via Pusher
+│   ├── useSessions.ts      # User session management (view/revoke own sessions)
 │   ├── useTasks.ts         # Task mutations (CRUD, reorder) with optimistic updates
 │   ├── useTeams.ts         # Team mutations with optimistic updates
 │   └── useUsers.ts         # User mutations with optimistic updates
@@ -747,6 +748,23 @@ src/
 
 - `DELETE(req, { params })` - Deletes session by ID
 - Self-protection: cannot delete own session
+
+#### `src/app/api/sessions/me/route.ts`
+
+**Methods**: `GET`, `DELETE`
+**Purpose**: Current user's own session management
+**Functions**:
+
+- `GET()` - Returns `{ sessions }` with IP, userAgent, isCurrent flag
+- `DELETE()` - Revokes all other active sessions (keeps current)
+
+#### `src/app/api/sessions/me/[id]/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Revoke a single own session
+**Functions**:
+
+- `DELETE(req, { params })` - Revokes session by ID (prevents revoking current session)
 
 #### `src/app/api/super-admin/audit/route.ts`
 

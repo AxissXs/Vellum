@@ -246,6 +246,17 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ## Super Admin Improvements
 
+### Active Session Management (July 2026)
+> Users can view and revoke their own active sessions.
+
+- `GET /api/sessions/me` — lists active sessions with IP, user agent, browser/OS detection
+- `DELETE /api/sessions/me/[id]` — revokes a single session (cannot revoke current)
+- `DELETE /api/sessions/me` — revokes all other sessions (keeps current)
+- Settings page shows session list with device icon, browser, OS, IP, and "Active X ago"
+- Current session highlighted with green badge, cannot be revoked
+- "Revoke All Others" button when multiple sessions exist
+- Optimistic UI updates with loading/error toasts
+
 ### Enhanced Toast Notifications (July 2026)
 > Loading → success/error toasts for all CRUD mutations.
 

@@ -41,14 +41,7 @@
   - Add `attachments` table to schema
   - Display in UI with previews
 
-- [ ] **Active session management for all users** - Allow users to view and manage their own active sessions
-  - API: `GET /api/sessions/me` — list current user's active sessions with device/IP info
-  - API: `DELETE /api/sessions/me/[id]` — revoke one of own sessions (cannot revoke current)
-  - UI: "Active Sessions" section in user settings / profile page
-  - Show session details: browser, OS, IP, location, last active time, created at
-  - Option to "Log out all other devices" (revoke all except current)
-  - Self-protection: prevent revoking the current session (show disabled state)
-  - Acceptance criteria: Users can see all their active sessions, revoke individual or all others, UI updates optimistically
+- ~~**Active session management for all users**~~ ✅ — View/revoke own sessions in Settings page, API at `/api/sessions/me`
 
 - ~~**Application versioning**~~ ✅ — Version in `package.json`, `NEXT_PUBLIC_APP_VERSION` env var, visible in sidebar and superadmin health panel
 
