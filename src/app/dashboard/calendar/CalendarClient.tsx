@@ -7,15 +7,14 @@ import {
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
-  format,
   isSameDay,
   isSameMonth,
   isToday,
-  parseISO,
   startOfMonth,
   startOfWeek,
   subMonths,
 } from "date-fns";
+import { tz } from "@date-fns/tz";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -38,6 +37,16 @@ import {
 import { hasPermission } from "@/lib/permissions";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import {
+  appAllDayEndIso,
+  appAllDayStartIso,
+  appWallToUtcIso,
+  formatInAppTz,
+  nowInAppTz,
+  parseAppDateKey,
+  toAppDateKey,
+} from "@/lib/timezone";
+import { useAppTimezone } from "@/providers/TimezoneProvider";
 
 type UserOption = { id: string; name: string; email: string };
 
@@ -64,10 +73,6 @@ const DEFAULT_LAYERS: CalendarLayers = {
   holidays: true,
 };
 
-function dateKey(d: Date) {
-  return format(d, "yyyy-MM-dd");
-}
-
 function userColor(userId: string) {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
@@ -84,16 +89,18 @@ export default function CalendarClient({
   userId: string;
   userRole: string;
 }) {
+  const timeZone = useAppTimezone();
+  const inTz = tz(timeZone);
   const searchParams = useSearchParams();
   const initialDate = searchParams.get("date");
   const initialScope = searchParams.get("scope") === "team" ? "team" : "me";
 
-  const [cursor, setCursor] = useState(() =>
-    initialDate ? parseISO(initialDate) : new Date()
+  const [cursor, setCursor] = useState<Date>(() =>
+    initialDate ? parseAppDateKey(initialDate, timeZone) : nowInAppTz(timeZone)
   );
   const [scope, setScope] = useState<"me" | "team">(initialScope);
   const [selectedDay, setSelectedDay] = useState<Date>(() =>
-    initialDate ? parseISO(initialDate) : new Date()
+    initialDate ? parseAppDateKey(initialDate, timeZone) : nowInAppTz(timeZone)
   );
   const [layers, setLayers] = useState<CalendarLayers>(DEFAULT_LAYERS);
   const [showModal, setShowModal] = useState(false);
@@ -103,10 +110,10 @@ export default function CalendarClient({
   const canCreateOwn = hasPermission(userRole, "create_own_schedule");
 
   const range = (() => {
-    const monthStart = startOfMonth(cursor);
-    const monthEnd = endOfMonth(cursor);
-    const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const monthStart = startOfMonth(cursor, { in: inTz });
+    const monthEnd = endOfMonth(cursor, { in: inTz });
+    const gridStart = startOfWeek(monthStart, { weekStartsOn: 1, in: inTz });
+    const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1, in: inTz });
     return {
       from: gridStart.toISOString(),
       to: gridEnd.toISOString(),
@@ -134,57 +141,61 @@ export default function CalendarClient({
   const updateSchedule = useUpdateSchedule();
   const deleteSchedule = useDeleteSchedule();
 
-  const selectedKey = dateKey(selectedDay);
+  const selectedKey = toAppDateKey(selectedDay, timeZone);
 
   const daySchedules =
     data?.schedules
       ?.filter((s) => {
-        const start = dateKey(parseISO(s.startsAt));
-        const end = dateKey(parseISO(s.endsAt));
+        const start = toAppDateKey(s.startsAt, timeZone);
+        const end = toAppDateKey(s.endsAt, timeZone);
         return selectedKey >= start && selectedKey <= end;
       })
       .slice()
       .sort(
         (a, b) =>
-          parseISO(b.startsAt).getTime() - parseISO(a.startsAt).getTime()
+          new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()
       ) ?? [];
 
   const dayActivity =
     data?.activity?.filter(
-      (a) => dateKey(parseISO(a.createdAt)) === selectedKey
+      (a) => toAppDateKey(a.createdAt, timeZone) === selectedKey
     ) ?? [];
 
   const dayTasks =
-    data?.tasks?.filter((t) => dateKey(parseISO(t.dueDate)) === selectedKey) ??
-    [];
+    data?.tasks?.filter(
+      (t) => toAppDateKey(t.dueDate, timeZone) === selectedKey
+    ) ?? [];
 
   const dayHolidays =
     data?.holidays?.filter((h) => h.date === selectedKey) ?? [];
 
   const dayConflicts =
     data?.conflicts?.filter(
-      (c) => dateKey(parseISO(c.dueDate)) === selectedKey
+      (c) => toAppDateKey(c.dueDate, timeZone) === selectedKey
     ) ?? [];
 
   function eventsForDay(day: Date) {
-    const key = dateKey(day);
+    const key = toAppDateKey(day, timeZone);
     const schedules =
       data?.schedules
         ?.filter((s) => {
-          const start = dateKey(parseISO(s.startsAt));
-          const end = dateKey(parseISO(s.endsAt));
+          const start = toAppDateKey(s.startsAt, timeZone);
+          const end = toAppDateKey(s.endsAt, timeZone);
           return key >= start && key <= end;
         })
         .slice()
         .sort(
           (a, b) =>
-            parseISO(b.startsAt).getTime() - parseISO(a.startsAt).getTime()
+            new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()
         ) ?? [];
     const holidays = data?.holidays?.filter((h) => h.date === key) ?? [];
-    const tasks = data?.tasks?.filter((t) => dateKey(parseISO(t.dueDate)) === key) ?? [];
+    const tasks =
+      data?.tasks?.filter((t) => toAppDateKey(t.dueDate, timeZone) === key) ??
+      [];
     const activityCount =
-      data?.activity?.filter((a) => dateKey(parseISO(a.createdAt)) === key)
-        .length ?? 0;
+      data?.activity?.filter(
+        (a) => toAppDateKey(a.createdAt, timeZone) === key
+      ).length ?? 0;
     return { schedules, holidays, tasks, activityCount };
   }
 
@@ -263,17 +274,17 @@ export default function CalendarClient({
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
             <button
-              onClick={() => setCursor(subMonths(cursor, 1))}
+              onClick={() => setCursor(subMonths(cursor, 1, { in: inTz }))}
               className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
               aria-label="Previous month"
             >
               <ChevronLeft size={18} />
             </button>
             <h2 className="text-sm font-semibold text-slate-900">
-              {format(cursor, "MMMM yyyy")}
+              {formatInAppTz(cursor, "MMMM yyyy", timeZone)}
             </h2>
             <button
-              onClick={() => setCursor(addMonths(cursor, 1))}
+              onClick={() => setCursor(addMonths(cursor, 1, { in: inTz }))}
               className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
               aria-label="Next month"
             >
@@ -298,11 +309,11 @@ export default function CalendarClient({
               {range.days.map((day) => {
                 const { schedules, holidays, tasks, activityCount } =
                   eventsForDay(day);
-                const inMonth = isSameMonth(day, cursor);
-                const selected = isSameDay(day, selectedDay);
+                const inMonth = isSameMonth(day, cursor, { in: inTz });
+                const selected = isSameDay(day, selectedDay, { in: inTz });
                 return (
                   <button
-                    key={day.toISOString()}
+                    key={toAppDateKey(day, timeZone)}
                     type="button"
                     onClick={() => setSelectedDay(day)}
                     onDoubleClick={() => openCreate(day)}
@@ -316,12 +327,12 @@ export default function CalendarClient({
                       <span
                         className={clsx(
                           "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
-                          isToday(day) && "bg-brand-500 text-white",
-                          !isToday(day) && inMonth && "text-slate-800",
-                          !isToday(day) && !inMonth && "text-slate-400"
+                          isToday(day, { in: inTz }) && "bg-brand-500 text-white",
+                          !isToday(day, { in: inTz }) && inMonth && "text-slate-800",
+                          !isToday(day, { in: inTz }) && !inMonth && "text-slate-400"
                         )}
                       >
-                        {format(day, "d")}
+                        {formatInAppTz(day, "d", timeZone)}
                       </span>
                       {holidays.length > 0 && (
                         <span className="h-1.5 w-1.5 rounded-full bg-rose-500" title={holidays[0].name} />
@@ -385,7 +396,10 @@ export default function CalendarClient({
           <div>
             <p className="text-xs uppercase tracking-wider text-slate-400">Selected</p>
             <h3 className="text-lg font-semibold text-slate-900 mt-0.5">
-              {format(selectedDay, "EEEE, d MMM yyyy")}
+              {formatInAppTz(selectedDay, "EEEE, d MMM yyyy", timeZone)}
+              <span className="block text-xs font-normal text-slate-400 mt-0.5">
+                {timeZone}
+              </span>
             </h3>
           </div>
 
@@ -452,7 +466,7 @@ export default function CalendarClient({
                         {scope === "team" && s.userName ? ` · ${s.userName}` : ""}
                         {s.allDay
                           ? " · All day"
-                          : ` · ${format(parseISO(s.startsAt), "HH:mm")}–${format(parseISO(s.endsAt), "HH:mm")}`}
+                          : ` · ${formatInAppTz(s.startsAt, "HH:mm", timeZone)}–${formatInAppTz(s.endsAt, "HH:mm", timeZone)}`}
                       </p>
                     </div>
                     {canEdit && (
@@ -492,7 +506,7 @@ export default function CalendarClient({
               dayActivity.slice(0, 12).map((a) => (
                 <div key={a.id} className="text-sm text-slate-600">
                   <span className="text-slate-400 text-xs">
-                    {format(parseISO(a.createdAt), "HH:mm")}
+                    {formatInAppTz(a.createdAt, "HH:mm", timeZone)}
                   </span>{" "}
                   <span className="font-medium text-slate-800">
                     {a.userName || "Someone"}
@@ -512,6 +526,7 @@ export default function CalendarClient({
           currentUserId={userId}
           defaultDay={selectedDay}
           editing={editing}
+          timeZone={timeZone}
           saving={createSchedule.isPending || updateSchedule.isPending}
           onClose={() => {
             setShowModal(false);
@@ -559,6 +574,7 @@ function ScheduleModal({
   currentUserId,
   defaultDay,
   editing,
+  timeZone,
   saving,
   onClose,
   onSubmit,
@@ -568,6 +584,7 @@ function ScheduleModal({
   currentUserId: string;
   defaultDay: Date;
   editing: ScheduleEvent | null;
+  timeZone: string;
   saving: boolean;
   onClose: () => void;
   onSubmit: (payload: {
@@ -581,7 +598,7 @@ function ScheduleModal({
     userId?: string;
   }) => Promise<void>;
 }) {
-  const dayStr = format(defaultDay, "yyyy-MM-dd");
+  const dayStr = toAppDateKey(defaultDay, timeZone);
   const [title, setTitle] = useState(editing?.title || "");
   const [description, setDescription] = useState(editing?.description || "");
   const [type, setType] = useState<ScheduleEvent["type"]>(editing?.type || "work");
@@ -593,19 +610,19 @@ function ScheduleModal({
     editing?.userId || currentUserId
   );
   const [startDate, setStartDate] = useState(
-    editing ? format(parseISO(editing.startsAt), "yyyy-MM-dd") : dayStr
+    editing ? toAppDateKey(editing.startsAt, timeZone) : dayStr
   );
   const [endDate, setEndDate] = useState(
-    editing ? format(parseISO(editing.endsAt), "yyyy-MM-dd") : dayStr
+    editing ? toAppDateKey(editing.endsAt, timeZone) : dayStr
   );
   const [startTime, setStartTime] = useState(
     editing && !editing.allDay
-      ? format(parseISO(editing.startsAt), "HH:mm")
+      ? formatInAppTz(editing.startsAt, "HH:mm", timeZone)
       : "09:00"
   );
   const [endTime, setEndTime] = useState(
     editing && !editing.allDay
-      ? format(parseISO(editing.endsAt), "HH:mm")
+      ? formatInAppTz(editing.endsAt, "HH:mm", timeZone)
       : "17:00"
   );
 
@@ -614,11 +631,11 @@ function ScheduleModal({
     if (!title.trim()) return;
 
     const startsAt = allDay
-      ? new Date(`${startDate}T00:00:00`).toISOString()
-      : new Date(`${startDate}T${startTime}:00`).toISOString();
+      ? appAllDayStartIso(startDate, timeZone)
+      : appWallToUtcIso(startDate, startTime, timeZone);
     const endsAt = allDay
-      ? new Date(`${endDate}T23:59:59`).toISOString()
-      : new Date(`${endDate}T${endTime}:00`).toISOString();
+      ? appAllDayEndIso(endDate, timeZone)
+      : appWallToUtcIso(endDate, endTime, timeZone);
 
     await onSubmit({
       title: title.trim(),

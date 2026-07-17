@@ -1,3 +1,5 @@
+import { toAppDateKey } from "@/lib/timezone";
+
 export type MalaysiaHoliday = {
   date: string; // YYYY-MM-DD
   name: string;
@@ -71,29 +73,16 @@ export function getMalaysiaHolidays(year: number): MalaysiaHoliday[] {
 
 export function getMalaysiaHolidaysInRange(
   from: Date,
-  to: Date
+  to: Date,
+  timeZone?: string
 ): MalaysiaHoliday[] {
+  const fromStr = toAppDateKey(from, timeZone);
+  const toStr = toAppDateKey(to, timeZone);
   const years = new Set<number>();
-  years.add(from.getFullYear());
-  years.add(to.getFullYear());
-  // Cover month edges that span years
-  const cursor = new Date(from);
-  while (cursor <= to) {
-    years.add(cursor.getFullYear());
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-
-  const fromStr = toDateKey(from);
-  const toStr = toDateKey(to);
+  years.add(Number(fromStr.slice(0, 4)));
+  years.add(Number(toStr.slice(0, 4)));
 
   return [...years]
     .flatMap((y) => getMalaysiaHolidays(y))
     .filter((h) => h.date >= fromStr && h.date <= toStr);
-}
-
-function toDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }

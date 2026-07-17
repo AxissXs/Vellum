@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { getAppTimezone } from "@/lib/timezone-server";
 import ClientLayout from "./ClientLayout";
 
 export default async function DashboardLayout({
@@ -13,7 +14,11 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const timezone = await getAppTimezone();
+
   return (
-    <ClientLayout user={user}>{children}</ClientLayout>
+    <ClientLayout user={user} timezone={timezone}>
+      {children}
+    </ClientLayout>
   );
 }

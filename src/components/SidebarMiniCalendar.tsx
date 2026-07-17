@@ -4,22 +4,30 @@ import Link from "next/link";
 import {
   eachDayOfInterval,
   endOfMonth,
-  format,
   isSameMonth,
   isToday,
   startOfMonth,
   startOfWeek,
   endOfWeek,
 } from "date-fns";
+import { tz } from "@date-fns/tz";
 import { clsx } from "clsx";
 import { useCalendar } from "@/hooks/useCalendar";
+import {
+  formatInAppTz,
+  nowInAppTz,
+  toAppDateKey,
+} from "@/lib/timezone";
+import { useAppTimezone } from "@/providers/TimezoneProvider";
 
 export default function SidebarMiniCalendar() {
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const timeZone = useAppTimezone();
+  const inTz = tz(timeZone);
+  const now = nowInAppTz(timeZone);
+  const monthStart = startOfMonth(now, { in: inTz });
+  const monthEnd = endOfMonth(now, { in: inTz });
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1, in: inTz });
+  const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1, in: inTz });
   const from = gridStart.toISOString();
   const to = gridEnd.toISOString();
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
@@ -37,11 +45,11 @@ export default function SidebarMiniCalendar() {
   });
 
   function density(day: Date) {
-    const key = format(day, "yyyy-MM-dd");
+    const key = toAppDateKey(day, timeZone);
     const scheduleCount =
       data?.schedules?.filter((s) => {
-        const start = format(new Date(s.startsAt), "yyyy-MM-dd");
-        const end = format(new Date(s.endsAt), "yyyy-MM-dd");
+        const start = toAppDateKey(s.startsAt, timeZone);
+        const end = toAppDateKey(s.endsAt, timeZone);
         return key >= start && key <= end;
       }).length ?? 0;
     const holiday = data?.holidays?.some((h) => h.date === key) ?? false;
@@ -52,7 +60,7 @@ export default function SidebarMiniCalendar() {
     <div className="mt-3 px-1">
       <div className="flex items-center justify-between mb-2 px-2">
         <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
-          {format(now, "MMM yyyy")}
+          {formatInAppTz(now, "MMM yyyy", timeZone)}
         </p>
         <Link
           href="/dashboard/calendar?scope=me"
@@ -68,17 +76,18 @@ export default function SidebarMiniCalendar() {
       </div>
       <div className="grid grid-cols-7 gap-0.5 px-1">
         {days.map((day) => {
-          const inMonth = isSameMonth(day, monthStart);
+          const inMonth = isSameMonth(day, monthStart, { in: inTz });
           const { scheduleCount, holiday } = density(day);
-          const key = format(day, "yyyy-MM-dd");
+          const key = toAppDateKey(day, timeZone);
           return (
             <Link
-              key={day.toISOString()}
+              key={key}
               href={`/dashboard/calendar?date=${key}&scope=me`}
               className={clsx(
                 "relative flex h-7 items-center justify-center rounded text-[11px] transition",
                 inMonth ? "text-slate-700 hover:bg-slate-100" : "text-slate-300",
-                isToday(day) && "bg-brand-500/10 text-brand-600 font-semibold"
+                isToday(day, { in: inTz }) &&
+                  "bg-brand-500/10 text-brand-600 font-semibold"
               )}
               title={
                 holiday
@@ -88,7 +97,7 @@ export default function SidebarMiniCalendar() {
                     : undefined
               }
             >
-              {format(day, "d")}
+              {formatInAppTz(day, "d", timeZone)}
               {(scheduleCount > 0 || holiday) && (
                 <span
                   className={clsx(

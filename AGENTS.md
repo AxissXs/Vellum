@@ -322,6 +322,8 @@ See `src/db/schema.ts` for:
 | `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, MY holidays) |
 | `/api/schedules`                        | POST               | Create schedule event          |
 | `/api/schedules/[id]`                   | PATCH, DELETE      | Update/delete schedule         |
+| `/api/timezone`                         | GET                | Platform app timezone          |
+| `/api/super-admin/timezone`             | GET, PATCH         | Super-admin get/set timezone   |
 | `/api/stats`                            | GET                | Dashboard statistics           |
 | `/api/health`                           | GET                | Health check                   |
 
