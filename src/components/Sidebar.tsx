@@ -160,6 +160,13 @@ export default function Sidebar({ user }: { user: User }) {
           )}
         </div>
       </div>
+
+      {/* Version */}
+      {!collapsed && (
+        <div className="px-4 py-2 border-t border-white/5 text-center">
+          <p className="text-[10px] text-slate-600">Vellum v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+        </div>
+      )}
     </aside>
   );
 }

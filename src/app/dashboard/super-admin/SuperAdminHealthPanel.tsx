@@ -10,6 +10,7 @@ import {
   UsersRound,
   ShieldAlert,
   Activity,
+  Info,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -43,6 +44,7 @@ function StatCard({
 }
 
 type HealthResponse = {
+  appVersion: string;
   activeSessions: number;
   totalUsers: number;
   userStatusBreakdown: Record<string, number>;
@@ -93,6 +95,14 @@ export default function SuperAdminHealthPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Version info */}
+      <div className="flex items-center gap-3 bg-slate-900 border border-white/5 rounded-xl px-5 py-3">
+        <Info size={16} className="text-slate-400 flex-shrink-0" />
+        <span className="text-sm text-slate-400">App Version:</span>
+        <span className="text-sm font-mono font-medium text-white">v{data.appVersion}</span>
+        <span className="text-xs text-slate-600 ml-auto">client: {process.env.NEXT_PUBLIC_APP_VERSION}</span>
+      </div>
+
       {/* Top stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

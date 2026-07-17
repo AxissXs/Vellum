@@ -3,6 +3,8 @@ import { getSession, requireRole } from "@/lib/auth";
 import { db } from "@/db";
 import { sessions, users, activityLogs, userSessions, tasks, projects, teams } from "@/db/schema";
 import { gt, gte, sql, eq, and, isNull } from "drizzle-orm";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +62,15 @@ export async function GET() {
     .orderBy(sql`count(*) desc`)
     .limit(10);
 
+  // App version from package.json
+  let appVersion = "unknown";
+  try {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
+    appVersion = pkg.version;
+  } catch {}
+
   return NextResponse.json({
+    appVersion,
     activeSessions: activeSessionsRow.count,
     totalUsers: totalUsersRow.count,
     userStatusBreakdown: statusRows.reduce((acc, r) => {
