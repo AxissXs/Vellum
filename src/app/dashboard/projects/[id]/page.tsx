@@ -4,19 +4,9 @@ import { projects, tasks, users, projectMilestones } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { hasPermission } from "@/lib/permissions";
-import KanbanBoard from "./KanbanBoard";
-import ProjectManagementPanel from "./ProjectManagementPanel";
-import ProjectNav from "./ProjectNav";
+import ProjectDetailClient from "./ProjectDetailClient";
 
 export const dynamic = "force-dynamic";
-
-const statusColumns = [
-  { key: "backlog", label: "Backlog", color: "bg-slate-500" },
-  { key: "todo", label: "To Do", color: "bg-blue-500" },
-  { key: "in_progress", label: "In Progress", color: "bg-amber-500" },
-  { key: "review", label: "Review", color: "bg-purple-500" },
-  { key: "done", label: "Done", color: "bg-emerald-500" },
-];
 
 export default async function ProjectDetailPage({
   params,
@@ -72,33 +62,11 @@ export default async function ProjectDetailPage({
       .orderBy(asc(projects.createdAt)),
   ]);
 
-  const doneTasks = taskRows.filter((task) => task.status === "done").length;
-  const completionRate = taskRows.length > 0 ? Math.round((doneTasks / taskRows.length) * 100) : 0;
-
-  const memberMap = new Map<string, { userId: string | null; name: string | null; openTasks: number; doneTasks: number }>();
-  for (const task of taskRows) {
-    const key = task.assigneeId || "unassigned";
-    const current = memberMap.get(key) || {
-      userId: task.assigneeId,
-      name: task.assigneeName || "Unassigned",
-      openTasks: 0,
-      doneTasks: 0,
-    };
-    if (task.status === "done") current.doneTasks += 1;
-    else current.openTasks += 1;
-    memberMap.set(key, current);
-  }
-
-  const columns = statusColumns.map((col) => ({
-    ...col,
-    tasks: taskRows
-      .filter((t) => t.status === col.key)
-      .map((t) => ({
-        ...t,
-        dueDate: t.dueDate?.toISOString() || null,
-        createdAt: t.createdAt.toISOString(),
-        updatedAt: t.updatedAt.toISOString(),
-      })),
+  const serializedTasks = taskRows.map((t) => ({
+    ...t,
+    dueDate: t.dueDate?.toISOString() || null,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
   }));
 
   const serializedProject = {
@@ -141,32 +109,17 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      <ProjectManagementPanel
+      <ProjectDetailClient
         project={serializedProject}
+        initialTasks={serializedTasks}
         initialMilestones={serializedMilestones}
         users={allUsers}
-        members={Array.from(memberMap.values())}
-        completionRate={completionRate}
+        allProjects={allProjects}
+        currentUserId={user?.id || ""}
+        userRole={user?.role || "member"}
         canEdit={hasPermission(user?.role, "edit_projects")}
         canDelete={hasPermission(user?.role, "delete_projects")}
       />
-
-      <ProjectNav projectId={project.id} />
-
-      <div>
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Delivery Board</h2>
-          <p className="text-sm text-slate-500">Plan and move execution work across your workflow.</p>
-        </div>
-        <KanbanBoard
-          projectId={project.id}
-          initialColumns={columns}
-          users={allUsers}
-          allProjects={allProjects}
-          currentUserId={user?.id || ""}
-          userRole={user?.role || "member"}
-        />
-      </div>
     </div>
   );
 }

@@ -2,7 +2,11 @@ import { db } from "@/db";
 import { notifications, notificationPreferences } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { sendPushNotification, isPushEnabled } from "@/lib/push";
-import { sendTelegramNotification } from "@/lib/telegram";
+import {
+  sendTelegramNotification,
+  broadcastToSupergroup,
+  maybeBroadcastToChannel,
+} from "@/lib/telegram";
 
 export async function isInAppEnabled(
   userId: string,
@@ -113,6 +117,26 @@ export async function sendNotification({
     }
   }
 
-  // Telegram notification (checks its own preferences internally)
-  await sendTelegramNotification({ userId, eventType: type, title, content, url });
+  // Telegram DM notification (checks its own preferences internally)
+  await sendTelegramNotification({
+    userId,
+    eventType: type,
+    title,
+    content,
+    url,
+  });
+
+  // Supergroup broadcast (no-op if not configured)
+  try {
+    await broadcastToSupergroup(type, `${title}\n\n${content}`);
+  } catch (err) {
+    console.error("[telegram] supergroup broadcast error:", err);
+  }
+
+  // Channel broadcast (if event allowlisted)
+  try {
+    await maybeBroadcastToChannel(type, title, content, url);
+  } catch (err) {
+    console.error("[telegram] channel broadcast error:", err);
+  }
 }

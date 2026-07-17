@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity";
 import { eq, asc } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification } from "@/lib/notifications";
+import { resolveMentionedUserIds } from "@/lib/mentions";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -112,6 +113,32 @@ export async function POST(req: NextRequest) {
         title: "New Comment",
         body: `${user.name || "Someone"} commented on "${task.title}"`,
         tag: `task-${taskId}`,
+      },
+      url: `/dashboard/tasks`,
+    });
+  }
+
+  // @mentions → comment_mention (Telegram / push / in-app per prefs)
+  const allUsers = await db
+    .select({ id: users.id, name: users.name })
+    .from(users);
+  const mentionedIds = resolveMentionedUserIds(content, allUsers).filter(
+    (id) => id !== user.id
+  );
+
+  for (const mentionedId of mentionedIds) {
+    await sendNotification({
+      userId: mentionedId,
+      type: "comment_mention",
+      title: "You were mentioned",
+      content: `${user.name || "Someone"} mentioned you on "${task?.title || "a task"}"`,
+      entityType: "task",
+      entityId: taskId,
+      actorUserId: user.id,
+      pushPayload: {
+        title: "You were mentioned",
+        body: `${user.name || "Someone"} mentioned you on "${task?.title || "a task"}"`,
+        tag: `mention-${taskId}`,
       },
       url: `/dashboard/tasks`,
     });

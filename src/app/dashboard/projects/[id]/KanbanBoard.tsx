@@ -33,7 +33,7 @@ import { Plus, Loader2, X, GripVertical, Calendar, MessageSquare } from "lucide-
 import { clsx } from "clsx";
 import TaskDetailModal from "./TaskDetailModal";
 import RichTextEditor from "@/components/RichTextEditor";
-import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
+import { useCreateTask, useReorderTasks } from "@/hooks/useTasks";
 import { useRealtime } from "@/hooks/useRealtime";
 import { hasPermission } from "@/lib/permissions";
 
@@ -119,6 +119,14 @@ interface KanbanBoardProps {
   currentUserId: string;
   userRole?: string;
   sprintId?: string;
+  /** Fired when board task set changes (create / drag persist / modal edit|delete). */
+  onTasksChange?: (tasks: Task[]) => void;
+}
+
+function columnsToTasks(cols: Column[]): Task[] {
+  return cols.flatMap((col) =>
+    col.tasks.map((t) => ({ ...t, status: col.key }))
+  );
 }
 
 function TaskCardBody({ task }: { task: Task }) {
@@ -353,6 +361,7 @@ export default function KanbanBoard({
   currentUserId,
   userRole = "member",
   sprintId,
+  onTasksChange,
 }: KanbanBoardProps) {
   const canCreateTasks = hasPermission(userRole, "create_tasks");
   const [columns, setColumns] = useState<Column[]>(initialColumns);
@@ -360,6 +369,22 @@ export default function KanbanBoard({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
   const boardScrollRef = useRef<HTMLDivElement>(null);
+  /** Status before drag — dragOver moves card locally before dragEnd runs. */
+  const dragOriginStatusRef = useRef<string | null>(null);
+  const columnsBeforeDragRef = useRef<Column[] | null>(null);
+  const columnsRef = useRef(columns);
+  columnsRef.current = columns;
+
+  function emitTasksChange(cols: Column[]) {
+    onTasksChange?.(columnsToTasks(cols));
+  }
+
+  function patchColumns(updater: (prev: Column[]) => Column[], notify = true) {
+    const next = updater(columnsRef.current);
+    columnsRef.current = next;
+    setColumns(next);
+    if (notify) emitTasksChange(next);
+  }
 
   // Mounted flag: render the static board on the server/first paint, then
   // mount DndContext on the client to avoid hydration mismatch.
@@ -383,7 +408,6 @@ export default function KanbanBoard({
   );
 
   const createTask = useCreateTask();
-  const updateTask = useUpdateTask();
   const reorderTasks = useReorderTasks();
 
   // Subscribe to real-time task updates for this project
@@ -393,7 +417,11 @@ export default function KanbanBoard({
     const taskId = event.active.id as string;
     const task = columns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
     if (task) {
-      event.active.data.current = { task };
+      dragOriginStatusRef.current = task.status;
+      columnsBeforeDragRef.current = columns.map((c) => ({
+        ...c,
+        tasks: [...c.tasks],
+      }));
       setActiveDragTask(task);
     }
   }, [columns]);
@@ -415,26 +443,28 @@ export default function KanbanBoard({
     if (!activeColumn || !overColumn) return;
 
     if (activeColumn.key !== overColumn.key) {
-      setColumns((prev) =>
-        prev.map((col) => {
-          if (col.key === activeColumn.key) {
-            return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
-          }
-          if (col.key === overColumn.key) {
-            const overIndex = isColumnDroppableId(overId)
-              ? col.tasks.length
-              : col.tasks.findIndex((t) => t.id === overId);
-            const insertIndex = overIndex >= 0 ? overIndex : col.tasks.length;
-            const newTasks = [...col.tasks];
-            newTasks.splice(insertIndex, 0, {
-              ...activeTask,
-              status: overColumn.key,
-              position: String(insertIndex),
-            });
-            return { ...col, tasks: newTasks };
-          }
-          return col;
-        })
+      patchColumns(
+        (prev) =>
+          prev.map((col) => {
+            if (col.key === activeColumn.key) {
+              return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
+            }
+            if (col.key === overColumn.key) {
+              const overIndex = isColumnDroppableId(overId)
+                ? col.tasks.length
+                : col.tasks.findIndex((t) => t.id === overId);
+              const insertIndex = overIndex >= 0 ? overIndex : col.tasks.length;
+              const newTasks = [...col.tasks];
+              newTasks.splice(insertIndex, 0, {
+                ...activeTask,
+                status: overColumn.key,
+                position: String(insertIndex),
+              });
+              return { ...col, tasks: newTasks };
+            }
+            return col;
+          }),
+        false
       );
       return;
     }
@@ -444,16 +474,18 @@ export default function KanbanBoard({
       const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
       if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
 
-      setColumns((prev) =>
-        prev.map((col) => {
-          if (col.key === activeColumn.key) {
-            const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
-              t.id === activeId ? { ...t, position: String(i) } : t
-            );
-            return { ...col, tasks: newTasks };
-          }
-          return col;
-        })
+      patchColumns(
+        (prev) =>
+          prev.map((col) => {
+            if (col.key === activeColumn.key) {
+              const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
+                t.id === activeId ? { ...t, position: String(i) } : t
+              );
+              return { ...col, tasks: newTasks };
+            }
+            return col;
+          }),
+        false
       );
     }
   }, [columns]);
@@ -461,41 +493,67 @@ export default function KanbanBoard({
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragTask(null);
-    if (!over) return;
+    const originStatus = dragOriginStatusRef.current;
+    const before = columnsBeforeDragRef.current;
+    dragOriginStatusRef.current = null;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    const activeColumn = findColumnForTask(columns, activeId);
-    const overColumn = resolveOverColumn(columns, overId);
-    if (!activeColumn || !overColumn) return;
-
-    if (activeColumn.key !== overColumn.key) {
-      const overIndex = isColumnDroppableId(overId)
-        ? Math.max(overColumn.tasks.findIndex((t) => t.id === activeId), 0)
-        : overColumn.tasks.findIndex((t) => t.id === overId);
-      await updateTask.mutateAsync({
-        id: activeId,
-        projectId,
-        status: overColumn.key,
-        position: String(Math.max(overIndex, 0)),
-      });
+    if (!over) {
+      if (before) {
+        columnsRef.current = before;
+        setColumns(before);
+      }
+      columnsBeforeDragRef.current = null;
       return;
     }
 
-    if (!isColumnDroppableId(overId)) {
-      const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
-
-      const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex);
-      const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
-      await reorderTasks.mutateAsync(updates);
+    const cols = columnsRef.current;
+    const activeId = active.id as string;
+    const finalColumn = findColumnForTask(cols, activeId);
+    if (!finalColumn || !originStatus) {
+      columnsBeforeDragRef.current = null;
+      return;
     }
-  }, [columns, projectId, updateTask, reorderTasks]);
+
+    // dragOver already applied UI move — always persist final column order(s)
+    const keys =
+      originStatus === finalColumn.key
+        ? [finalColumn.key]
+        : [originStatus, finalColumn.key];
+    const updates: { id: string; position: string; status: string }[] = [];
+    for (const key of keys) {
+      const col = cols.find((c) => c.key === key);
+      if (!col) continue;
+      col.tasks.forEach((t, i) => {
+        updates.push({ id: t.id, position: String(i), status: col.key });
+      });
+    }
+
+    if (updates.length === 0) {
+      columnsBeforeDragRef.current = null;
+      return;
+    }
+
+    try {
+      await reorderTasks.mutateAsync(updates);
+      columnsBeforeDragRef.current = null;
+      emitTasksChange(cols);
+    } catch {
+      if (before) {
+        columnsRef.current = before;
+        setColumns(before);
+      }
+      columnsBeforeDragRef.current = null;
+    }
+  }, [reorderTasks, onTasksChange]);
 
   const handleDragCancel = useCallback(() => {
     setActiveDragTask(null);
+    if (columnsBeforeDragRef.current) {
+      columnsRef.current = columnsBeforeDragRef.current;
+      setColumns(columnsBeforeDragRef.current);
+    }
+    dragOriginStatusRef.current = null;
+    columnsBeforeDragRef.current = null;
   }, []);
 
   async function handleCreateTask(status: string) {
@@ -503,7 +561,7 @@ export default function KanbanBoard({
     if (!data?.title.trim()) return;
 
     try {
-      await createTask.mutateAsync({
+      const created = await createTask.mutateAsync({
         title: data.title.trim(),
         description: data.description.trim() || null,
         priority: data.priority,
@@ -513,11 +571,69 @@ export default function KanbanBoard({
         dueDate: data.dueDate || null,
         sprintId: sprintId || null,
       });
+      const assignee = users.find((u) => u.id === created.assigneeId) ?? null;
+      patchColumns((prev) =>
+        prev.map((col) =>
+          col.key === status
+            ? {
+                ...col,
+                tasks: [
+                  ...col.tasks,
+                  {
+                    ...created,
+                    dueDate: created.dueDate ?? null,
+                    position: created.position ?? String(col.tasks.length),
+                    assigneeName: assignee?.name ?? null,
+                    assigneeAvatar: assignee?.avatarUrl ?? null,
+                  },
+                ],
+              }
+            : col
+        )
+      );
       setShowNewTask(null);
-      setNewTaskData((prev) => ({ ...prev, [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "", projectId: "" } }));
+      setNewTaskData((prev) => ({
+        ...prev,
+        [status]: {
+          title: "",
+          description: "",
+          priority: "medium",
+          assigneeId: "",
+          dueDate: "",
+          projectId: "",
+        },
+      }));
     } catch (err) {
       console.error("Failed to create task:", err);
     }
+  }
+
+  function handleTaskDetailChange(updated: Task | null) {
+    if (!updated) {
+      const id = selectedTask?.id;
+      if (!id) return;
+      patchColumns((prev) =>
+        prev.map((col) => ({
+          ...col,
+          tasks: col.tasks.filter((t) => t.id !== id),
+        }))
+      );
+      setSelectedTask(null);
+      return;
+    }
+
+    patchColumns((prev) => {
+      const without = prev.map((col) => ({
+        ...col,
+        tasks: col.tasks.filter((t) => t.id !== updated.id),
+      }));
+      return without.map((col) =>
+        col.key === updated.status
+          ? { ...col, tasks: [...col.tasks, updated] }
+          : col
+      );
+    });
+    setSelectedTask(updated);
   }
 
   function getInitials(name: string | null) {
@@ -532,7 +648,7 @@ export default function KanbanBoard({
       currentUserId={currentUserId}
       userRole={userRole}
       onClose={() => setSelectedTask(null)}
-      onChange={() => {}}
+      onChange={handleTaskDetailChange}
     />
   ) : null;
 

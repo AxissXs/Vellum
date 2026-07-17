@@ -10,6 +10,18 @@ export { getPlatformSetting, setPlatformSetting };
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
 
+export const TELEGRAM_EVENT_TYPES = [
+  "task_assigned",
+  "task_mentioned",
+  "due_date_approaching",
+  "status_changed",
+  "new_comment",
+  "comment_mention",
+  "schedule_assigned",
+] as const;
+
+export type TelegramEventType = (typeof TELEGRAM_EVENT_TYPES)[number];
+
 export async function getBotToken(): Promise<string | null> {
   return getPlatformSetting("telegram_bot_token");
 }
@@ -19,16 +31,76 @@ export async function isTelegramConfigured(): Promise<boolean> {
   return !!token;
 }
 
-async function telegramApi<T = any>(
+export function getWebhookUrl(overrideOrigin?: string | null): string | null {
+  const baseUrl =
+    overrideOrigin?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    process.env.APP_URL?.replace(/\/$/, "") ||
+    null;
+  if (!baseUrl) return null;
+  return `${baseUrl}/api/telegram/webhook`;
+}
+
+export async function getTelegramTopicMapping(
+  eventType: string
+): Promise<string | null> {
+  return getPlatformSetting(`telegram_topic_${eventType}`);
+}
+
+export async function getChannelEvents(): Promise<string[]> {
+  const raw = await getPlatformSetting("telegram_channel_events");
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export async function setChannelEvents(events: string[]) {
+  await setPlatformSetting(
+    "telegram_channel_events",
+    events.length ? events.join(",") : null
+  );
+}
+
+export async function getTelegramTemplate(
+  eventType: string
+): Promise<string | null> {
+  return getPlatformSetting(`telegram_template_${eventType}`);
+}
+
+export async function setTelegramTemplate(
+  eventType: string,
+  template: string | null
+) {
+  await setPlatformSetting(`telegram_template_${eventType}`, template);
+}
+
+export function getDefaultTemplate(_eventType: string): string {
+  return "<b>{title}</b>\n\n{content}";
+}
+
+function interpolateTemplate(
+  template: string,
+  vars: Record<string, string>
+): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => {
+    const val = vars[key];
+    return val !== undefined ? escapeHtml(val) : `{${key}}`;
+  });
+}
+
+async function telegramApi<T = unknown>(
   method: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  token?: string
 ): Promise<{ ok: boolean; result?: T; description?: string }> {
-  const token = await getBotToken();
-  if (!token) {
+  const botToken = token ?? (await getBotToken());
+  if (!botToken) {
     return { ok: false, description: "Bot token not configured" };
   }
 
-  const url = `${TELEGRAM_API_BASE}/bot${token}/${method}`;
+  const url = `${TELEGRAM_API_BASE}/bot${botToken}/${method}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -39,7 +111,7 @@ async function telegramApi<T = any>(
   return data as { ok: boolean; result?: T; description?: string };
 }
 
-export async function getTelegramBotInfo(): Promise<{
+export async function getTelegramBotInfo(token?: string): Promise<{
   ok: boolean;
   username?: string;
   firstName?: string;
@@ -47,7 +119,8 @@ export async function getTelegramBotInfo(): Promise<{
 }> {
   const data = await telegramApi<{ username?: string; first_name?: string }>(
     "getMe",
-    {}
+    {},
+    token
   );
 
   if (!data.ok) {
@@ -64,25 +137,48 @@ export async function getTelegramBotInfo(): Promise<{
   };
 }
 
-export async function setTelegramWebhook(webhookUrl: string) {
-  const data = await telegramApi("setWebhook", {
-    url: webhookUrl,
-    allowed_updates: ["message"],
-  });
-  return data;
+export async function getWebhookSecretToken(): Promise<string> {
+  let secret = await getPlatformSetting("telegram_webhook_secret");
+  if (!secret) {
+    secret = crypto.randomUUID().replace(/-/g, "");
+    await setPlatformSetting("telegram_webhook_secret", secret);
+  }
+  return secret;
+}
+
+export async function setTelegramWebhook(webhookUrl: string, token?: string) {
+  const secretToken = await getWebhookSecretToken();
+  return telegramApi(
+    "setWebhook",
+    {
+      url: webhookUrl,
+      allowed_updates: ["message"],
+      secret_token: secretToken,
+    },
+    token
+  );
 }
 
 export async function sendTelegramMessage(
   chatId: string,
   text: string,
-  options?: { parseMode?: "HTML" | "Markdown" | "MarkdownV2"; disablePreview?: boolean }
+  options?: {
+    parseMode?: "HTML" | "Markdown" | "MarkdownV2";
+    disablePreview?: boolean;
+    topicId?: string;
+  },
+  token?: string
 ) {
-  return telegramApi("sendMessage", {
+  const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
     parse_mode: options?.parseMode ?? "HTML",
     disable_web_page_preview: options?.disablePreview ?? true,
-  });
+  };
+  if (options?.topicId) {
+    body.message_thread_id = Number(options.topicId);
+  }
+  return telegramApi("sendMessage", body, token);
 }
 
 export async function isTelegramEnabled(
@@ -95,7 +191,7 @@ export async function isTelegramEnabled(
     .where(
       and(
         eq(notificationPreferences.userId, userId),
-        eq(notificationPreferences.eventType, eventType as any)
+        eq(notificationPreferences.eventType, eventType as never)
       )
     )
     .limit(1);
@@ -134,44 +230,97 @@ export async function sendTelegramNotification({
   const configured = await isTelegramConfigured();
   if (!configured) return;
 
-  const text = url
-    ? `<b>${escapeHtml(title)}</b>\n\n${escapeHtml(content)}\n\n<a href="${escapeHtml(url)}">Open in Perfect</a>`
-    : `<b>${escapeHtml(title)}</b>\n\n${escapeHtml(content)}`;
+  const customTemplate = await getTelegramTemplate(eventType);
+  const template = customTemplate || getDefaultTemplate(eventType);
 
-  await sendTelegramMessage(chatId, text, { parseMode: "HTML" });
-}
+  const vars: Record<string, string> = { title, content };
+  if (url) vars.url = url;
 
-export async function broadcastToSupergroup(
-  text: string,
-  topicId?: string
-) {
-  const supergroupId = await getPlatformSetting("telegram_supergroup_id");
-  if (!supergroupId) return { ok: false, description: "Supergroup not configured" };
-
-  const body: Record<string, unknown> = {
-    chat_id: supergroupId,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  };
-
-  if (topicId) {
-    body.message_thread_id = Number(topicId);
+  let text = interpolateTemplate(template, vars);
+  if (url && !text.includes("<a ")) {
+    text += `\n\n<a href="${escapeHtml(url)}">Open in Perfect</a>`;
   }
 
-  return telegramApi("sendMessage", body);
+  const result = await sendTelegramMessage(chatId, text, { parseMode: "HTML" });
+  if (!result.ok) {
+    console.error(
+      "[telegram] sendMessage failed:",
+      result.description || "unknown error",
+      { chatId, eventType }
+    );
+  }
 }
 
+export async function broadcastToSupergroup(eventType: string, text: string) {
+  const supergroupId = await getPlatformSetting("telegram_supergroup_id");
+  if (!supergroupId) {
+    return { ok: false, description: "Supergroup not configured" };
+  }
+
+  const topicId = await getTelegramTopicMapping(eventType);
+
+  const result = await sendTelegramMessage(supergroupId, text, {
+    parseMode: "HTML",
+    topicId: topicId ?? undefined,
+  });
+  if (!result.ok) {
+    console.error(
+      "[telegram] supergroup broadcast failed:",
+      result.description || "unknown error",
+      { eventType }
+    );
+  }
+  return result;
+}
+
+export async function maybeBroadcastToChannel(
+  eventType: string,
+  title: string,
+  content: string,
+  url?: string
+) {
+  const channelEvents = await getChannelEvents();
+  if (!channelEvents.includes(eventType)) {
+    return { ok: false, description: "Event not enabled for channel" };
+  }
+
+  const channelId = await getPlatformSetting("telegram_channel_id");
+  if (!channelId) {
+    return { ok: false, description: "Channel not configured" };
+  }
+
+  const customTemplate = await getTelegramTemplate(eventType);
+  const template = customTemplate || getDefaultTemplate(eventType);
+
+  const vars: Record<string, string> = { title, content };
+  if (url) vars.url = url;
+
+  let text = interpolateTemplate(template, vars);
+  if (url && !text.includes("<a ")) {
+    text += `\n\n<a href="${escapeHtml(url)}">Open in Perfect</a>`;
+  }
+
+  const result = await sendTelegramMessage(channelId, text, {
+    parseMode: "HTML",
+  });
+  if (!result.ok) {
+    console.error(
+      "[telegram] channel broadcast failed:",
+      result.description || "unknown error",
+      { eventType }
+    );
+  }
+  return result;
+}
+
+/** @deprecated Prefer maybeBroadcastToChannel */
 export async function broadcastToChannel(text: string) {
   const channelId = await getPlatformSetting("telegram_channel_id");
-  if (!channelId) return { ok: false, description: "Channel not configured" };
+  if (!channelId) {
+    return { ok: false, description: "Channel not configured" };
+  }
 
-  return telegramApi("sendMessage", {
-    chat_id: channelId,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  });
+  return sendTelegramMessage(channelId, text, { parseMode: "HTML" });
 }
 
 function escapeHtml(text: string): string {

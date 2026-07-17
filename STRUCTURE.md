@@ -148,7 +148,8 @@ src/
 │       │   ├── status/route.ts     # GET - Link status
 │       │   ├── pairing-code/route.ts  # GET - Generate pairing code
 │       │   ├── unlink/route.ts     # DELETE - Unlink account
-│       │   └── webhook/route.ts    # POST - Bot webhook
+│       │   ├── webhook/route.ts    # POST - Bot webhook (secret token)
+│       │   └── config/route.ts     # GET - Public bot configured check
 │       ├── super-admin/
 │       │   ├── users/route.ts      # GET - List users
 │       │   ├── users/[id]/route.ts # PATCH - Update status/role
@@ -160,9 +161,10 @@ src/
 │       │   ├── health/route.ts     # GET - Health metrics
 │       │   ├── permissions/route.ts # GET - Role matrix
 │       │   └── telegram/
-│       │       ├── settings/route.ts  # GET, PATCH - Bot settings
+│       │       ├── settings/route.ts  # GET, PATCH - Bot settings + auto webhook
+│       │       ├── topics/route.ts    # POST - Create forum topic
 │       │       ├── stats/route.ts     # GET - Usage stats
-│       │       └── test/route.ts      # POST - Test message
+│       │       └── test/route.ts      # POST - Test message (optional token)
 │       ├── activity/
 │       │   └── route.ts            # GET - Activity logs
 │       ├── calendar/
@@ -231,6 +233,7 @@ src/
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
 │   ├── pusher-client.ts    # Pusher client singleton + ref counting
+│   ├── mentions.ts         # Parse @FirstName mentions from comment markdown
 │   └── telegram.ts         # Telegram bot API + pairing helpers
 └── providers/              # React Context Providers
     └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
@@ -462,7 +465,7 @@ src/
 
 ### `src/app/dashboard/settings/page.tsx`
 
-**Purpose**: User notification settings (in-app / push / email / Telegram prefs, push toggle, Telegram pairing)
+**Purpose**: User notification settings (in-app / push / email / Telegram prefs, push toggle, Telegram pairing + how-to guide)
 **Exports**: `SettingsPage()` - Client component
 
 ### `src/app/dashboard/super-admin/page.tsx`
@@ -503,7 +506,7 @@ src/
 
 ### `src/app/dashboard/super-admin/SuperAdminTelegramPanel.tsx`
 
-**Purpose**: Telegram bot token/webhook settings and test send
+**Purpose**: Telegram bot settings — token, auto webhook, supergroup/channel IDs, per-event forum topics, channel event allowlist, HTML templates, test connection, setup guide
 **Exports**: `SuperAdminTelegramPanel()` - Client component
 
 ---
@@ -786,10 +789,18 @@ src/
 #### `src/app/api/telegram/webhook/route.ts`
 
 **Methods**: `POST`
-**Purpose**: Telegram bot webhook (pairing commands)
+**Purpose**: Telegram bot webhook (pairing commands); verifies `X-Telegram-Bot-Api-Secret-Token`
 **Functions**:
 
 - `POST(req)` - Handle Telegram updates
+
+#### `src/app/api/telegram/config/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Public check whether Telegram bot is configured (no auth)
+**Functions**:
+
+- `GET()` - Returns `{ configured, username }`
 
 #### `src/app/api/super-admin/activity/route.ts`
 
@@ -861,11 +872,19 @@ src/
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
 **Methods**: `GET`, `PATCH`
-**Purpose**: Platform Telegram bot settings
+**Purpose**: Platform Telegram bot settings (token, IDs, topics, channel events, templates); auto `setWebhook` on save
 **Functions**:
 
-- `GET()` - Current bot settings
-- `PATCH(req)` - Update bot token / webhook / channel IDs
+- `GET()` - Settings, topics, channelEvents, templates, webhookUrl
+- `PATCH(req)` - Update settings; optional `webhookOrigin` for Deploy without env URL
+
+#### `src/app/api/super-admin/telegram/topics/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Create a forum topic in the configured supergroup and map it to an event type
+**Functions**:
+
+- `POST(req)` - Body: `{ eventType, name? }` → creates topic via Bot API
 
 #### `src/app/api/super-admin/telegram/stats/route.ts`
 
@@ -881,7 +900,7 @@ src/
 **Purpose**: Send a Telegram test message
 **Functions**:
 
-- `POST()` - Test bot connectivity
+- `POST(req)` - Test bot connectivity; optional token override (test-before-save)
 
 #### `src/app/api/activity/route.ts`
 
@@ -1281,12 +1300,12 @@ src/
 
 #### `src/lib/notifications.ts`
 
-**Purpose**: Multi-channel notification dispatch (in-app, push, Telegram)
+**Purpose**: Multi-channel notification dispatch (in-app, push, Telegram DM + supergroup/channel broadcast)
 **Exports**:
 
 - `isInAppEnabled(userId, eventType)` - Check in-app preference
 - `sendInAppNotification(...)` - Insert notification + Pusher badge event
-- `sendNotification(...)` - Fan-out to enabled channels
+- `sendNotification(...)` - Fan-out to enabled channels (incl. `broadcastToSupergroup` / `maybeBroadcastToChannel`)
 
 #### `src/lib/push.ts`
 
@@ -1297,14 +1316,25 @@ src/
 - `getNotificationPreferences(userId)` / `getDefaultNotificationPreferences()` / `ensureNotificationPreferences(userId)`
 - `updateNotificationPreference(...)` / `isPushEnabled(userId, eventType)`
 
+#### `src/lib/mentions.ts`
+
+**Purpose**: Resolve `@FirstName` tokens in comment markdown to user IDs (matches RichTextEditor insert format)
+**Exports**:
+- `extractMentionTokens(content)` - Unique @tokens (lowercased)
+- `resolveMentionedUserIds(content, users)` - User IDs matching first/compact name
+
 #### `src/lib/telegram.ts`
 
-**Purpose**: Telegram Bot API helpers, pairing, and notification send
+**Purpose**: Telegram Bot API helpers — pairing DMs, templates, forum topics, channel allowlist, webhook secret/URL
 **Exports**:
 
-- `getPlatformSetting` / `setPlatformSetting` / `getBotToken` / `isTelegramConfigured`
+- `TELEGRAM_EVENT_TYPES` / `TelegramEventType`
+- `getBotToken` / `isTelegramConfigured` / `getWebhookUrl` / `getWebhookSecretToken`
+- `getTelegramTopicMapping` / `getChannelEvents` / `setChannelEvents`
+- `getTelegramTemplate` / `setTelegramTemplate` / `getDefaultTemplate`
 - `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage`
-- `isTelegramEnabled` / `sendTelegramNotification` / `broadcastToSupergroup` / `broadcastToChannel`
+- `isTelegramEnabled` / `sendTelegramNotification`
+- `broadcastToSupergroup(eventType, text)` / `maybeBroadcastToChannel` / `broadcastToChannel`
 
 #### `src/lib/api.ts`
 

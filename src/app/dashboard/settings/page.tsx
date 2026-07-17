@@ -9,8 +9,10 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTelegramStatus, useGeneratePairingCode, useUnlinkTelegram } from "@/hooks/useTelegram";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 import { Switch } from "@/components/ui/Switch";
-import { Loader2, Link as LinkIcon, Unlink, Copy, Check } from "lucide-react";
+import { Loader2, Link as LinkIcon, Unlink, Copy, Check, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -22,6 +24,76 @@ const eventLabels: Record<string, string> = {
   schedule_assigned: "Schedule Assigned",
 };
 
+function TelegramUserGuide({
+  linked,
+  botUsername,
+  configured,
+}: {
+  linked: boolean;
+  botUsername: string | null;
+  configured: boolean;
+}) {
+  const botLabel = botUsername ? `@${botUsername}` : "the Perfect bot";
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
+      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+        <BookOpen size={13} className="text-brand-600" />
+        How to link Telegram
+      </p>
+      {!configured && (
+        <p className="text-xs text-amber-700">
+          Bot is not configured yet. Ask a super admin (Super Admin → Telegram).
+        </p>
+      )}
+      {linked ? (
+        <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1">
+          <li>Keep this account linked so Perfect can DM you.</li>
+          <li>
+            Below, turn on the{" "}
+            <span className="font-medium text-slate-800">Telegram</span> column
+            for events you want (defaults are off).
+          </li>
+          <li>
+            Mentions: another user must @you in a comment (self-mentions are
+            ignored). Enable{" "}
+            <span className="font-medium text-slate-800">Comment Mention</span>.
+          </li>
+          <li>Unlink anytime if you no longer want bot DMs.</li>
+        </ol>
+      ) : (
+        <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1">
+          <li>
+            Confirm a super admin configured the bot and webhook (Super Admin →
+            Telegram).
+          </li>
+          <li>
+            Click{" "}
+            <span className="font-medium text-slate-800">Generate Pairing Code</span>{" "}
+            (valid 10 minutes).
+          </li>
+          <li>
+            Open {botLabel} in Telegram and send{" "}
+            <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">
+              /start ABC123
+            </code>
+            .
+          </li>
+          <li>
+            Enable{" "}
+            <span className="font-medium text-slate-800">Telegram</span> under
+            Notification Preferences for each event.
+          </li>
+        </ol>
+      )}
+      <p className="text-[11px] text-slate-500">
+        Your toggles control private bot DMs only. Team group/channel posts are
+        configured by super admins separately.
+      </p>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { data: preferences, isLoading } = useNotificationPreferences();
   const { mutate: updatePref, isPending } = useUpdateNotificationPreference();
@@ -30,6 +102,14 @@ export default function SettingsPage() {
   const { data: telegramStatus, isLoading: telegramLoading } = useTelegramStatus();
   const { mutate: generateCode, data: codeData, isPending: generatingCode } = useGeneratePairingCode();
   const { mutate: unlink, isPending: unlinking } = useUnlinkTelegram();
+
+  const { data: telegramConfig } = useQuery({
+    queryKey: ["telegram", "config"],
+    queryFn: async () =>
+      api.get<{ configured: boolean; username: string | null }>(
+        "/api/telegram/config"
+      ),
+  });
 
   const [copied, setCopied] = useState(false);
 
@@ -104,6 +184,11 @@ export default function SettingsPage() {
           </div>
         ) : telegramStatus?.linked ? (
           <div className="space-y-4">
+            <TelegramUserGuide
+              linked
+              configured={telegramConfig?.configured ?? false}
+              botUsername={telegramConfig?.username ?? null}
+            />
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
               <p className="text-sm text-emerald-600">
                 Linked to Telegram{" "}
@@ -128,22 +213,34 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-slate-500">
-              Generate a pairing code and send it to the Perfect bot on Telegram.
-            </p>
+            <TelegramUserGuide
+              linked={false}
+              configured={telegramConfig?.configured ?? false}
+              botUsername={telegramConfig?.username ?? null}
+            />
 
             {codeData?.code ? (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
-                <code className="text-sm font-mono text-brand-600">
-                  /start {codeData.code}
-                </code>
-                <button
-                  onClick={() => copyCode(codeData.code)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
-                  title="Copy"
-                >
-                  {copied ? <Check size={18} className="text-emerald-600" /> : <Copy size={18} />}
-                </button>
+              <div className="space-y-2">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between gap-4">
+                  <code className="text-sm font-mono text-brand-600">
+                    /start {codeData.code}
+                  </code>
+                  <button
+                    onClick={() => copyCode(codeData.code)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
+                    title="Copy"
+                  >
+                    {copied ? (
+                      <Check size={18} className="text-emerald-600" />
+                    ) : (
+                      <Copy size={18} />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Paste this into a DM with the bot. Code expires in 10 minutes —
+                  generate a new one if it fails.
+                </p>
               </div>
             ) : (
               <button

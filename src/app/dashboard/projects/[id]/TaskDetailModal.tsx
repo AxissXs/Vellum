@@ -64,7 +64,8 @@ export default function TaskDetailModal({
   currentUserId: string;
   userRole?: string;
   onClose: () => void;
-  onChange: () => void;
+  /** Updated task after save, or `null` after delete. */
+  onChange: (task: Task | null) => void;
 }) {
   const canEdit = hasPermission(userRole, "edit_tasks");
   const canDelete = hasPermission(userRole, "delete_tasks");
@@ -119,9 +120,20 @@ export default function TaskDetailModal({
 
     if (res.ok) {
       const data = await res.json();
-      setTask(data.task);
+      const assignee = users.find((u) => u.id === (data.task.assigneeId || editAssignee || null));
+      const updated: Task = {
+        ...task,
+        ...data.task,
+        dueDate: data.task.dueDate ?? null,
+        createdAt: data.task.createdAt ?? task.createdAt,
+        updatedAt: data.task.updatedAt ?? task.updatedAt,
+        position: data.task.position ?? task.position,
+        assigneeName: assignee?.name ?? null,
+        assigneeAvatar: assignee?.avatarUrl ?? null,
+      };
+      setTask(updated);
       setEditing(false);
-      onChange();
+      onChange(updated);
     }
     setSaving(false);
   }
@@ -131,7 +143,7 @@ export default function TaskDetailModal({
     setDeleting(true);
     const res = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
     if (res.ok) {
-      onChange();
+      onChange(null);
       onClose();
     }
     setDeleting(false);
@@ -391,22 +403,24 @@ export default function TaskDetailModal({
                       </form>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-h-5">
                           <span className="text-xs font-medium text-slate-600">{c.authorName || "Unknown"}</span>
                           <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
                           {c.authorId === currentUserId && (
-                            <div className="flex items-center gap-1 ml-auto">
+                            <div className="flex items-center gap-0.5 ml-auto -my-0.5">
                               <button
+                                type="button"
                                 onClick={() => startEditComment(c)}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
+                                className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
                                 title="Edit"
                               >
                                 <Edit2 size={12} />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleDeleteComment(c.id)}
                                 disabled={deleteCommentMutation.isPending}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
+                                className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
                                 title="Delete"
                               >
                                 {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}

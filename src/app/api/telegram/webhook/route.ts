@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { telegramPairingCodes, users } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
-import { getBotToken, sendTelegramMessage } from "@/lib/telegram";
+import {
+  getBotToken,
+  getWebhookSecretToken,
+  sendTelegramMessage,
+} from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
   const token = await getBotToken();
@@ -10,23 +14,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bot not configured" }, { status: 400 });
   }
 
-  let update: any;
+  const secretToken = await getWebhookSecretToken();
+  const providedSecret = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
+  if (providedSecret !== secretToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let update: unknown;
   try {
     update = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const message = update?.message;
+  const message = (update as { message?: { text?: string; chat?: { id: number }; from?: { username?: string } } })
+    ?.message;
   if (!message || !message.text) {
     return NextResponse.json({ ok: true });
   }
 
   const text: string = message.text;
-  const chatId = String(message.chat.id);
+  const chatId = String(message.chat?.id);
   const username = message.from?.username || null;
 
-  // Handle /start <code>
   if (text.startsWith("/start ")) {
     const code = text.slice(7).trim().toUpperCase();
 
@@ -43,17 +53,18 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (!pairing) {
-      await sendTelegramMessage(chatId, "Invalid or expired pairing code. Please generate a new code in Perfect settings.");
+      await sendTelegramMessage(
+        chatId,
+        "Invalid or expired pairing code. Please generate a new code in Perfect settings."
+      );
       return NextResponse.json({ ok: true });
     }
 
-    // Link the user's Telegram
     await db
       .update(users)
       .set({ telegramChatId: chatId, telegramUsername: username })
       .where(eq(users.id, pairing.userId));
 
-    // Mark code as used
     await db
       .update(telegramPairingCodes)
       .set({ used: true })
@@ -67,7 +78,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Handle plain /start
   if (text === "/start") {
     await sendTelegramMessage(
       chatId,

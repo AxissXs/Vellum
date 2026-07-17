@@ -1,13 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession, requireRole } from "@/lib/auth";
-import { getTelegramBotInfo, sendTelegramMessage } from "@/lib/telegram";
+import { getTelegramBotInfo } from "@/lib/telegram";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  requireRole(user, ["superadmin"]);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    requireRole(user, ["superadmin"]);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  const info = await getTelegramBotInfo();
+  let token: string | undefined;
+  try {
+    const body = await req.json();
+    if (typeof body?.token === "string" && body.token.trim()) {
+      token = body.token.trim();
+    }
+  } catch {
+    // empty body OK — test stored token
+  }
+
+  const info = await getTelegramBotInfo(token);
   if (!info.ok) {
     return NextResponse.json(
       { ok: false, error: info.description || "Failed to connect to Telegram" },
@@ -15,5 +31,9 @@ export async function POST() {
     );
   }
 
-  return NextResponse.json({ ok: true, username: info.username, firstName: info.firstName });
+  return NextResponse.json({
+    ok: true,
+    username: info.username,
+    firstName: info.firstName,
+  });
 }

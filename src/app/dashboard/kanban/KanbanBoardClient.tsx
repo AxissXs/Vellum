@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import TaskDetailModal from "@/app/dashboard/projects/[id]/TaskDetailModal";
-import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
+import { useCreateTask, useReorderTasks } from "@/hooks/useTasks";
 import { useRealtime } from "@/hooks/useRealtime";
 import { hasPermission } from "@/lib/permissions";
 
@@ -374,6 +374,11 @@ export default function KanbanBoardClient({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
   const boardScrollRef = useRef<HTMLDivElement>(null);
+  /** Status before drag — dragOver moves card locally before dragEnd runs. */
+  const dragOriginStatusRef = useRef<string | null>(null);
+  const columnsBeforeDragRef = useRef<Column[] | null>(null);
+  const columnsRef = useRef(columns);
+  columnsRef.current = columns;
 
   // Mounted flag: render the static board on the server/first paint, then
   // mount DndContext on the client to avoid hydration mismatch.
@@ -400,7 +405,6 @@ export default function KanbanBoardClient({
   );
 
   const createTask = useCreateTask();
-  const updateTask = useUpdateTask();
   const reorderTasks = useReorderTasks();
 
   // Subscribe to global real-time task updates (cross-project board view)
@@ -424,7 +428,11 @@ export default function KanbanBoardClient({
     const taskId = event.active.id as string;
     const task = columns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
     if (task) {
-      event.active.data.current = { task };
+      dragOriginStatusRef.current = task.status;
+      columnsBeforeDragRef.current = columns.map((c) => ({
+        ...c,
+        tasks: [...c.tasks],
+      }));
       setActiveDragTask(task);
     }
   }, [columns]);
@@ -492,43 +500,59 @@ export default function KanbanBoardClient({
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragTask(null);
-    if (!over) return;
+    const originStatus = dragOriginStatusRef.current;
+    const before = columnsBeforeDragRef.current;
+    dragOriginStatusRef.current = null;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    const activeColumn = findColumnForTask(columns, activeId);
-    const overColumn = resolveOverColumn(columns, overId);
-    if (!activeColumn || !overColumn) return;
-
-    if (activeColumn.key !== overColumn.key) {
-      const overIndex = isColumnDroppableId(overId)
-        ? Math.max(overColumn.tasks.findIndex((t) => t.id === activeId), 0)
-        : overColumn.tasks.findIndex((t) => t.id === overId);
-      const task = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-      if (!task) return;
-      await updateTask.mutateAsync({
-        id: activeId,
-        projectId: task.projectId,
-        status: overColumn.key,
-        position: String(Math.max(overIndex, 0)),
-      });
+    if (!over) {
+      if (before) setColumns(before);
+      columnsBeforeDragRef.current = null;
       return;
     }
 
-    if (!isColumnDroppableId(overId)) {
-      const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
-
-      const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex);
-      const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
-      await reorderTasks.mutateAsync(updates);
+    const cols = columnsRef.current;
+    const activeId = active.id as string;
+    const finalColumn = findColumnForTask(cols, activeId);
+    if (!finalColumn || !originStatus) {
+      columnsBeforeDragRef.current = null;
+      return;
     }
-  }, [columns, updateTask, reorderTasks]);
+
+    // dragOver already applied UI move — always persist final column order(s)
+    const keys =
+      originStatus === finalColumn.key
+        ? [finalColumn.key]
+        : [originStatus, finalColumn.key];
+    const updates: { id: string; position: string; status: string }[] = [];
+    for (const key of keys) {
+      const col = cols.find((c) => c.key === key);
+      if (!col) continue;
+      col.tasks.forEach((t, i) => {
+        updates.push({ id: t.id, position: String(i), status: col.key });
+      });
+    }
+
+    if (updates.length === 0) {
+      columnsBeforeDragRef.current = null;
+      return;
+    }
+
+    try {
+      await reorderTasks.mutateAsync(updates);
+      columnsBeforeDragRef.current = null;
+    } catch {
+      if (before) setColumns(before);
+      columnsBeforeDragRef.current = null;
+    }
+  }, [reorderTasks]);
 
   const handleDragCancel = useCallback(() => {
     setActiveDragTask(null);
+    if (columnsBeforeDragRef.current) {
+      setColumns(columnsBeforeDragRef.current);
+    }
+    dragOriginStatusRef.current = null;
+    columnsBeforeDragRef.current = null;
   }, []);
 
   async function handleCreateTask(status: string) {
@@ -536,7 +560,7 @@ export default function KanbanBoardClient({
     if (!data?.title.trim()) return;
 
     try {
-      await createTask.mutateAsync({
+      const created = await createTask.mutateAsync({
         title: data.title.trim(),
         description: data.description.trim() || null,
         priority: data.priority,
@@ -545,14 +569,97 @@ export default function KanbanBoardClient({
         assigneeId: data.assigneeId || null,
         dueDate: data.dueDate || null,
       });
+      const assignee = users.find((u) => u.id === created.assigneeId) ?? null;
+      const project = projects.find((p) => p.id === created.projectId) ?? null;
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.key === status
+            ? {
+                ...col,
+                tasks: [
+                  ...col.tasks,
+                  {
+                    ...created,
+                    dueDate: created.dueDate ?? null,
+                    position: created.position ?? String(col.tasks.length),
+                    assigneeName: assignee?.name ?? null,
+                    assigneeAvatar: assignee?.avatarUrl ?? null,
+                    projectName: project?.name ?? null,
+                    projectColor: project?.color ?? null,
+                  },
+                ],
+              }
+            : col
+        )
+      );
       setShowNewTask(null);
       setNewTaskData((prev) => ({
         ...prev,
-        [status]: { title: "", description: "", priority: "medium", assigneeId: "", dueDate: "", projectId: "" },
+        [status]: {
+          title: "",
+          description: "",
+          priority: "medium",
+          assigneeId: "",
+          dueDate: "",
+          projectId: "",
+        },
       }));
     } catch (err) {
       console.error("Failed to create task:", err);
     }
+  }
+
+  function handleTaskDetailChange(
+    updated: {
+      id: string;
+      title: string;
+      description: string | null;
+      status: string;
+      priority: string;
+      projectId: string;
+      assigneeId: string | null;
+      creatorId: string;
+      dueDate: string | null;
+      position: string;
+      createdAt: string;
+      updatedAt: string;
+      assigneeName: string | null;
+      assigneeAvatar: string | null;
+    } | null
+  ) {
+    if (!updated) {
+      const id = selectedTask?.id;
+      if (!id) return;
+      setColumns((prev) =>
+        prev.map((col) => ({
+          ...col,
+          tasks: col.tasks.filter((t) => t.id !== id),
+        }))
+      );
+      setSelectedTask(null);
+      return;
+    }
+
+    const enriched: Task = {
+      ...updated,
+      projectName:
+        projects.find((p) => p.id === updated.projectId)?.name ?? null,
+      projectColor:
+        projects.find((p) => p.id === updated.projectId)?.color ?? null,
+    };
+
+    setColumns((prev) => {
+      const without = prev.map((col) => ({
+        ...col,
+        tasks: col.tasks.filter((t) => t.id !== enriched.id),
+      }));
+      return without.map((col) =>
+        col.key === enriched.status
+          ? { ...col, tasks: [...col.tasks, enriched] }
+          : col
+      );
+    });
+    setSelectedTask(enriched);
   }
 
   function getInitials(name: string | null) {
@@ -572,7 +679,7 @@ export default function KanbanBoardClient({
       currentUserId={currentUserId}
       userRole={userRole}
       onClose={() => setSelectedTask(null)}
-      onChange={() => {}}
+      onChange={handleTaskDetailChange}
     />
   ) : null;
 
