@@ -5,6 +5,7 @@ import { eq, gt } from "drizzle-orm";
 import { compareSync } from "bcryptjs";
 
 const SESSION_COOKIE = "tf_session";
+const IMPERSONATOR_SESSION_COOKIE = "tf_impersonator";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 export type AuthUser = {
@@ -139,4 +140,4 @@ export function requireRole(
   }
 }
 
-export { SESSION_COOKIE, SESSION_MAX_AGE };
+export { SESSION_COOKIE, IMPERSONATOR_SESSION_COOKIE, SESSION_MAX_AGE };

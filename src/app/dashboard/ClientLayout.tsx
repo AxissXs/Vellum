@@ -3,6 +3,7 @@
 import { QueryProvider } from "@/providers/QueryProvider";
 import Sidebar from "@/components/Sidebar";
 import NotificationBell from "@/components/NotificationBell";
+import ImpersonationBanner from "@/components/ImpersonationBanner";
 import type { ReactNode } from "react";
 
 interface DashboardLayoutProps {
@@ -14,15 +15,17 @@ interface DashboardLayoutProps {
     role: string;
     avatarUrl: string | null;
   };
+  isImpersonating?: boolean;
 }
 
-export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, user, isImpersonating }: DashboardLayoutProps) {
   return (
     <QueryProvider>
       <div className="min-h-screen bg-slate-950">
         <Sidebar user={user} />
         <main className="pl-[260px] transition-all duration-200">
           <div className="max-w-[1600px] mx-auto">
+            {isImpersonating && <ImpersonationBanner targetName={user.name} />}
             <div className="flex items-center justify-between px-6 lg:px-8 py-4">
               <div />
               <NotificationBell />

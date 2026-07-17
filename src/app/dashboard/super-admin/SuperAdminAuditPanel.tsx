@@ -47,6 +47,7 @@ const tagLabels: Record<string, string> = {
   data_change: "Data Change",
   security: "Security",
   user_action: "User Action",
+  impersonation: "Impersonation",
 };
 
 function formatDateShort(dateStr: string) {
@@ -117,7 +118,7 @@ export default function SuperAdminAuditPanel() {
       {/* Tag + Severity Pills */}
       <div className="flex flex-wrap gap-2">
         <span className="text-xs text-slate-500 self-center mr-1">Tag:</span>
-        {["", "data_change", "security", "user_action"].map((t) => (
+        {["", "data_change", "security", "user_action", "impersonation"].map((t) => (
           <button
             key={t}
             onClick={() => { setTagFilter(t); setPage(1); }}
