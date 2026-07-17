@@ -66,6 +66,70 @@ Vellum deploys to **Deno Deploy** with a managed **Prisma Postgres** database.
 
 Note: `drizzle.config.ts` skips loading `.env` in production so the injected `DATABASE_URL` is used. Demo seeding (`ensureDemoData`) is disabled in production.
 
+### Deno Deploy build pitfalls (do not regress)
+
+Prod build uses **webpack on purpose** (`deno task build` → `next build --webpack`). Deno Deploy build containers are tight on RAM and collect page data with **1 worker**. Agents must preserve these rules:
+
+#### 1. Never pull Node-only / DB code into Client Components
+
+`pg`, `bcryptjs`, `web-push`, `pusher` must stay server-only. They are listed in `serverExternalPackages` in [`next.config.ts`](next.config.ts).
+
+**Import chain that breaks the browser (and sometimes Deploy page-data):**
+
+`ClientComponent` → shared lib → `@/db` / `platform-settings` → `pg` → `Can't resolve 'dns'|'fs'|'net'|'tls'`
+
+**Pattern:** split client-safe helpers from server-only DB accessors.
+
+- Client-safe: [`src/lib/timezone.ts`](src/lib/timezone.ts), [`src/lib/holidays/index.ts`](src/lib/holidays/index.ts)
+- Server-only: [`src/lib/timezone-server.ts`](src/lib/timezone-server.ts), [`src/lib/holidays-server.ts`](src/lib/holidays-server.ts)
+
+Same rule for any new platform setting that reads Postgres.
+
+#### 2. Keep `/_not-found` and `/_global-error` dependency-free
+
+Symptom on Deno Deploy:
+
+```
+TypeError: i[a] is not a function
+Failed to collect page data for /_not-found
+# or /_global-error, /login, /api/activity, …
+```
+
+Cause: Deno Deploy runs webpack page-data collect under Deno Node-compat (`ext:core`) with **1 worker**. Loading **shared server chunks** via `webpack-runtime` then fails (`i[a] is not a function`). Whack-a-mole on individual routes is not enough — any entry that still shares chunks can fail next.
+
+**Required webpack policy** in [`next.config.ts`](next.config.ts) (server + production only):
+
+- `optimization.splitChunks = false` — every server entry self-contained (no shared chunk load)
+- Keep `minimize` **on** (default) — disabling it bloats un-minified self-contained bundles → OOM during static page generation
+- Build script uses `node --max-old-space-size=8192` (see [`deno.json`](deno.json) `build` task) to handle the extra webpack compilation memory
+
+**Also keep UI minimal:**
+
+- [`src/app/not-found.tsx`](src/app/not-found.tsx) — inline styles only; **no** `next/link`, brand, CSS modules, providers, or `@/db`
+- [`src/app/global-error.tsx`](src/app/global-error.tsx) — own `<html>`/`<body>`; **no** app layout, brand, CSS, or providers
+
+**Do NOT:**
+
+- Re-enable server `splitChunks` “to save disk” — Deploy page-data will break again
+- Disable server `minimize` — un-minified self-contained bundles OOM the Deploy container (exit 137)
+- Remove `bcryptjs` / `pg` from `serverExternalPackages`
+- Switch prod build off `--webpack` without verifying Deploy page-data collect still works
+- “Improve” not-found/global-error with Tailwind, Link, lucide, or shared UI kits
+
+#### 3. Login / auth page-data
+
+Prefer dynamic imports for `@/db` on pages that must stay out of static graphs (see [`src/app/login/page.tsx`](src/app/login/page.tsx)). Keep bcrypt usage server-side and dynamically imported where needed.
+
+#### 4. Verify before claiming Deploy-ready
+
+After touching `next.config.ts`, `not-found.tsx`, `global-error.tsx`, root `layout.tsx`, or anything that can reach `pg`/`bcryptjs` from a page module:
+
+```bash
+deno task build
+```
+
+Confirm build past “Collecting page data” / “Generating static pages”. Local Node success is necessary but not sufficient — Deploy uses Deno’s Node compat. After webpack changes, confirm server entries have **no shared chunk deps** (e.g. `api/activity/route.js` should not `.X(0,[…])` shared ids).
+
 ## Environment Variables
 
 Required in `.env`:

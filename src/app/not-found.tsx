@@ -1,5 +1,8 @@
-import Link from "next/link";
-
+/**
+ * Standalone 404. Avoid next/link and other app imports — Deno Deploy webpack
+ * page-data collection has hit "i[a] is not a function" when /_not-found
+ * loads shared server chunks.
+ */
 export default function NotFound() {
   return (
     <div
@@ -20,12 +23,12 @@ export default function NotFound() {
       <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>
         The page you requested does not exist.
       </p>
-      <Link
+      <a
         href="/dashboard"
         style={{ color: "#0052cc", fontSize: 14, fontWeight: 600 }}
       >
         Back to dashboard
-      </Link>
+      </a>
     </div>
   );
 }
