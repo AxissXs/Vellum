@@ -4,12 +4,131 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Loader2, Send, Settings, Users, Bot } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  Settings,
+  Users,
+  Bot,
+  BookOpen,
+  ChevronDown,
+  Copy,
+  Check,
+} from "lucide-react";
 
 function maskToken(token: string | null): string {
   if (!token) return "";
   if (token.length <= 8) return "********";
   return token.slice(0, 4) + "..." + token.slice(-4);
+}
+
+function SetupGuide() {
+  const [open, setOpen] = useState(true);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://YOUR_HOST";
+  const webhookUrl = `${origin}/api/telegram/webhook`;
+  const setWebhookCurl = `curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \\
+  -H "Content-Type: application/json" \\
+  -d '{"url":"${webhookUrl}","allowed_updates":["message"]}'`;
+
+  function copyWebhookCurl() {
+    navigator.clipboard.writeText(setWebhookCurl);
+    setCopiedWebhook(true);
+    toast.success("Webhook command copied");
+    setTimeout(() => setCopiedWebhook(false), 2000);
+  }
+
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-100/80 transition"
+      >
+        <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <BookOpen size={16} className="text-brand-600" />
+          Setup guide
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 shrink-0 transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 space-y-4 border-t border-slate-200 pt-4">
+          <ol className="list-decimal list-inside space-y-3 text-sm text-slate-600">
+            <li>
+              Create a bot with{" "}
+              <span className="font-medium text-slate-800">@BotFather</span> and
+              copy the token. Open the bot in Telegram and tap{" "}
+              <span className="font-medium text-slate-800">Start</span> so DMs work.
+            </li>
+            <li>
+              Paste the <span className="font-medium text-slate-800">Bot Token</span>{" "}
+              below (and optional group/channel IDs). Click{" "}
+              <span className="font-medium text-slate-800">Save Settings</span>, then{" "}
+              <span className="font-medium text-slate-800">Test Connection</span>.
+            </li>
+            <li>
+              Point Telegram at this app&apos;s webhook (HTTPS only — use your
+              production host). Run once from a terminal:
+              <div className="mt-2 relative">
+                <pre className="text-xs font-mono bg-white border border-slate-200 rounded-lg p-3 pr-10 overflow-x-auto whitespace-pre-wrap break-all text-slate-700">
+                  {setWebhookCurl}
+                </pre>
+                <button
+                  type="button"
+                  onClick={copyWebhookCurl}
+                  className="absolute top-2 right-2 p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                  title="Copy"
+                >
+                  {copiedWebhook ? (
+                    <Check size={14} className="text-emerald-600" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Verify:{" "}
+                <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">
+                  getWebhookInfo
+                </code>{" "}
+                should show{" "}
+                <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded break-all">
+                  {webhookUrl}
+                </code>
+                .
+              </p>
+            </li>
+            <li>
+              Users link in <span className="font-medium text-slate-800">Settings → Telegram</span>:
+              generate a pairing code, DM the bot{" "}
+              <code className="font-mono text-xs bg-white border border-slate-200 px-1 rounded">
+                /start CODE
+              </code>
+              , then enable Telegram per event under Notification Preferences.
+            </li>
+          </ol>
+
+          <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-800/90 space-y-1.5">
+            <p>
+              <span className="font-semibold">Notifications are private DMs</span>{" "}
+              after pairing. Group/channel IDs are stored for broadcasts but are
+              not used by the normal notification path yet.
+            </p>
+            <p>
+              Pairing codes expire in <span className="font-semibold">10 minutes</span>.
+              Localhost cannot receive webhooks without a public HTTPS tunnel.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function SuperAdminTelegramPanel() {
@@ -97,6 +216,8 @@ export default function SuperAdminTelegramPanel() {
         </div>
       </div>
 
+      <SetupGuide />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4">
           <div className="bg-brand-500/10 border border-brand-500/20 p-3 rounded-lg">
@@ -165,7 +286,7 @@ export default function SuperAdminTelegramPanel() {
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Get this from @BotFather on Telegram.
+                  From @BotFather. Required for pairing and DM notifications.
                 </p>
               </div>
 
@@ -178,12 +299,14 @@ export default function SuperAdminTelegramPanel() {
                   value={supergroupInput}
                   onChange={(e) => setSupergroupInput(e.target.value)}
                   placeholder={
-                    settings?.telegram_supergroup_id ?? "-123456789"
+                    settings?.telegram_supergroup_id ?? "-1001234567890"
                   }
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Numeric ID of the supergroup for typed notifications.
+                  Optional. Stored for group broadcasts (not used for personal
+                  notifications yet). Usually starts with{" "}
+                  <code className="font-mono text-[11px]">-100</code>.
                 </p>
               </div>
 
@@ -201,7 +324,8 @@ export default function SuperAdminTelegramPanel() {
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Numeric ID of the channel for broadcast notifications.
+                  Optional. Stored for channel broadcasts (not used for personal
+                  notifications yet).
                 </p>
               </div>
             </div>

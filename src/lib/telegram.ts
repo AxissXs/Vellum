@@ -138,7 +138,14 @@ export async function sendTelegramNotification({
     ? `<b>${escapeHtml(title)}</b>\n\n${escapeHtml(content)}\n\n<a href="${escapeHtml(url)}">Open in Perfect</a>`
     : `<b>${escapeHtml(title)}</b>\n\n${escapeHtml(content)}`;
 
-  await sendTelegramMessage(chatId, text, { parseMode: "HTML" });
+  const result = await sendTelegramMessage(chatId, text, { parseMode: "HTML" });
+  if (!result.ok) {
+    console.error(
+      "[telegram] sendMessage failed:",
+      result.description || "unknown error",
+      { chatId, eventType }
+    );
+  }
 }
 
 export async function broadcastToSupergroup(

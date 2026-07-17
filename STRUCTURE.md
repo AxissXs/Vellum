@@ -231,6 +231,7 @@ src/
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
 │   ├── pusher-client.ts    # Pusher client singleton + ref counting
+│   ├── mentions.ts         # Parse @FirstName mentions from comment markdown
 │   └── telegram.ts         # Telegram bot API + pairing helpers
 └── providers/              # React Context Providers
     └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
@@ -462,7 +463,7 @@ src/
 
 ### `src/app/dashboard/settings/page.tsx`
 
-**Purpose**: User notification settings (in-app / push / email / Telegram prefs, push toggle, Telegram pairing)
+**Purpose**: User notification settings (in-app / push / email / Telegram prefs, push toggle, Telegram pairing + how-to guide)
 **Exports**: `SettingsPage()` - Client component
 
 ### `src/app/dashboard/super-admin/page.tsx`
@@ -503,7 +504,7 @@ src/
 
 ### `src/app/dashboard/super-admin/SuperAdminTelegramPanel.tsx`
 
-**Purpose**: Telegram bot token/webhook settings and test send
+**Purpose**: Telegram bot token/group/channel settings, test connection, collapsible setup guide (webhook curl)
 **Exports**: `SuperAdminTelegramPanel()` - Client component
 
 ---
@@ -1296,6 +1297,13 @@ src/
 - `sendPushNotification(userId, payload)` - Send via `web-push`
 - `getNotificationPreferences(userId)` / `getDefaultNotificationPreferences()` / `ensureNotificationPreferences(userId)`
 - `updateNotificationPreference(...)` / `isPushEnabled(userId, eventType)`
+
+#### `src/lib/mentions.ts`
+
+**Purpose**: Resolve `@FirstName` tokens in comment markdown to user IDs (matches RichTextEditor insert format)
+**Exports**:
+- `extractMentionTokens(content)` - Unique @tokens (lowercased)
+- `resolveMentionedUserIds(content, users)` - User IDs matching first/compact name
 
 #### `src/lib/telegram.ts`
 
