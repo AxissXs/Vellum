@@ -111,6 +111,60 @@
   - Replace existing silent optimistic updates with visible feedback (keep optimistic UI, add toast layer on top)
   - Acceptance criteria: Every mutation shows a toast with appropriate status (loading → success/error), animations feel smooth, no toast spam on rapid actions
 
+- [ ] **Comment replies** - Threaded replies on task comments with notifications
+  - Add `parentId` column to `comments` table (nullable, self-referencing FK)
+  - API: `POST /api/comments` accepts optional `parentId` to create a reply
+  - UI: "Reply" button on each comment, opens inline reply form
+  - Display replies nested under parent comment (1 level deep, not infinite thread)
+  - Reply count badge on parent comment if it has replies
+  - Send notification to parent comment author when someone replies (via `sendNotification()`)
+  - Real-time reply updates via Pusher
+  - Acceptance criteria: Users can reply to any comment, replies are visually nested, parent comment author gets notified, real-time works
+
+- [ ] **Superadmin user detail modal** - Rich user detail view with session history
+  - Click any user row in superadmin users table to open a detail modal
+  - Modal shows: full profile (name, email, role, status, avatar), created at, last login, last IP
+  - Login sessions list: IP, user agent (parsed: browser, OS, device), success/failure, timestamp
+  - Session list paginated, sortable by date
+  - Inline actions: change role, change status, ban/unban, impersonate
+  - Acceptance criteria: Superadmin can click a user to see full details and session history in a modal
+
+- [ ] **User impersonation** - Superadmin can impersonate any user
+  - "Impersonate" button in user detail modal and inline in users table
+  - `POST /api/super-admin/impersonate` — creates a new session as the target user, sets a different cookie
+  - Show banner at top of screen: "Impersonating {name} — [Stop Impersonating]"
+  - Stop impersonation reverts to superadmin session
+  - Log impersonation in audit log with `action: "impersonated_user"`
+  - Only superadmin can impersonate; cannot impersonate another superadmin
+  - Acceptance criteria: Superadmin can impersonate any non-superadmin user, see banner, stop to revert; audit log records it
+
+- [ ] **Task card assignee avatars** - Show assigned members on task cards
+  > Depends on: User profiles (avatar upload)
+  - Fetch assignee avatar URL with task data (already in `tasks` via join to `users`)
+  - Display assignee avatar(s) on task cards in kanban, task lists, and any task previews
+  - Show up to 2 avatars inline, "+N" badge if more
+  - Fallback to initials if no avatar
+  - Acceptance criteria: Task cards show assigned user avatars, works in kanban and task list views
+
+- [ ] **Quick task assignment** - Rapidly assign/unassign users to tasks
+  - "Assign" button on task cards (kanban hover) and in task detail modal
+  - Opens a small popover/dropdown with user search + multi-select
+  - Type to filter users by name
+  - Click to toggle assignment (optimistic update)
+  - Show assigned users with avatar + name, "×" to remove
+  - Send notification to newly assigned user
+  - Acceptance criteria: Users can quickly assign team members from task card or modal, search works, notifications fire
+
+- [ ] **Task modal redesign** - Better task detail modal with improved UX
+  - Redesign layout: cleaner header with task title + status badge, two-column body (details left, activity right)
+  - Linked assignee: clickable avatar/name that opens user detail or profile
+  - Linked project: clickable project badge
+  - Better status/priority selectors (visual, not plain dropdowns)
+  - Activity timeline section: shows comments, status changes, assignments in chronological order
+  - Keyboard shortcuts: `Esc` to close, `E` to edit, `Delete` to delete
+  - Responsive: full-screen on mobile, centered modal on desktop
+  - Acceptance criteria: Modal feels polished, all links work, keyboard shortcuts work, responsive layout
+
 ## Priority: Low
 
 - [ ] **Project notes** - Rich text notes per project
