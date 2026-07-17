@@ -70,7 +70,7 @@ export default function NotificationBell() {
                     key={n.id}
                     className={clsx(
                       "px-4 py-3 hover:bg-slate-50 transition cursor-pointer",
-                      !n.read && "bg-brand-50"
+                      !n.read && "bg-brand-500/5"
                     )}
                     onClick={() => {
                       if (!n.read) markRead(n.id);
@@ -88,12 +88,17 @@ export default function NotificationBell() {
                         <p
                           className={clsx(
                             "text-sm leading-snug",
-                            n.read ? "text-slate-500" : "text-slate-200"
+                            n.read ? "text-slate-500" : "text-slate-900 font-medium"
                           )}
                         >
                           {n.content}
                         </p>
-                        <p className="text-[11px] text-slate-500 mt-1">
+                        <p
+                          className={clsx(
+                            "text-[11px] mt-1",
+                            n.read ? "text-slate-400" : "text-slate-500"
+                          )}
+                        >
                           {formatTimeAgo(n.createdAt)}
                         </p>
                       </div>
