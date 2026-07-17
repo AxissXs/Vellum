@@ -319,11 +319,12 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/telegram/stats`       | GET                | Telegram usage stats           |
 | `/api/super-admin/telegram/test`        | POST               | Send Telegram test message     |
 | `/api/activity`                         | GET                | Activity logs                  |
-| `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, MY holidays) |
+| `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, holidays) |
 | `/api/schedules`                        | POST               | Create schedule event          |
 | `/api/schedules/[id]`                   | PATCH, DELETE      | Update/delete schedule         |
 | `/api/timezone`                         | GET                | Platform app timezone          |
 | `/api/super-admin/timezone`             | GET, PATCH         | Super-admin get/set timezone   |
+| `/api/super-admin/holidays`             | GET, PATCH         | Super-admin get/set holiday country |
 | `/api/stats`                            | GET                | Dashboard statistics           |
 | `/api/health`                           | GET                | Health check                   |
 

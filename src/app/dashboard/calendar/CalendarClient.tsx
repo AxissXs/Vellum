@@ -221,7 +221,7 @@ export default function CalendarClient({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Calendar</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Schedules, activity, tasks, and Malaysia holidays
+            Schedules, activity, tasks, and public holidays
           </p>
         </div>
         {(canCreateOwn || canManage) && (
@@ -422,8 +422,8 @@ export default function CalendarClient({
               {dayHolidays.map((h) => (
                 <div key={h.date + h.name} className="text-sm text-rose-700">
                   <span className="font-medium">{h.name}</span>
-                  {h.nameMs ? (
-                    <span className="text-rose-500/80"> · {h.nameMs}</span>
+                  {h.localName ? (
+                    <span className="text-rose-500/80"> · {h.localName}</span>
                   ) : null}
                   {h.religion ? (
                     <span className="ml-1 text-[10px] uppercase tracking-wider text-rose-400">

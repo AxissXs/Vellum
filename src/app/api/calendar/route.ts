@@ -10,7 +10,8 @@ import {
   users,
 } from "@/db/schema";
 import { hasPermission } from "@/lib/permissions";
-import { getMalaysiaHolidaysInRange } from "@/lib/holidays/malaysia";
+import { getHolidaysInRange } from "@/lib/holidays";
+import { getHolidayCountry } from "@/lib/holidays-server";
 import { getAppTimezone } from "@/lib/timezone-server";
 
 const SCHEDULE_TYPES = ["work", "meeting", "leave", "training", "other"] as const;
@@ -226,7 +227,12 @@ export async function GET(req: NextRequest) {
   }
 
   const holidays = layers.has("holidays")
-    ? getMalaysiaHolidaysInRange(from, to, await getAppTimezone())
+    ? getHolidaysInRange(
+        await getHolidayCountry(),
+        from,
+        to,
+        await getAppTimezone()
+      )
     : [];
 
   // Leave vs task due-date conflicts for leave schedules in range

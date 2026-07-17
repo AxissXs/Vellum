@@ -1,0 +1,66 @@
+import type { Holiday } from "./types";
+
+/** Thailand public holidays (curated national). */
+const HOLIDAYS_BY_YEAR: Record<number, Holiday[]> = {
+  2025: [
+    { date: "2025-01-01", name: "New Year's Day", type: "public", scope: "national" },
+    { date: "2025-02-12", name: "Makha Bucha", religion: "buddhist", type: "public", scope: "national" },
+    { date: "2025-04-06", name: "Chakri Memorial Day", type: "public", scope: "national" },
+    { date: "2025-04-13", name: "Songkran", type: "public", scope: "national" },
+    { date: "2025-04-14", name: "Songkran (Day 2)", type: "public", scope: "national" },
+    { date: "2025-04-15", name: "Songkran (Day 3)", type: "public", scope: "national" },
+    { date: "2025-05-01", name: "Labour Day", type: "public", scope: "national" },
+    { date: "2025-05-05", name: "Coronation Day", type: "public", scope: "national" },
+    { date: "2025-05-11", name: "Visakha Bucha", religion: "buddhist", type: "public", scope: "national" },
+    { date: "2025-06-03", name: "Queen Suthida's Birthday", type: "public", scope: "national" },
+    { date: "2025-07-28", name: "King's Birthday", type: "public", scope: "national" },
+    { date: "2025-08-12", name: "Queen Mother's Birthday", type: "public", scope: "national" },
+    { date: "2025-10-13", name: "King Bhumibol Memorial Day", type: "public", scope: "national" },
+    { date: "2025-10-23", name: "Chulalongkorn Day", type: "public", scope: "national" },
+    { date: "2025-12-05", name: "King Bhumibol's Birthday / Father's Day", type: "public", scope: "national" },
+    { date: "2025-12-10", name: "Constitution Day", type: "public", scope: "national" },
+    { date: "2025-12-31", name: "New Year's Eve", type: "public", scope: "national" },
+  ],
+  2026: [
+    { date: "2026-01-01", name: "New Year's Day", type: "public", scope: "national" },
+    { date: "2026-03-03", name: "Makha Bucha", religion: "buddhist", type: "public", scope: "national" },
+    { date: "2026-04-06", name: "Chakri Memorial Day", type: "public", scope: "national" },
+    { date: "2026-04-13", name: "Songkran", type: "public", scope: "national" },
+    { date: "2026-04-14", name: "Songkran (Day 2)", type: "public", scope: "national" },
+    { date: "2026-04-15", name: "Songkran (Day 3)", type: "public", scope: "national" },
+    { date: "2026-05-01", name: "Labour Day", type: "public", scope: "national" },
+    { date: "2026-05-04", name: "Coronation Day (Observed)", type: "public", scope: "national" },
+    { date: "2026-05-31", name: "Visakha Bucha", religion: "buddhist", type: "public", scope: "national" },
+    { date: "2026-06-03", name: "Queen Suthida's Birthday", type: "public", scope: "national" },
+    { date: "2026-07-28", name: "King's Birthday", type: "public", scope: "national" },
+    { date: "2026-08-12", name: "Queen Mother's Birthday", type: "public", scope: "national" },
+    { date: "2026-10-13", name: "King Bhumibol Memorial Day", type: "public", scope: "national" },
+    { date: "2026-10-23", name: "Chulalongkorn Day", type: "public", scope: "national" },
+    { date: "2026-12-05", name: "King Bhumibol's Birthday / Father's Day", type: "public", scope: "national" },
+    { date: "2026-12-10", name: "Constitution Day", type: "public", scope: "national" },
+    { date: "2026-12-31", name: "New Year's Eve", type: "public", scope: "national" },
+  ],
+  2027: [
+    { date: "2027-01-01", name: "New Year's Day", type: "public", scope: "national" },
+    { date: "2027-02-21", name: "Makha Bucha", religion: "buddhist", type: "public", scope: "national" },
+    { date: "2027-04-06", name: "Chakri Memorial Day", type: "public", scope: "national" },
+    { date: "2027-04-13", name: "Songkran", type: "public", scope: "national" },
+    { date: "2027-04-14", name: "Songkran (Day 2)", type: "public", scope: "national" },
+    { date: "2027-04-15", name: "Songkran (Day 3)", type: "public", scope: "national" },
+    { date: "2027-05-01", name: "Labour Day", type: "public", scope: "national" },
+    { date: "2027-05-05", name: "Coronation Day", type: "public", scope: "national" },
+    { date: "2027-05-20", name: "Visakha Bucha", religion: "buddhist", type: "public", scope: "national" },
+    { date: "2027-06-03", name: "Queen Suthida's Birthday", type: "public", scope: "national" },
+    { date: "2027-07-28", name: "King's Birthday", type: "public", scope: "national" },
+    { date: "2027-08-12", name: "Queen Mother's Birthday", type: "public", scope: "national" },
+    { date: "2027-10-13", name: "King Bhumibol Memorial Day", type: "public", scope: "national" },
+    { date: "2027-10-23", name: "Chulalongkorn Day", type: "public", scope: "national" },
+    { date: "2027-12-05", name: "King Bhumibol's Birthday / Father's Day", type: "public", scope: "national" },
+    { date: "2027-12-10", name: "Constitution Day", type: "public", scope: "national" },
+    { date: "2027-12-31", name: "New Year's Eve", type: "public", scope: "national" },
+  ],
+};
+
+export function getThailandHolidays(year: number): Holiday[] {
+  return HOLIDAYS_BY_YEAR[year] ?? [];
+}

@@ -29,7 +29,7 @@ const tabs = [
   { id: "health", label: "System Health", icon: HeartPulse },
   { id: "roles", label: "Role Matrix", icon: ShieldCheck },
   { id: "telegram", label: "Telegram", icon: MessageCircle },
-  { id: "timezone", label: "Timezone", icon: Globe },
+  { id: "timezone", label: "Locale", icon: Globe },
 ];
 
 export default function SuperAdminClient() {

@@ -210,7 +210,17 @@ src/
 │   ├── activity.ts         # Deferred activity-log writes (`after()`)
 │   ├── api.ts              # API client helpers
 │   ├── holidays/
-│   │   └── malaysia.ts     # Curated MY federal/religious holidays 2025–2027
+│   │   ├── index.ts        # Country registry + getHolidaysInRange (client-safe)
+│   │   ├── types.ts        # Holiday / HolidayCountryCode types
+│   │   ├── malaysia.ts     # MY holidays 2025–2027
+│   │   ├── singapore.ts    # SG holidays
+│   │   ├── indonesia.ts    # ID holidays
+│   │   ├── philippines.ts  # PH holidays
+│   │   ├── thailand.ts     # TH holidays
+│   │   ├── australia.ts    # AU holidays
+│   │   ├── united-kingdom.ts # GB bank holidays
+│   │   └── united-states.ts  # US federal holidays
+│   ├── holidays-server.ts  # getHolidayCountry (platform setting)
 │   ├── audit.ts            # Client IP helper for audit logs
 │   ├── auth.ts             # Authentication utilities (React `cache` + session JOIN)
 │   ├── brand.ts            # Whitelabel brand config (name, logos, colors, email domain)
@@ -464,7 +474,7 @@ src/
 
 **Purpose**: Tabbed shell for super-admin panels
 **Exports**: `SuperAdminClient()` - Client component
-**Tabs**: Users, Activity, Sessions, Audit, Health, Roles, Telegram
+**Tabs**: Users, Activity, Sessions, Audit, Health, Roles, Telegram, Locale (timezone + holiday country)
 
 ### `src/app/dashboard/super-admin/SuperAdminActivityPanel.tsx`
 
@@ -887,7 +897,7 @@ src/
 **Purpose**: Aggregated calendar feed
 **Functions**:
 
-- `GET(req)` - Query `from`, `to`, `scope=me|team`, `userId`, `layers` → schedules, activity, task due dates, MY holidays, leave conflicts
+- `GET(req)` - Query `from`, `to`, `scope=me|team`, `userId`, `layers` → schedules, activity, task due dates, configured-country holidays, leave conflicts
 
 #### `src/app/api/schedules/route.ts`
 
@@ -1234,13 +1244,25 @@ src/
 
 **Notes**: Prefer `hasPermission` / `requirePermission` from `lib/permissions.ts` for entity CRUD. Use `requireRole` for coarse admin/superadmin gates.
 
+#### `src/lib/holidays/index.ts`
+
+**Purpose**: Multi-country public holiday registry (2025–2027 curated lists)
+**Exports**:
+- `Holiday`, `HolidayCountryCode`, `HolidayCountryOption`
+- `HOLIDAY_COUNTRIES`, `DEFAULT_HOLIDAY_COUNTRY`, `HOLIDAY_COUNTRY_SETTING_KEY`
+- `isValidHolidayCountry(code)`, `getHolidaysForYear(country, year)`, `getHolidaysInRange(country, from, to, timeZone?)`
+
+#### `src/lib/holidays-server.ts`
+
+**Purpose**: Server-only holiday country from `platform_settings`
+**Exports**:
+- `getHolidayCountry()` - Cached resolver (default `MY`)
+
 #### `src/lib/holidays/malaysia.ts`
 
 **Purpose**: Curated Malaysia federal and religious public holidays (2025–2027)
 **Exports**:
-- `MalaysiaHoliday` - Holiday shape
 - `getMalaysiaHolidays(year)` - Holidays for a year
-- `getMalaysiaHolidaysInRange(from, to)` - Holidays overlapping a date range
 
 #### `src/lib/activity.ts`
 

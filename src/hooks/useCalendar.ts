@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import type { MalaysiaHoliday } from "@/lib/holidays/malaysia";
+import type { Holiday } from "@/lib/holidays";
 
 export type ScheduleEvent = {
   id: string;
@@ -61,7 +61,7 @@ export type CalendarData = {
   schedules: ScheduleEvent[];
   activity: CalendarActivity[];
   tasks: CalendarTask[];
-  holidays: MalaysiaHoliday[];
+  holidays: Holiday[];
   conflicts: CalendarConflict[];
   scope: "me" | "team";
 };
