@@ -26,7 +26,6 @@ const entityConfig: Record<
     table: tasks,
     titleCol: tasks.title,
     typeLabel: "Task",
-    extraSelect: { projectName: projects.name },
   },
   project: {
     table: projects,
