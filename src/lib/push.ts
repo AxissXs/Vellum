@@ -78,24 +78,25 @@ export async function getDefaultNotificationPreferences() {
     { eventType: "status_changed", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
     { eventType: "new_comment", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
     { eventType: "comment_mention", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
+    { eventType: "schedule_assigned", pushEnabled: true, inAppEnabled: true, emailEnabled: false, telegramEnabled: false },
   ] as const;
 }
 
 export async function ensureNotificationPreferences(userId: string) {
   const existing = await getNotificationPreferences(userId);
+  const defaults = await getDefaultNotificationPreferences();
+  const existingTypes = new Set(existing.map((p) => p.eventType));
 
-  if (existing.length === 0) {
-    const defaults = await getDefaultNotificationPreferences();
-    for (const pref of defaults) {
-      await db.insert(notificationPreferences).values({
-        userId,
-        eventType: pref.eventType,
-        pushEnabled: pref.pushEnabled,
-        inAppEnabled: pref.inAppEnabled,
-        emailEnabled: pref.emailEnabled,
-        telegramEnabled: pref.telegramEnabled,
-      });
-    }
+  for (const pref of defaults) {
+    if (existingTypes.has(pref.eventType)) continue;
+    await db.insert(notificationPreferences).values({
+      userId,
+      eventType: pref.eventType,
+      pushEnabled: pref.pushEnabled,
+      inAppEnabled: pref.inAppEnabled,
+      emailEnabled: pref.emailEnabled,
+      telegramEnabled: pref.telegramEnabled,
+    });
   }
 
   return getNotificationPreferences(userId);

@@ -17,10 +17,12 @@ import {
   Kanban,
   Timer,
   X,
+  Calendar,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { brand } from "@/lib/brand";
 import { BrandLogo } from "@/components/BrandLogo";
+import SidebarMiniCalendar from "@/components/SidebarMiniCalendar";
 
 type User = {
   id: string;
@@ -54,6 +56,7 @@ export default function Sidebar({
     { href: "/dashboard/teams", label: "Teams", icon: Users },
     { href: "/dashboard/sprints", label: "Sprints", icon: Timer },
     { href: "/dashboard/activity", label: "Activity", icon: Activity },
+    { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ...(user.role === "superadmin" || user.role === "admin"
       ? [{ href: "/dashboard/admin", label: "Admin", icon: Shield }]
@@ -168,8 +171,18 @@ export default function Sidebar({
         })}
       </nav>
 
+      {/* Mini calendar pinned above profile */}
+      <div
+        className={clsx(
+          "shrink-0 px-3 pb-2 border-t border-slate-100",
+          collapsed && "lg:hidden"
+        )}
+      >
+        <SidebarMiniCalendar />
+      </div>
+
       {/* User */}
-      <div className="p-3 border-t border-slate-200">
+      <div className="p-3 border-t border-slate-200 shrink-0">
         <div className={clsx("flex items-center gap-3", collapsed && "lg:justify-center")}>
           <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-600 text-xs font-bold shrink-0">
             {getInitials(user.name)}

@@ -1,7 +1,5 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { db } from "@/db";
-import { users } from "@/db/schema";
 import LoginForm from "@/components/LoginForm";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +11,10 @@ const errorMessages: Record<string, string> = {
 };
 
 async function isInitialized() {
+  // Dynamic imports keep db/schema out of the static page module graph where
+  // possible (Deno Deploy page-data collection is sensitive to Node natives).
+  const { db } = await import("@/db");
+  const { users } = await import("@/db/schema");
   const existingUsers = await db.select({ count: users.id }).from(users).limit(1);
   return existingUsers.length > 0;
 }

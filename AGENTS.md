@@ -4,7 +4,7 @@ This document provides guidance for AI agents working on the Vellum project.
 
 ## Project Overview
 
-**Vellum** (product UI brand: **Perfect**) is a Next.js 15 (App Router) team management platform with:
+**Vellum** (product UI brand: **Perfect**) is a Next.js 16 (App Router) team management platform with:
 
 - PostgreSQL database using Drizzle ORM
 - Kanban boards for project management
@@ -46,7 +46,7 @@ deno task lint           # ESLint
 deno task typecheck      # TypeScript check
 
 # Build & Deploy
-deno task build          # Production build (standalone output for Deno Deploy)
+deno task build          # Production build (Turbopack, standalone for Deno Deploy)
 deno task start          # Start production server
 deno task db:deploy      # Local: deno run migrate.ts (same runner as Deploy predeploy)
 deno task deploy         # CLI deploy via deployctl (GitHub integration is preferred)
@@ -65,6 +65,66 @@ Vellum deploys to **Deno Deploy** with a managed **Prisma Postgres** database.
 7. Deno Deploy serves the app via `jsr:@deno/nextjs-start/v16` (`next start` on the Node runtime). Do NOT set `runtime = "edge"` on routes — `pg` needs the Node runtime.
 
 Note: `drizzle.config.ts` skips loading `.env` in production so the injected `DATABASE_URL` is used. Demo seeding (`ensureDemoData`) is disabled in production.
+
+### Deno Deploy build pitfalls (do not regress)
+
+Prod build uses **Turbopack** (`deno task build` → `next build`, no `--webpack`). Deno Deploy build containers have ~**3GB** build RAM and **768MB** runtime. Agents must preserve these rules:
+
+#### 1. Prefer Turbopack for prod builds — do not force webpack
+
+Webpack on Deno Deploy previously failed page-data collect with:
+
+```
+TypeError: i[a] is not a function
+Failed to collect page data for /_not-found  # or /login, /api/activity, …
+```
+
+Cause: Deno’s Node compat (`ext:core`) + 1-worker webpack page-data loading **shared server chunks**. Workarounds (`splitChunks: false`, `--max-old-space-size=8192`) either broke collect or **OOM’d** (exit 137) under the 3GB build limit.
+
+**Current policy:** default Turbopack build. Do **not** add `--webpack` unless Deploy Turbopack regresses and a verified webpack fix fits in 3GB.
+
+#### 2. Never pull Node-only / DB code into Client Components
+
+`pg`, `bcryptjs`, `web-push`, `pusher` must stay server-only. They are listed in `serverExternalPackages` in [`next.config.ts`](next.config.ts).
+
+**Import chain that breaks the browser (and sometimes Deploy page-data):**
+
+`ClientComponent` → shared lib → `@/db` / `platform-settings` → `pg` → `Can't resolve 'dns'|'fs'|'net'|'tls'`
+
+**Pattern:** split client-safe helpers from server-only DB accessors.
+
+- Client-safe: [`src/lib/timezone.ts`](src/lib/timezone.ts), [`src/lib/holidays/index.ts`](src/lib/holidays/index.ts)
+- Server-only: [`src/lib/timezone-server.ts`](src/lib/timezone-server.ts), [`src/lib/holidays-server.ts`](src/lib/holidays-server.ts)
+
+Same rule for any new platform setting that reads Postgres.
+
+#### 3. Keep `/_not-found` and `/_global-error` dependency-free
+
+Still required for reliable prerender / page-data on Deploy:
+
+- [`src/app/not-found.tsx`](src/app/not-found.tsx) — inline styles only; **no** `next/link`, brand, CSS modules, providers, or `@/db`
+- [`src/app/global-error.tsx`](src/app/global-error.tsx) — own `<html>`/`<body>`; **no** app layout, brand, CSS, or providers
+
+**Do NOT:**
+
+- Force `--webpack` “for stability” without verifying Deploy under the 3GB build / 768MB runtime limits
+- Add `optimization.splitChunks = false` for server (webpack-era hack — OOM on Deploy)
+- Remove `bcryptjs` / `pg` from `serverExternalPackages`
+- “Improve” not-found/global-error with Tailwind, Link, lucide, or shared UI kits
+
+#### 4. Login / auth page-data
+
+Prefer dynamic imports for `@/db` on pages that must stay out of static graphs (see [`src/app/login/page.tsx`](src/app/login/page.tsx)). Keep bcrypt usage server-side and dynamically imported where needed.
+
+#### 5. Verify before claiming Deploy-ready
+
+After touching `next.config.ts`, `not-found.tsx`, `global-error.tsx`, root `layout.tsx`, `deno.json` build task, or anything that can reach `pg`/`bcryptjs` from a page module:
+
+```bash
+deno task build
+```
+
+Confirm build past “Collecting page data” / “Generating static pages”. Local success is necessary; then confirm Deno Deploy revision succeeds (CLI/`deno task deploy` or GitHub integration).
 
 ## Environment Variables
 
@@ -268,8 +328,8 @@ See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
 
 See `src/db/schema.ts` for:
 
-- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `activity_logs`, `notifications`, `push_subscriptions`, `notification_preferences`, `telegram_pairing_codes`, `platform_settings`
-- Enums: `user_role`, `task_status`, `task_priority`, `notification_event_type`
+- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `activity_logs`, `notifications`, `push_subscriptions`, `notification_preferences`, `telegram_pairing_codes`, `platform_settings`, `schedule_events`
+- Enums: `user_role`, `task_status`, `task_priority`, `notification_event_type`, `schedule_type`, `schedule_visibility`
 - Relations defined via Drizzle references
 
 ## API Routes Reference
@@ -319,6 +379,12 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/telegram/stats`       | GET                | Telegram usage stats           |
 | `/api/super-admin/telegram/test`        | POST               | Send Telegram test message     |
 | `/api/activity`                         | GET                | Activity logs                  |
+| `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, holidays) |
+| `/api/schedules`                        | POST               | Create schedule event          |
+| `/api/schedules/[id]`                   | PATCH, DELETE      | Update/delete schedule         |
+| `/api/timezone`                         | GET                | Platform app timezone          |
+| `/api/super-admin/timezone`             | GET, PATCH         | Super-admin get/set timezone   |
+| `/api/super-admin/holidays`             | GET, PATCH         | Super-admin get/set holiday country |
 | `/api/stats`                            | GET                | Dashboard statistics           |
 | `/api/health`                           | GET                | Health check                   |
 

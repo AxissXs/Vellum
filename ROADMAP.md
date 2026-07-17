@@ -133,7 +133,7 @@ Tracked in [`.cursor/plans/migrate_vellum_bun_→_deno_(package_manager)_+_neon_
 - [ ] Task dependencies → TODO.md §"Task dependencies"
 - [ ] Webhooks (outgoing) → TODO.md §"Webhooks"
 - [ ] Slack/Discord integration → TODO.md §"Slack/Discord integration"
-- [ ] Calendar view → TODO.md §"Calendar view"
+- [x] Calendar view → TODO.md §"Calendar view"
 - [ ] Export/Import (JSON/CSV) → TODO.md §"Export/Import"
 - [ ] Multi-language (i18n) → TODO.md §"Multi-language (i18n)"
 - [ ] Public project views → TODO.md §"Public project views"

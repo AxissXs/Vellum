@@ -16,9 +16,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./drizzle/**/*"],
   },
-  // Keep Node-only packages out of Turbopack page-data bundles (Deno Deploy
-  // builds have hit "module factory is not available" during /_not-found).
-  serverExternalPackages: ["web-push", "pusher"],
+  // Keep Node-only packages out of bundles — they must run server-side only.
+  serverExternalPackages: ["web-push", "pusher", "bcryptjs", "pg"],
   // Do NOT set turbopack.root to projectRoot. Next.js bug:
   // https://github.com/vercel/next.js/issues/90307 — CSS @import then
   // resolves from the *parent* directory and fails to find tailwindcss
@@ -34,16 +33,6 @@ const nextConfig: NextConfig = {
         "node_modules/@tailwindcss/postcss"
       ),
     },
-  },
-  webpack: (config) => {
-    // webpack can also walk up to a parent package-lock.json and break
-    // resolution for locally-installed deps. Pin to this project.
-    config.resolve.roots = [projectRoot, ...(config.resolve.roots ?? [])];
-    config.resolve.modules = [
-      path.join(projectRoot, "node_modules"),
-      ...(config.resolve.modules ?? []),
-    ];
-    return config;
   },
 };
 

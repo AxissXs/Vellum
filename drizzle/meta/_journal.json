@@ -43,6 +43,13 @@
       "when": 1784166219593,
       "tag": "0005_even_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784243993288,
+      "tag": "0006_charming_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { TimezoneProvider } from "@/providers/TimezoneProvider";
 import Sidebar from "@/components/Sidebar";
 import { BrandLogo } from "@/components/BrandLogo";
 import NotificationBell from "@/components/NotificationBell";
@@ -18,9 +19,14 @@ interface DashboardLayoutProps {
     role: string;
     avatarUrl: string | null;
   };
+  timezone: string;
 }
 
-export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
+export default function DashboardLayout({
+  children,
+  user,
+  timezone,
+}: DashboardLayoutProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -33,6 +39,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
 
   return (
     <QueryProvider>
+      <TimezoneProvider initialTimezone={timezone}>
       <div className="min-h-dvh bg-slate-50">
         <Sidebar
           user={user}
@@ -83,6 +90,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           </div>
         </main>
       </div>
+      </TimezoneProvider>
     </QueryProvider>
   );
 }
