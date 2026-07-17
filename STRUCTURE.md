@@ -1353,7 +1353,7 @@ Holds `dependencies`/`devDependencies` only (Deno reads these for `deno install`
 **`deno.json` Tasks** (run via `deno task <name>`):
 
 - `dev` - `node ./node_modules/next/dist/bin/next dev` (Turbopack)
-- `build` - `node ./node_modules/next/dist/bin/next build`
+- `build` - `node ./node_modules/next/dist/bin/next build` (Turbopack) + `copy-deploy-migrations.mjs`
 - `start` - `node ./node_modules/next/dist/bin/next start`
 - `lint` - `node ./node_modules/eslint/bin/eslint.js .`
 - `typecheck` - `node ./node_modules/typescript/bin/tsc --noEmit`
@@ -1390,9 +1390,13 @@ Holds `dependencies`/`devDependencies` only (Deno reads these for `deno install`
 
 ### `next.config.ts`
 
-**Purpose**: Next.js configuration
+**Purpose**: Next.js configuration for Deno Deploy + local Turbopack
 
-- Minimal config (defaults work)
+- `output: "standalone"` — Deno Deploy / `next start`
+- `outputFileTracingRoot` / `outputFileTracingIncludes` — pin package root; include `drizzle/**/*` for boot migrations
+- `serverExternalPackages`: `web-push`, `pusher`, `bcryptjs`, `pg`
+- `turbopack.resolveAlias` — pin `tailwindcss` / `@tailwindcss/postcss` (avoid parent `package-lock.json` workspace-root bug)
+- **No** `--webpack` / no server `splitChunks: false` — prod uses default Turbopack (webpack shared-chunk collect broke on Deno Deploy; self-contained webpack OOMd under 3GB build limit)
 
 ### `eslint.config.mjs`
 

@@ -134,24 +134,25 @@ deno task db:seed          # Seed full demo data
 # Quality
 deno task lint             # ESLint
 deno task typecheck        # TypeScript check
-deno task build            # Production build
+deno task build            # Production build (Turbopack)
 
 # Deploy
-deno task build            # Production build (+ copy migrate/drizzle into public/deploy)
+deno task build            # Turbopack prod build (+ copy migrate/drizzle into public/deploy)
 deno task deploy           # CLI deploy via deployctl (GitHub integration preferred)
 deno task db:deploy        # Run migrations against DATABASE_URL
 ```
 
 ## 🌐 Deployment (Deno Deploy)
 
-Vellum deploys to **Deno Deploy** with managed **Prisma Postgres**. See [AGENTS.md](AGENTS.md) for the full checklist.
+Vellum deploys to **Deno Deploy** with managed **Prisma Postgres**. See [AGENTS.md](AGENTS.md) for the full checklist (including Turbopack build pitfalls).
 
 1. Create a Deno Deploy project and link the GitHub repo (Next.js is auto-detected).
 2. Provision Prisma Postgres and assign it to the app (`DATABASE_URL` is injected — do not set it manually in prod).
 3. Add env vars: `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`, `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`.
-4. Pre-deploy command (in `deno.json`): `deno run -A public/deploy/migrate.ts`.
+4. Migrations run on **server boot** via `instrumentation.ts` (do **not** use `deploy.predeploy`).
 
 Do **not** set `runtime = "edge"` on routes — `pg` needs the Node runtime.
+Prod build uses **Turbopack** (default `next build`) — do not force `--webpack` (see AGENTS.md).
 
 ## 📄 License
 

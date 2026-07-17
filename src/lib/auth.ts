@@ -88,7 +88,7 @@ export async function authenticateUser(
 
   if (!user) return null;
 
-  // Dynamic import keeps bcryptjs out of the login/page-data webpack graph
+  // Dynamic import keeps bcryptjs out of the login/page-data graph
   // (Deno Deploy has failed with "i[a] is not a function" when bcrypt was
   // statically pulled into /login via getSession's auth module).
   const { compare } = await import("bcryptjs");

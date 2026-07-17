@@ -4,7 +4,7 @@ This document provides guidance for AI agents working on the Vellum project.
 
 ## Project Overview
 
-**Vellum** (product UI brand: **Perfect**) is a Next.js 15 (App Router) team management platform with:
+**Vellum** (product UI brand: **Perfect**) is a Next.js 16 (App Router) team management platform with:
 
 - PostgreSQL database using Drizzle ORM
 - Kanban boards for project management
@@ -46,7 +46,7 @@ deno task lint           # ESLint
 deno task typecheck      # TypeScript check
 
 # Build & Deploy
-deno task build          # Production build (standalone output for Deno Deploy)
+deno task build          # Production build (Turbopack, standalone for Deno Deploy)
 deno task start          # Start production server
 deno task db:deploy      # Local: deno run migrate.ts (same runner as Deploy predeploy)
 deno task deploy         # CLI deploy via deployctl (GitHub integration is preferred)
@@ -68,9 +68,22 @@ Note: `drizzle.config.ts` skips loading `.env` in production so the injected `DA
 
 ### Deno Deploy build pitfalls (do not regress)
 
-Prod build uses **webpack on purpose** (`deno task build` → `next build --webpack`). Deno Deploy build containers are tight on RAM and collect page data with **1 worker**. Agents must preserve these rules:
+Prod build uses **Turbopack** (`deno task build` → `next build`, no `--webpack`). Deno Deploy build containers have ~**3GB** build RAM and **768MB** runtime. Agents must preserve these rules:
 
-#### 1. Never pull Node-only / DB code into Client Components
+#### 1. Prefer Turbopack for prod builds — do not force webpack
+
+Webpack on Deno Deploy previously failed page-data collect with:
+
+```
+TypeError: i[a] is not a function
+Failed to collect page data for /_not-found  # or /login, /api/activity, …
+```
+
+Cause: Deno’s Node compat (`ext:core`) + 1-worker webpack page-data loading **shared server chunks**. Workarounds (`splitChunks: false`, `--max-old-space-size=8192`) either broke collect or **OOM’d** (exit 137) under the 3GB build limit.
+
+**Current policy:** default Turbopack build. Do **not** add `--webpack` unless Deploy Turbopack regresses and a verified webpack fix fits in 3GB.
+
+#### 2. Never pull Node-only / DB code into Client Components
 
 `pg`, `bcryptjs`, `web-push`, `pusher` must stay server-only. They are listed in `serverExternalPackages` in [`next.config.ts`](next.config.ts).
 
@@ -85,50 +98,33 @@ Prod build uses **webpack on purpose** (`deno task build` → `next build --webp
 
 Same rule for any new platform setting that reads Postgres.
 
-#### 2. Keep `/_not-found` and `/_global-error` dependency-free
+#### 3. Keep `/_not-found` and `/_global-error` dependency-free
 
-Symptom on Deno Deploy:
-
-```
-TypeError: i[a] is not a function
-Failed to collect page data for /_not-found
-# or /_global-error, /login, /api/activity, …
-```
-
-Cause: Deno Deploy runs webpack page-data collect under Deno Node-compat (`ext:core`) with **1 worker**. Loading **shared server chunks** via `webpack-runtime` then fails (`i[a] is not a function`). Whack-a-mole on individual routes is not enough — any entry that still shares chunks can fail next.
-
-**Required webpack policy** in [`next.config.ts`](next.config.ts) (server + production only):
-
-- `optimization.splitChunks = false` — every server entry self-contained (no shared chunk load)
-- Keep `minimize` **on** (default) — disabling it bloats un-minified self-contained bundles → OOM during static page generation
-- Build script uses `node --max-old-space-size=8192` (see [`deno.json`](deno.json) `build` task) to handle the extra webpack compilation memory
-
-**Also keep UI minimal:**
+Still required for reliable prerender / page-data on Deploy:
 
 - [`src/app/not-found.tsx`](src/app/not-found.tsx) — inline styles only; **no** `next/link`, brand, CSS modules, providers, or `@/db`
 - [`src/app/global-error.tsx`](src/app/global-error.tsx) — own `<html>`/`<body>`; **no** app layout, brand, CSS, or providers
 
 **Do NOT:**
 
-- Re-enable server `splitChunks` “to save disk” — Deploy page-data will break again
-- Disable server `minimize` — un-minified self-contained bundles OOM the Deploy container (exit 137)
+- Force `--webpack` “for stability” without verifying Deploy under the 3GB build / 768MB runtime limits
+- Add `optimization.splitChunks = false` for server (webpack-era hack — OOM on Deploy)
 - Remove `bcryptjs` / `pg` from `serverExternalPackages`
-- Switch prod build off `--webpack` without verifying Deploy page-data collect still works
 - “Improve” not-found/global-error with Tailwind, Link, lucide, or shared UI kits
 
-#### 3. Login / auth page-data
+#### 4. Login / auth page-data
 
 Prefer dynamic imports for `@/db` on pages that must stay out of static graphs (see [`src/app/login/page.tsx`](src/app/login/page.tsx)). Keep bcrypt usage server-side and dynamically imported where needed.
 
-#### 4. Verify before claiming Deploy-ready
+#### 5. Verify before claiming Deploy-ready
 
-After touching `next.config.ts`, `not-found.tsx`, `global-error.tsx`, root `layout.tsx`, or anything that can reach `pg`/`bcryptjs` from a page module:
+After touching `next.config.ts`, `not-found.tsx`, `global-error.tsx`, root `layout.tsx`, `deno.json` build task, or anything that can reach `pg`/`bcryptjs` from a page module:
 
 ```bash
 deno task build
 ```
 
-Confirm build past “Collecting page data” / “Generating static pages”. Local Node success is necessary but not sufficient — Deploy uses Deno’s Node compat. After webpack changes, confirm server entries have **no shared chunk deps** (e.g. `api/activity/route.js` should not `.X(0,[…])` shared ids).
+Confirm build past “Collecting page data” / “Generating static pages”. Local success is necessary; then confirm Deno Deploy revision succeeds (CLI/`deno task deploy` or GitHub integration).
 
 ## Environment Variables
 

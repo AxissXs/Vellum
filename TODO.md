@@ -301,9 +301,10 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
 - [x] **Calendar view** - Tasks with due dates on calendar
   - Team + personal month calendar (`/dashboard/calendar`)
   - `schedule_events` with admin assign-for-others
-  - Malaysia federal/religious holidays overlay (2025–2027)
+  - Multi-country public holidays (Super Admin Locale picker; default MY)
   - Activity + leave/due-date conflict hints
-  - Sidebar mini team calendar
+  - Sidebar mini calendar (`scope=me`)
+  - Prod Deploy: Turbopack build (not webpack) — see AGENTS.md pitfalls
 - [ ] **Export/Import** - JSON/CSV backup and restore
 - [ ] **Multi-language (i18n)** - Translation system
 - [ ] **Public project views** - Shareable read-only links
