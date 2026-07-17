@@ -11,6 +11,8 @@ import PushNotificationToggle from "@/components/PushNotificationToggle";
 import { Switch } from "@/components/ui/Switch";
 import { Loader2, Link as LinkIcon, Unlink, Copy, Check, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -22,18 +24,31 @@ const eventLabels: Record<string, string> = {
   schedule_assigned: "Schedule Assigned",
 };
 
-function TelegramUserGuide({ linked }: { linked: boolean }) {
+function TelegramUserGuide({
+  linked,
+  botUsername,
+  configured,
+}: {
+  linked: boolean;
+  botUsername: string | null;
+  configured: boolean;
+}) {
+  const botLabel = botUsername ? `@${botUsername}` : "the Perfect bot";
+
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
       <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
         <BookOpen size={13} className="text-brand-600" />
         How to link Telegram
       </p>
+      {!configured && (
+        <p className="text-xs text-amber-700">
+          Bot is not configured yet. Ask a super admin (Super Admin → Telegram).
+        </p>
+      )}
       {linked ? (
         <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1">
-          <li>
-            Keep this account linked so Perfect can DM you.
-          </li>
+          <li>Keep this account linked so Perfect can DM you.</li>
           <li>
             Below, turn on the{" "}
             <span className="font-medium text-slate-800">Telegram</span> column
@@ -44,36 +59,36 @@ function TelegramUserGuide({ linked }: { linked: boolean }) {
             ignored). Enable{" "}
             <span className="font-medium text-slate-800">Comment Mention</span>.
           </li>
-          <li>
-            Unlink anytime if you no longer want bot messages.
-          </li>
+          <li>Unlink anytime if you no longer want bot DMs.</li>
         </ol>
       ) : (
         <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1">
           <li>
-            Ask a super admin to configure the bot and webhook first (Super Admin
-            → Telegram).
+            Confirm a super admin configured the bot and webhook (Super Admin →
+            Telegram).
           </li>
           <li>
-            Click <span className="font-medium text-slate-800">Generate Pairing Code</span>{" "}
-            below (valid for 10 minutes).
+            Click{" "}
+            <span className="font-medium text-slate-800">Generate Pairing Code</span>{" "}
+            (valid 10 minutes).
           </li>
           <li>
-            Open the Perfect bot in Telegram and send the exact command, e.g.{" "}
+            Open {botLabel} in Telegram and send{" "}
             <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">
               /start ABC123
             </code>
             .
           </li>
           <li>
-            When linked, enable{" "}
-            <span className="font-medium text-slate-800">Telegram</span> for
-            events under Notification Preferences.
+            Enable{" "}
+            <span className="font-medium text-slate-800">Telegram</span> under
+            Notification Preferences for each event.
           </li>
         </ol>
       )}
       <p className="text-[11px] text-slate-500">
-        Notifications arrive as private bot messages — not in a group or channel.
+        Your toggles control private bot DMs only. Team group/channel posts are
+        configured by super admins separately.
       </p>
     </div>
   );
@@ -87,6 +102,14 @@ export default function SettingsPage() {
   const { data: telegramStatus, isLoading: telegramLoading } = useTelegramStatus();
   const { mutate: generateCode, data: codeData, isPending: generatingCode } = useGeneratePairingCode();
   const { mutate: unlink, isPending: unlinking } = useUnlinkTelegram();
+
+  const { data: telegramConfig } = useQuery({
+    queryKey: ["telegram", "config"],
+    queryFn: async () =>
+      api.get<{ configured: boolean; username: string | null }>(
+        "/api/telegram/config"
+      ),
+  });
 
   const [copied, setCopied] = useState(false);
 
@@ -161,7 +184,11 @@ export default function SettingsPage() {
           </div>
         ) : telegramStatus?.linked ? (
           <div className="space-y-4">
-            <TelegramUserGuide linked />
+            <TelegramUserGuide
+              linked
+              configured={telegramConfig?.configured ?? false}
+              botUsername={telegramConfig?.username ?? null}
+            />
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
               <p className="text-sm text-emerald-600">
                 Linked to Telegram{" "}
@@ -186,7 +213,11 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <TelegramUserGuide linked={false} />
+            <TelegramUserGuide
+              linked={false}
+              configured={telegramConfig?.configured ?? false}
+              botUsername={telegramConfig?.username ?? null}
+            />
 
             {codeData?.code ? (
               <div className="space-y-2">

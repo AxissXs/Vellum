@@ -138,6 +138,11 @@ Web Push (VAPID) — optional; push no-ops when unset:
 - `VAPID_PRIVATE_KEY` - Private VAPID key (server send)
 - `VAPID_SUBJECT` - Contact URI (e.g. `mailto:admin@example.com`)
 
+Telegram webhook URL (optional if admin saves settings from the browser — uses `window.location.origin`):
+
+- `NEXT_PUBLIC_APP_URL` - Public app origin (preferred for auto `setWebhook`)
+- `APP_URL` - Fallback origin if `NEXT_PUBLIC_APP_URL` unset
+
 > **Local Postgres < 13**: `gen_random_uuid()` is not built-in. Enable the extension once per database:
 > `CREATE EXTENSION IF NOT EXISTS pgcrypto;` (the schema uses `gen_random_uuid()` for IDs).
 
@@ -365,7 +370,8 @@ See `src/db/schema.ts` for:
 | `/api/telegram/status`                  | GET                | Telegram link status           |
 | `/api/telegram/pairing-code`            | GET                | Generate Telegram pairing code |
 | `/api/telegram/unlink`                  | DELETE             | Unlink Telegram account        |
-| `/api/telegram/webhook`                 | POST               | Telegram bot webhook           |
+| `/api/telegram/webhook`                 | POST               | Telegram bot webhook (secret)  |
+| `/api/telegram/config`                  | GET                | Public bot configured + username |
 | `/api/super-admin/users`                | GET                | Super-admin user list          |
 | `/api/super-admin/users/[id]`           | PATCH              | Update user status/role        |
 | `/api/super-admin/activity`             | GET                | Live user activity feed        |
@@ -375,7 +381,8 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/audit/export`         | GET                | Export audit logs (csv/pdf)    |
 | `/api/super-admin/health`               | GET                | System health metrics          |
 | `/api/super-admin/permissions`          | GET                | Role/permission matrix         |
-| `/api/super-admin/telegram/settings`    | GET, PATCH         | Telegram bot settings          |
+| `/api/super-admin/telegram/settings`    | GET, PATCH         | Telegram bot settings + webhook |
+| `/api/super-admin/telegram/topics`      | POST               | Create forum topic in supergroup |
 | `/api/super-admin/telegram/stats`       | GET                | Telegram usage stats           |
 | `/api/super-admin/telegram/test`        | POST               | Send Telegram test message     |
 | `/api/activity`                         | GET                | Activity logs                  |
