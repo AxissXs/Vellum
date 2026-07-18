@@ -2,6 +2,25 @@
 
 ## Priority: High
 
+- [ ] **Fix Kanban drag-and-drop** — Tasks get locked in TO-DO column after first move
+
+  Tasks can only be moved from any column to the TO-DO column, then become locked. Drag-and-drop interaction is laggy and unresponsive.
+
+  - Reproduce and fix the column-locking issue
+  - Optimize drag-and-drop performance
+  - Acceptance criteria: Tasks can be dragged between all columns freely; interaction is smooth
+
+- [ ] **Fix notification system bugs** — Resolve duplicate, missing, and incorrect notifications
+
+  Several notification-related issues need addressing: missing notifications on Kanban moves, spurious notifications on no-op saves, duplicate broadcasts, and missing deep links.
+
+  - Add a link (with or without ID) to notifications pointing to the triggering object/change
+  - Ensure moving a task between Kanban columns fires a notification
+  - Prevent saving a task without changes from firing a notification
+  - Fix "task assigned" and "task assigned to you" both being sent to the supergroup topic — only the assignee should receive the direct assignment notification
+  - Fix status changed notification being sent twice
+  - Acceptance criteria: No duplicate notifications; correct routing; no-op saves are silent; Kanban moves notify; all notifications include relevant links
+
 - [ ] **Role & Permission Manager** — Dynamic roles, granular permissions, and presets for superadmin
   > Full plan: [`TODO/role-permission-manager.md`](TODO/role-permission-manager.md)
 
@@ -121,13 +140,18 @@
   - Acceptance criteria: Task cards show assigned user avatars, works in kanban and task list views
 
 - [ ] **User last seen tracking** - Record every authenticated request to update user's last activity
-  > Depends on: Feature flags system (must be toggleable)
-  - Add `lastSeenAt` (timestamp) and `lastSeenIp` (text) columns to `users` table
-  - Create a global middleware or hook that fires on every authenticated API request
-  - Update `users.lastSeenAt` and `users.lastSeenIp` on each request (throttled to max once per 60s per user to reduce DB load)
-  - Display "Last seen" column in superadmin users table (timeAgo format)
-  - Display last seen in user detail modal
-  - Gated behind a feature flag: `tracking.lastSeen` — when disabled, no DB writes happen
+  > Depends on: Feature flags system (must be toggleable). **Blocked until feature flags are built.**
+  > Partially implemented in `feat/last-seen-tracking` branch.
+
+  - [x] DB: Add `lastSeenAt` (timestamp) and `lastSeenIp` (text) columns to `users` table
+  - [x] Core: Throttled update helper in `src/lib/last-seen.ts` (60s per user, fire-and-forget)
+  - [x] Core: Integrated into `getSession()` — updates on every authenticated request
+  - [x] Core: Skips update during impersonation (target user's last-seen stays accurate)
+  - [x] API: `GET /api/super-admin/users` returns `lastSeenAt` and `lastSeenIp`
+  - [x] API: `GET /api/super-admin/users/[id]` returns `lastSeenAt` and `lastSeenIp`
+  - [x] UI: "Last Seen" sortable column added to `SuperAdminUsersPanel`
+  - [x] UI: Last seen display added to `UserDetailModal` profile card
+  - [ ] Gate behind feature flag: `tracking.lastSeen` via `isFeatureEnabled()` once feature flags exist
   - Acceptance criteria: Superadmin sees accurate "last seen" per user, DB writes are throttled, feature can be toggled off
 
 - [ ] **Feature flags system** - Superadmin-controlled enable/disable for platform features

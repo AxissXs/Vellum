@@ -33,6 +33,8 @@ type UserDetail = {
     updatedAt: string;
     lastLoginAt: string | null;
     lastIp: string | null;
+    lastSeenAt: string | null;
+    lastSeenIp: string | null;
   };
   sessions: Array<{
     id: string;
@@ -255,10 +257,16 @@ export default function UserDetailModal({
                       Last login {formatTimeAgo(user.lastLoginAt)}
                     </span>
                   )}
-                  {user.lastIp && (
+                  {user.lastSeenAt && (
                     <span className="flex items-center gap-1">
                       <Globe size={11} />
-                      {user.lastIp}
+                      Last seen {formatTimeAgo(user.lastSeenAt)}
+                    </span>
+                  )}
+                  {user.lastSeenIp && (
+                    <span className="flex items-center gap-1">
+                      <Globe size={11} />
+                      {user.lastSeenIp}
                     </span>
                   )}
                 </div>

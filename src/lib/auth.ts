@@ -1,8 +1,10 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
 import { eq, gt } from "drizzle-orm";
 import { compareSync } from "bcryptjs";
+import { shouldUpdateLastSeen, updateLastSeen } from "./last-seen";
+import { getClientIPFromHeaders } from "./audit";
 
 const SESSION_COOKIE = "tf_session";
 const IMPERSONATOR_SESSION_COOKIE = "tf_impersonator";
@@ -63,6 +65,17 @@ export async function getSession(): Promise<AuthUser | null> {
   if (user.status === "banned") {
     await db.delete(sessions).where(eq(sessions.id, sessionId));
     return null;
+  }
+
+  // Update last seen timestamp (throttled to once per minute per user)
+  // Skip during impersonation so the target user's last-seen is not artificially updated.
+  // TODO: Gate this behind `isFeatureEnabled("tracking.lastSeen")` once feature flags exist.
+  const hdrs = await headers();
+  const hasImpersonatorCookie = hdrs.get("cookie")?.includes(`${IMPERSONATOR_SESSION_COOKIE}=`) ?? false;
+  if (!hasImpersonatorCookie && shouldUpdateLastSeen(user.id)) {
+    const ip = getClientIPFromHeaders(hdrs);
+    // Fire-and-forget: do not block response on DB write
+    updateLastSeen(user.id, ip).catch(() => {});
   }
 
   return user as AuthUser;

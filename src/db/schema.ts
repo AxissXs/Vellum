@@ -45,6 +45,8 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   telegramChatId: text("telegram_chat_id"),
   telegramUsername: text("telegram_username"),
+  lastSeenAt: timestamp("last_seen_at"),
+  lastSeenIp: text("last_seen_ip"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

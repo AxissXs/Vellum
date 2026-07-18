@@ -315,8 +315,8 @@ src/
 **Exports**: `SuperAdminUsersPanel()` - Client component
 
 - Search by name/email, role/status filters
-- Sort by name, createdAt, lastLoginAt
-- Displays last login time and IP per user (from `user_sessions`)
+- Sort by name, createdAt, lastLoginAt, lastSeenAt
+- Displays last login time and IP per user (from `user_sessions`) and last seen time/IP (from `users.lastSeenAt` / `users.lastSeenIp`)
 - Inline role/status dropdowns with optimistic updates
 
 ### `src/app/dashboard/super-admin/SuperAdminActivityPanel.tsx`
@@ -1059,7 +1059,7 @@ src/
 **Purpose**: Complete database schema definition
 **Exports** (Tables):
 
-- `users` - User accounts (includes `telegramChatId`, `telegramUsername`)
+- `users` - User accounts (includes `telegramChatId`, `telegramUsername`, `lastSeenAt`, `lastSeenIp`)
 - `teams` - Teams
 - `teamMembers` - Team membership
 - `projects` - Projects
@@ -1248,7 +1248,7 @@ src/
 **Exports**:
 
 - `AuthUser` - Type for authenticated user
-- `getSession(): Promise<AuthUser | null>` - Get current session
+- `getSession(): Promise<AuthUser | null>` - Get current session; also updates `users.lastSeenAt`/`lastSeenIp` (throttled, fire-and-forget) and skips during impersonation
 - `createSession(userId): Promise<string>` - Create new session
 - `destroySession(sessionId)` - Delete session
 - `authenticateUser(email, password): Promise<AuthResult>` - Verify credentials, returns `{ ok, user }` or `{ ok: false, reason }` with reasons: `invalid_credentials`, `inactive`, `banned`
@@ -1267,12 +1267,23 @@ src/
 - `getJSON(url)` - GET with JSON parsing
 - `postJSON(url, data)` - POST with JSON
 
+#### `src/lib/last-seen.ts`
+
+**Purpose**: Throttled per-user "last seen" tracking helper
+**Exports**:
+
+- `shouldUpdateLastSeen(userId): boolean` - Throttles updates to once per 60s per user (in-memory)
+- `updateLastSeen(userId, ipAddress): Promise<void>` - Writes `lastSeenAt` + `lastSeenIp` to `users` table; swallows errors so it never blocks requests
+
+**Notes**: Called from `getSession()`. Skipped during impersonation so target user's last-seen stays accurate. Gated by feature flag `tracking.lastSeen` once feature flags system is built.
+
 #### `src/lib/audit.ts`
 
 **Purpose**: Request metadata extraction and structured activity logging
 **Exports**:
 
 - `getClientIP(req: NextRequest): string` - Multi-header IP parser (x-forwarded-for, x-real-ip, x-client-ip, cf-connecting-ip); validates format, filters private IPs, falls back to "unknown"
+- `getClientIPFromHeaders(headers)` - Same IP parser for use outside NextRequest (e.g. `headers()` from Next.js server)
 - `writeActivityLog({ db, userId, action, entityType, entityId, details, ipAddress, req, before?, after? })` - Writes activity log entry with auto-classified `tag` (data_change/security/user_action) and `severity` (info/warning/critical), plus before/after snapshots to `activity_log_snapshots`
 
 #### `src/lib/pusher.ts`

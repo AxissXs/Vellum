@@ -2,6 +2,30 @@ import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { activityLogs, activityLogSnapshots } from "@/db/schema";
 
+export function getClientIPFromHeaders(headersList: { get(name: string): string | null }): string {
+  const headersToCheck = [
+    "x-forwarded-for",
+    "x-real-ip",
+    "x-client-ip",
+    "cf-connecting-ip",
+    "true-client-ip",
+  ];
+
+  for (const header of headersToCheck) {
+    const value = headersList.get(header);
+    if (!value) continue;
+
+    const ips = value.split(",").map((s) => s.trim());
+    for (const ip of ips) {
+      if (isValidIP(ip) && !isPrivateIP(ip)) {
+        return ip;
+      }
+    }
+  }
+
+  return "unknown";
+}
+
 function isValidIP(ip: string): boolean {
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
     return ip.split(".").every((octet) => {

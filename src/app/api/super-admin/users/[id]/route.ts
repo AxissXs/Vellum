@@ -24,6 +24,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       role: users.role,
       status: users.status,
       avatarUrl: users.avatarUrl,
+      lastSeenAt: users.lastSeenAt,
+      lastSeenIp: users.lastSeenIp,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })

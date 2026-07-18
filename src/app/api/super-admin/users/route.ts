@@ -22,6 +22,8 @@ export async function GET() {
       role: users.role,
       status: users.status,
       avatarUrl: users.avatarUrl,
+      lastSeenAt: users.lastSeenAt,
+      lastSeenIp: users.lastSeenIp,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })

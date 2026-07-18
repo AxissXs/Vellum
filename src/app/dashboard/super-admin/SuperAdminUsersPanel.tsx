@@ -17,6 +17,8 @@ export type SuperAdminUser = {
   updatedAt: string;
   lastLoginAt: string | null;
   lastIp: string | null;
+  lastSeenAt: string | null;
+  lastSeenIp: string | null;
 };
 
 function getInitials(name: string) {
@@ -52,7 +54,7 @@ export default function SuperAdminUsersPanel() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"name" | "createdAt" | "lastLoginAt">("name");
+  const [sortBy, setSortBy] = useState<"name" | "createdAt" | "lastLoginAt" | "lastSeenAt">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
@@ -124,7 +126,7 @@ export default function SuperAdminUsersPanel() {
     }
   }
 
-  function toggleSort(column: "name" | "createdAt" | "lastLoginAt") {
+  function toggleSort(column: "name" | "createdAt" | "lastLoginAt" | "lastSeenAt") {
     if (sortBy === column) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
@@ -170,6 +172,11 @@ export default function SuperAdminUsersPanel() {
     if (sortBy === "lastLoginAt") {
       const ta = a.lastLoginAt ? new Date(a.lastLoginAt).getTime() : 0;
       const tb = b.lastLoginAt ? new Date(b.lastLoginAt).getTime() : 0;
+      return sortDir === "asc" ? ta - tb : tb - ta;
+    }
+    if (sortBy === "lastSeenAt") {
+      const ta = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : 0;
+      const tb = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : 0;
       return sortDir === "asc" ? ta - tb : tb - ta;
     }
     const ta = new Date(a.createdAt).getTime();
@@ -250,6 +257,12 @@ export default function SuperAdminUsersPanel() {
                   >
                     Last Login {sortBy === "lastLoginAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
                   </th>
+                  <th
+                    className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap cursor-pointer select-none"
+                    onClick={() => toggleSort("lastSeenAt")}
+                  >
+                    Last Seen {sortBy === "lastSeenAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
+                  </th>
                   <th className="px-5 py-3 font-medium text-slate-400 text-right">Actions</th>
                 </tr>
               </thead>
@@ -288,6 +301,17 @@ export default function SuperAdminUsersPanel() {
                         <div className="flex items-center gap-1 text-[10px] text-slate-600 mt-0.5">
                           <Globe size={10} />
                           {u.lastIp}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <div className="text-xs text-slate-400">
+                        {timeAgo(u.lastSeenAt)}
+                      </div>
+                      {u.lastSeenIp && (
+                        <div className="flex items-center gap-1 text-[10px] text-slate-600 mt-0.5">
+                          <Globe size={10} />
+                          {u.lastSeenIp}
                         </div>
                       )}
                     </td>
@@ -345,7 +369,7 @@ export default function SuperAdminUsersPanel() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={7} className="px-5 py-8 text-center text-slate-500 text-sm">
                       No users match your filters.
                     </td>
                   </tr>
