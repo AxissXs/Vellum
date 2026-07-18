@@ -4,6 +4,11 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import Sidebar from "@/components/Sidebar";
 import NotificationBell from "@/components/NotificationBell";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
+import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { Keyboard } from "lucide-react";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 interface DashboardLayoutProps {
@@ -19,6 +24,21 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, user, isImpersonating }: DashboardLayoutProps) {
+  const { helpOpen, toggleHelp, closeHelp } = useKeyboardShortcuts();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    function handleNewTask() {
+      const isKanban = pathname === "/dashboard/kanban" || /^\/dashboard\/projects\/[^/]+$/.test(pathname);
+      if (!isKanban) {
+        router.push("/dashboard/kanban");
+      }
+    }
+    window.addEventListener("keyboard:new-task", handleNewTask);
+    return () => window.removeEventListener("keyboard:new-task", handleNewTask);
+  }, [pathname, router]);
+
   return (
     <QueryProvider>
       <div className="min-h-screen bg-slate-950">
@@ -28,12 +48,22 @@ export default function DashboardLayout({ children, user, isImpersonating }: Das
             {isImpersonating && <ImpersonationBanner targetName={user.name} />}
             <div className="flex items-center justify-between px-6 lg:px-8 py-4">
               <div />
-              <NotificationBell />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggleHelp}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition"
+                  aria-label="Keyboard shortcuts"
+                  title="Keyboard shortcuts (?)">
+                  <Keyboard size={20} />
+                </button>
+                <NotificationBell />
+              </div>
             </div>
             <div className="px-6 lg:px-8 pb-8">{children}</div>
           </div>
         </main>
       </div>
+      <KeyboardShortcutsHelp open={helpOpen} onClose={closeHelp} />
     </QueryProvider>
   );
 }

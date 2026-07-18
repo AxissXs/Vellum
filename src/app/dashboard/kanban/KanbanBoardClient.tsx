@@ -4,6 +4,8 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
+  useRef,
 } from "react";
 import {
   DndContext,
@@ -248,6 +250,7 @@ export default function KanbanBoardClient({
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -266,6 +269,23 @@ export default function KanbanBoardClient({
 
   // Subscribe to global real-time task updates (cross-project board view)
   useRealtime();
+
+  // Keyboard shortcuts listeners
+  useEffect(() => {
+    function handleNewTask(event: Event) {
+      const detail = (event as CustomEvent).detail as { status?: string } | undefined;
+      setShowNewTask(detail?.status ?? "todo");
+    }
+    function handleFocusSearch() {
+      searchRef.current?.focus();
+    }
+    window.addEventListener("keyboard:new-task", handleNewTask);
+    window.addEventListener("keyboard:focus-search", handleFocusSearch);
+    return () => {
+      window.removeEventListener("keyboard:new-task", handleNewTask);
+      window.removeEventListener("keyboard:focus-search", handleFocusSearch);
+    };
+  }, []);
 
   const filteredColumns = useMemo(() => {
     if (selectedProjectId === "all" && !searchQuery) {
@@ -445,6 +465,7 @@ export default function KanbanBoardClient({
             <label htmlFor="kanban-search" className="sr-only">Search tasks</label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 size-4" />
             <input
+              ref={searchRef}
               id="kanban-search"
               type="text"
               placeholder="Search tasks..."

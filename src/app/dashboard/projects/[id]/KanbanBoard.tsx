@@ -3,6 +3,7 @@
 import {
   useState,
   useCallback,
+  useEffect,
 } from "react";
 import {
   DndContext,
@@ -227,6 +228,16 @@ export default function KanbanBoard({
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Keyboard shortcuts listener — open add-task form on "todo" column
+  useEffect(() => {
+    function handleNewTask(event: Event) {
+      const detail = (event as CustomEvent).detail as { status?: string } | undefined;
+      setShowNewTask(detail?.status ?? "todo");
+    }
+    window.addEventListener("keyboard:new-task", handleNewTask);
+    return () => window.removeEventListener("keyboard:new-task", handleNewTask);
+  }, []);
 
   const [newTaskData, setNewTaskData] = useState<Record<string, { title: string; description: string; priority: string; assigneeId: string; dueDate: string; projectId: string }>>({});
 

@@ -85,7 +85,7 @@
   - System preference detection
   - Tailwind dark mode class strategy
 
-- [ ] **Keyboard shortcuts** - Power user shortcuts
+- ~~**Keyboard shortcuts**~~ ✅ — `?` = toggle help, `n` = new task, `/` = focus search, `Esc` = close modal
   - `n` = new task, `/` = search, `?` = help
   - Kanban navigation (arrows, enter to edit)
 

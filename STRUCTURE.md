@@ -1001,10 +1001,22 @@ src/
 **Purpose**: Amber banner shown at top of dashboard when superadmin is impersonating a user
 **Exports**: `ImpersonationBanner({ targetName })` - Client component
 **Features**:
+
 - Displays target user name and description text
 - "Stop Impersonating" button calls `POST /api/super-admin/impersonate/stop`
 - Redirects to `/dashboard/super-admin` after stopping
 - Shows loading spinner while stopping
+
+#### `src/components/KeyboardShortcutsHelp.tsx`
+
+**Purpose**: Modal displaying available keyboard shortcuts
+**Exports**: `KeyboardShortcutsHelp({ open, onClose })` - Client component
+**Features**:
+
+- Dark-themed modal (`bg-slate-900`, `border-white/10`) with keyboard icon header
+- Lists shortcuts stored in `SHORTCUTS` from `useKeyboardShortcuts.ts`
+- Close via button (`data-kbd-close`), `Esc`, or backdrop click
+- Accessible with `role="dialog"` and `aria-modal`
 
 #### `src/components/ui/Switch.tsx`
 
@@ -1167,6 +1179,23 @@ src/
 - `useUpdateNotificationPreferences()` - Mutation hook for updating preferences
 
 **Pattern**: Standard React Query with cache invalidation on mutation success
+
+#### `src/hooks/useKeyboardShortcuts.ts`
+
+**Purpose**: Global keyboard shortcuts listener and help-modal state
+**Exports**:
+
+- `useKeyboardShortcuts()` - Returns `{ helpOpen, toggleHelp, closeHelp }`
+- `SHORTCUTS[]` - Human-readable shortcut list for display
+
+**Behavior**:
+
+- Listens to `keydown` on `window`
+- `?` (when no input focused) toggles help modal
+- `n` (when no input / modal open) dispatches `keyboard:new-task` CustomEvent
+- `/` (when no input / modal open) dispatches `keyboard:focus-search` CustomEvent
+- `Esc` closes help modal first, then tries to close top-most `[role="dialog"]` modal
+- Guards: skips `n` and `/` when an `<input>`, `<textarea>`, or `contenteditable` is focused, or when any modal (`[role="dialog"]`) is already open
 
 #### `src/hooks/useTelegram.ts`
 

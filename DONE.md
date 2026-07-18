@@ -299,6 +299,17 @@ This document tracks features and tasks that have been fully implemented, tested
 - **Auth**: Exported `IMPERSONATOR_SESSION_COOKIE` constant from `src/lib/auth.ts`
 - **Audit panels**: Added "Impersonation" to `tagLabels` and tag filter in `SuperAdminAuditPanel` and `AuditLogDetailModal`
 
+### Keyboard Shortcuts (July 2026)
+> Power-user keyboard shortcuts across the dashboard.
+
+- `?` — toggles Keyboard Shortcuts help modal (works even when a modal is open)
+- `n` — opens "Add task" form on todo column inside kanban pages; navigates to `/dashboard/kanban` from other pages
+- `/` — focuses the primary search input on the current page (e.g., `kanban-search` on the kanban board)
+- `Esc` — closes the help modal, then falls back to closing any open `[role="dialog"]` modal via its close button or synthetic Escape event
+- Guards: `n` and `/` are suppressed when an `<input>`, `<textarea>`, or `contenteditable` is focused, and when any modal is already open
+- New files: `src/hooks/useKeyboardShortcuts.ts`, `src/components/KeyboardShortcutsHelp.tsx`
+- Wired into `ClientLayout.tsx` (header button + modal), `KanbanBoardClient.tsx`, and `KanbanBoard.tsx` (listeners for `keyboard:new-task`)
+
 ---
 
 ## How to Update This File
