@@ -4,7 +4,20 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare, Plus, Unplug, QrCode } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  Settings,
+  Users,
+  Bot,
+  Link,
+  Check,
+  Copy,
+  MessageSquare,
+  Plus,
+  Unplug,
+  QrCode,
+} from "lucide-react";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -89,14 +102,18 @@ function TopicCreator({
       />
       <div className="flex items-center gap-2">
         <button
-          onClick={() => createTopic.mutate({
-            name: topicName,
-            iconColor: iconColor ? Number(iconColor) : undefined,
-          })}
+          onClick={() =>
+            createTopic.mutate({
+              name: topicName,
+              iconColor: iconColor ? Number(iconColor) : undefined,
+            })
+          }
           disabled={createTopic.isPending || !topicName.trim()}
           className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-md transition flex items-center gap-1"
         >
-          {createTopic.isPending && <Loader2 size={12} className="animate-spin" />}
+          {createTopic.isPending && (
+            <Loader2 size={12} className="animate-spin" />
+          )}
           Create
         </button>
         <button
@@ -117,7 +134,7 @@ function TopicBinder({ eventType }: { eventType: string }) {
     mutationFn: async () => {
       const res = await api.post<{ code: string; eventType: string }>(
         "/api/telegram/topic-code",
-        { eventType }
+        { eventType },
       );
       return res;
     },
@@ -181,7 +198,9 @@ function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
 
   const generateCode = useMutation({
     mutationFn: async () => {
-      const res = await api.post<{ code: string }>("/api/telegram/supergroup-code");
+      const res = await api.post<{ code: string }>(
+        "/api/telegram/supergroup-code",
+      );
       return res;
     },
     onSuccess: (data) => {
@@ -196,7 +215,8 @@ function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
     return (
       <div className="mt-2 bg-slate-900 border border-white/10 rounded-lg p-3 space-y-1.5">
         <p className="text-xs text-slate-400">
-          Add the bot to your supergroup as an admin, then send this command inside the group:
+          Add the bot to your supergroup as an admin, then send this command
+          inside the group:
         </p>
         <div className="flex items-center gap-2">
           <code className="text-sm text-emerald-400 font-mono bg-slate-800 px-2 py-1 rounded">
@@ -229,11 +249,7 @@ function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
       disabled={generateCode.isPending}
       className="text-xs text-slate-400 hover:text-sky-400 transition flex items-center gap-1"
     >
-      {generateCode.isPending ? (
-        <Loader2 size={12} className="animate-spin" />
-      ) : (
-        <QrCode size={12} />
-      )}
+      {generateCode.isPending && <Loader2 size={12} className="animate-spin" />}
       Pair supergroup
     </button>
   );
@@ -254,21 +270,24 @@ function TelegramConfigForm({
 }) {
   const [tokenInput, setTokenInput] = useState("");
   const [supergroupInput, setSupergroupInput] = useState(
-    initialData.settings.telegram_supergroup_id ?? ""
+    initialData.settings.telegram_supergroup_id ?? "",
   );
   const [channelInput, setChannelInput] = useState(
-    initialData.settings.telegram_channel_id ?? ""
+    initialData.settings.telegram_channel_id ?? "",
   );
   const [topics, setTopics] = useState<Record<string, string>>(() => {
     const t: Record<string, string> = {};
     for (const ev of eventTypes) t[ev] = initialData.topics[ev] ?? "";
     return t;
   });
-  const [channelEvents, setChannelEvents] = useState<Record<string, boolean>>(() => {
-    const ce: Record<string, boolean> = {};
-    for (const ev of eventTypes) ce[ev] = initialData.channelEvents.includes(ev);
-    return ce;
-  });
+  const [channelEvents, setChannelEvents] = useState<Record<string, boolean>>(
+    () => {
+      const ce: Record<string, boolean> = {};
+      for (const ev of eventTypes)
+        ce[ev] = initialData.channelEvents.includes(ev);
+      return ce;
+    },
+  );
   const [templates, setTemplates] = useState<Record<string, string>>(() => {
     const tmpl: Record<string, string> = {};
     for (const ev of eventTypes) tmpl[ev] = initialData.templates[ev] ?? "";
@@ -289,7 +308,9 @@ function TelegramConfigForm({
   }
 
   function handleSaveChannelEvents() {
-    onSave({ channelEvents: Object.keys(channelEvents).filter((k) => channelEvents[k]) });
+    onSave({
+      channelEvents: Object.keys(channelEvents).filter((k) => channelEvents[k]),
+    });
   }
 
   function handleSaveTemplates() {
@@ -339,21 +360,28 @@ function TelegramConfigForm({
             <div className="bg-slate-900 border border-white/10 rounded-lg p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-slate-500 mb-0.5">Webhook URL</p>
-                <p className="text-sm text-sky-400 truncate font-mono">{initialData.webhookUrl}</p>
+                <p className="text-sm text-sky-400 truncate font-mono">
+                  {initialData.webhookUrl}
+                </p>
               </div>
               <button
                 onClick={() => copyWebhook(initialData.webhookUrl!)}
                 className="shrink-0 text-slate-400 hover:text-white transition"
                 title="Copy webhook URL"
               >
-                {copiedWebhook ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+                {copiedWebhook ? (
+                  <Check size={18} className="text-emerald-400" />
+                ) : (
+                  <Copy size={18} />
+                )}
               </button>
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              Supergroup ID <span className="text-slate-500 font-normal">(optional)</span>
+              Supergroup ID{" "}
+              <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <input
               type="text"
@@ -367,7 +395,8 @@ function TelegramConfigForm({
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              Channel ID <span className="text-slate-500 font-normal">(optional)</span>
+              Channel ID{" "}
+              <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <input
               type="text"
@@ -413,12 +442,19 @@ function TelegramConfigForm({
           </h3>
         </div>
         <p className="text-sm text-slate-400">
-          Map each notification category to a forum topic ID in the supergroup. Leave blank to send to the general chat. Use "Create topic" to create a new forum topic directly.
+          Map each notification category to a forum topic ID in the supergroup.
+          Leave blank to send to the general chat. Use "Create topic" to create
+          a new forum topic directly.
         </p>
         <div className="space-y-4">
           {eventTypes.map((ev) => (
-            <div key={ev} className="bg-slate-900/30 border border-white/5 rounded-lg p-3 space-y-2">
-              <div className="text-sm text-white font-medium">{eventLabels[ev]}</div>
+            <div
+              key={ev}
+              className="bg-slate-900/30 border border-white/5 rounded-lg p-3 space-y-2"
+            >
+              <div className="text-sm text-white font-medium">
+                {eventLabels[ev]}
+              </div>
               <div className="flex items-center gap-3">
                 <input
                   type="text"
@@ -460,7 +496,8 @@ function TelegramConfigForm({
           </h3>
         </div>
         <p className="text-sm text-slate-400">
-          Select which notification types should also be broadcast to the configured channel.
+          Select which notification types should also be broadcast to the
+          configured channel.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {eventTypes.map((ev) => (
@@ -503,7 +540,9 @@ function TelegramConfigForm({
           </h3>
         </div>
         <p className="text-sm text-slate-400">
-          Customize the HTML message sent for each event type. Variables: {"`{title}`"}, {"`{content}`"}, {"`{url}`"}. Leave blank to use defaults.
+          Customize the HTML message sent for each event type. Variables:{" "}
+          {"`{title}`"}, {"`{content}`"}, {"`{url}`"}. Leave blank to use
+          defaults.
         </p>
         <div className="space-y-4">
           {eventTypes.map((ev) => (
@@ -543,7 +582,9 @@ export default function SuperAdminTelegramPanel() {
   const { data: settingsData, isLoading: settingsLoading } = useQuery({
     queryKey: ["super-admin", "telegram", "settings"],
     queryFn: async () => {
-      const res = await api.get<SettingsPayload>("/api/super-admin/telegram/settings");
+      const res = await api.get<SettingsPayload>(
+        "/api/super-admin/telegram/settings",
+      );
       return res;
     },
   });
@@ -552,7 +593,7 @@ export default function SuperAdminTelegramPanel() {
     queryKey: ["super-admin", "telegram", "stats"],
     queryFn: async () => {
       const res = await api.get<{ pairedUsers: number }>(
-        "/api/super-admin/telegram/stats"
+        "/api/super-admin/telegram/stats",
       );
       return res;
     },
@@ -609,7 +650,8 @@ export default function SuperAdminTelegramPanel() {
         <div>
           <h2 className="text-lg font-semibold text-white">Telegram Bot</h2>
           <p className="text-sm text-slate-400">
-            Configure the platform Telegram bot, topic mappings, channel events, and message templates.
+            Configure the platform Telegram bot, topic mappings, channel events,
+            and message templates.
           </p>
         </div>
       </div>
@@ -622,7 +664,7 @@ export default function SuperAdminTelegramPanel() {
           </div>
           <div>
             <p className="text-2xl font-bold text-white">
-              {statsLoading ? "-" : stats?.pairedUsers ?? 0}
+              {statsLoading ? "-" : (stats?.pairedUsers ?? 0)}
             </p>
             <p className="text-sm text-slate-400">Paired Users</p>
           </div>
@@ -634,7 +676,9 @@ export default function SuperAdminTelegramPanel() {
           </div>
           <div>
             <p className="text-sm font-medium text-white">
-              {settingsData?.settings.telegram_bot_token ? "Configured" : "Not Configured"}
+              {settingsData?.settings.telegram_bot_token
+                ? "Configured"
+                : "Not Configured"}
             </p>
             <p className="text-sm text-slate-400">Bot Token</p>
           </div>
