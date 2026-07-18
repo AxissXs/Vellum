@@ -2,14 +2,6 @@
 
 ## Priority: High
 
-- [ ] **Fix Kanban drag-and-drop** — Tasks get locked in TO-DO column after first move
-
-  Tasks can only be moved from any column to the TO-DO column, then become locked. Drag-and-drop interaction is laggy and unresponsive.
-
-  - Reproduce and fix the column-locking issue
-  - Optimize drag-and-drop performance
-  - Acceptance criteria: Tasks can be dragged between all columns freely; interaction is smooth
-
 - [ ] **Fix notification system bugs** — Resolve duplicate, missing, and incorrect notifications
 
   Several notification-related issues need addressing: missing notifications on Kanban moves, spurious notifications on no-op saves, duplicate broadcasts, and missing deep links.

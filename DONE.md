@@ -355,4 +355,25 @@ When a task from [TODO.md](TODO.md) is fully completed and merged:
 
 ---
 
+## Kanban Drag-and-Drop Fix (July 2026)
+
+Fixed critical column-locking bug and DnD performance issues.
+
+**Root Causes:**
+1. **Stale closure in `handleDragOver`** — `activeTask`, `overTask`, `activeColumn`, `overColumn` were captured from the outer `columns` scope and used inside a `setColumns` functional updater. During a single drag, `onDragOver` fires multiple times, and each invocation kept referencing the ORIGINAL column. With each successive `onDragOver` event, the functional updater removed the task from the wrong (already-emptied) column and inserted it into the target column, creating duplicate tasks. With duplicate task IDs in the same column, `useSortable` registry broke and tasks appeared "locked."
+2. **No `useDroppable` on column containers** — Dropping into empty space or empty columns never triggered collisions because `closestCenter` only detects center overlaps between sortable items. The column container itself was not a droppable target, so `over` was `null`, the drag snapped back, and users experienced laggy/unresponsive behavior.
+
+**Fixes Applied:**
+- `handleDragOver`: All lookups (`activeTask`, `overTask`, `activeColumn`, `overColumn`) now happen inside the `setColumns` functional updater using `prev` state, not the stale outer closure.
+- Added guard to skip cross-column moves when the task has already been moved to the target column.
+- Added `useDroppable` to each `Column` container, allowing drops into empty columns and empty space.
+- Removed stale `onDragStart` prop handler and its unused callback pipeline.
+- Used `useRef` + `useEffect` to sync `columnsRef` for `handleDragStart` and `handleDragEnd` without violating React purity rules.
+
+**Files Changed:**
+- `src/app/dashboard/kanban/KanbanBoardClient.tsx`
+- `src/app/dashboard/projects/[id]/KanbanBoard.tsx`
+
+---
+
 *Last updated: July 2026*

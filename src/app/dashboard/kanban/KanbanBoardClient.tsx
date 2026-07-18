@@ -14,6 +14,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
@@ -97,12 +98,10 @@ function TaskCard({
   task,
   users,
   onClick,
-  onDragStart,
 }: {
   task: Task;
   users: User[];
   onClick: () => void;
-  onDragStart: () => void;
 }) {
   const {
     attributes,
@@ -126,7 +125,6 @@ function TaskCard({
       {...attributes}
       {...listeners}
       onClick={onClick}
-      onDragStart={onDragStart}
       className={clsx(
         "bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
         priorityColors[task.priority],
@@ -184,21 +182,24 @@ function Column({
   column,
   users,
   onTaskClick,
-  onDragStart,
   addForm,
 }: {
   column: Column;
   users: User[];
   onTaskClick: (task: Task) => void;
-  onDragStart: (task: Task) => void;
   addForm?: React.ReactNode;
 }) {
+  const { setNodeRef } = useDroppable({ id: column.key });
+
   return (
     <SortableContext
       items={column.tasks.map((t) => t.id)}
       strategy={verticalListSortingStrategy}
     >
-      <div className="flex flex-col h-full min-h-[500px]">
+      <div
+        ref={setNodeRef}
+        className="flex flex-col h-full min-h-[500px]"
+      >
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-full ${column.color}`} />
@@ -227,7 +228,6 @@ function Column({
               task={task}
               users={users}
               onClick={() => onTaskClick(task)}
-              onDragStart={() => onDragStart(task)}
             />
           ))}
         </div>
@@ -301,13 +301,19 @@ export default function KanbanBoardClient({
     }));
   }, [columns, selectedProjectId, searchQuery]);
 
+  const columnsRef = useRef<Column[]>(columns);
+  useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;
-    const task = columns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
+    const currentColumns = columnsRef.current;
+    const task = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
     if (task) {
       event.active.data.current = { task };
     }
-  }, [columns]);
+  }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
@@ -318,45 +324,46 @@ export default function KanbanBoardClient({
 
     if (activeId === overId) return;
 
-    const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    const overTask = columns.flatMap((c) => c.tasks).find((t) => t.id === overId);
+    setColumns((prev) => {
+      const activeTask = prev.flatMap((c) => c.tasks).find((t) => t.id === activeId);
+      const overTask = prev.flatMap((c) => c.tasks).find((t) => t.id === overId);
+      if (!activeTask || !overTask) return prev;
 
-    if (activeTask && overTask) {
-      const activeColumn = columns.find((c) => c.tasks.some((t) => t.id === activeId));
-      const overColumn = columns.find((c) => c.tasks.some((t) => t.id === overId));
-
-      if (activeColumn && overColumn && activeColumn.key !== overColumn.key) {
-        setColumns((prev) =>
-          prev.map((col) => {
-            if (col.key === activeColumn.key) {
-              return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
-            }
-            if (col.key === overColumn.key) {
-              const overIndex = col.tasks.findIndex((t) => t.id === overId);
-              const newTasks = [...col.tasks];
-              newTasks.splice(overIndex, 0, { ...activeTask, status: overColumn.key, position: String(overIndex) });
-              return { ...col, tasks: newTasks };
-            }
-            return col;
-          })
-        );
-      } else if (activeColumn && overColumn && activeColumn.key === overColumn.key) {
+      const activeColumn = prev.find((c) => c.tasks.some((t) => t.id === activeId));
+      const overColumn = prev.find((c) => c.tasks.some((t) => t.id === overId));
+      if (!activeColumn || !overColumn) return prev;
+      if (activeColumn.key === overColumn.key) {
         const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
         const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        setColumns((prev) =>
-          prev.map((col) => {
-            if (col.key === activeColumn.key) {
-              const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
-                t.id === activeId || t.id === overId ? { ...t, position: String(i) } : t
-              );
-              return { ...col, tasks: newTasks };
-            }
-            return col;
-          })
-        );
+        if (activeIndex === overIndex) return prev;
+        return prev.map((col) => {
+          if (col.key === activeColumn.key) {
+            const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
+              t.id === activeId || t.id === overId ? { ...t, position: String(i) } : t
+            );
+            return { ...col, tasks: newTasks };
+          }
+          return col;
+        });
       }
-    }
-  }, [columns]);
+
+      // Cross-column: only move if task is still in activeColumn
+      if (!activeColumn.tasks.some((t) => t.id === activeId)) return prev;
+
+      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+      return prev.map((col) => {
+        if (col.key === activeColumn.key) {
+          return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
+        }
+        if (col.key === overColumn.key) {
+          const newTasks = [...col.tasks];
+          newTasks.splice(overIndex, 0, { ...activeTask, status: overColumn.key, position: String(overIndex) });
+          return { ...col, tasks: newTasks };
+        }
+        return col;
+      });
+    });
+  }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -365,11 +372,12 @@ export default function KanbanBoardClient({
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
+    const currentColumns = columnsRef.current;
+    const activeTask = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
     if (!activeTask) return;
 
-    const activeColumn = columns.find((c) => c.tasks.some((t) => t.id === activeId));
-    const overColumn = columns.find((c) => c.tasks.some((t) => t.id === overId));
+    const activeColumn = currentColumns.find((c) => c.tasks.some((t) => t.id === activeId));
+    const overColumn = currentColumns.find((c) => c.tasks.some((t) => t.id === overId));
 
     if (activeColumn && overColumn) {
       if (activeColumn.key !== overColumn.key) {
@@ -383,7 +391,7 @@ export default function KanbanBoardClient({
         await reorderTasks.mutateAsync(updates);
       }
     }
-  }, [columns, updateTask, reorderTasks]);
+  }, [updateTask, reorderTasks]);
 
   async function handleCreateTask(status: string) {
     const data = newTaskData[status];
@@ -584,7 +592,6 @@ export default function KanbanBoardClient({
                 <Column
                   column={column}
                   onTaskClick={setSelectedTask}
-                  onDragStart={() => {}}
                   users={users}
                   addForm={taskForm}
                 />
