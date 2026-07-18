@@ -5,6 +5,7 @@ import {
   uuid,
   boolean,
   pgEnum,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", [
@@ -158,20 +159,31 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const comments = pgTable("comments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  content: text("content").notNull(),
-  taskId: uuid("task_id")
-    .references(() => tasks.id, { onDelete: "cascade" })
-    .notNull(),
-  authorId: uuid("author_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  deletedAt: timestamp("deleted_at"),
-  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const comments = pgTable(
+  "comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    content: text("content").notNull(),
+    taskId: uuid("task_id")
+      .references(() => tasks.id, { onDelete: "cascade" })
+      .notNull(),
+    authorId: uuid("author_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    parentId: uuid("parent_id"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+      name: "comments_parent_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
 
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),

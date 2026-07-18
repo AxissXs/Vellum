@@ -94,7 +94,7 @@
 - ~~**Fix select dropdown styling**~~ ✅ — Fixed with `color-scheme: dark` in `globals.css`
 - ~~**Fix select click propagation in users table**~~ ✅ — Added `e.stopPropagation()` to role/status selects
 
-- [ ] **Comment replies** - Threaded replies on task comments with notifications
+- ~~**Comment replies**~~ ✅ — Threaded replies on task comments with notifications
   - Add `parentId` column to `comments` table (nullable, self-referencing FK)
   - API: `POST /api/comments` accepts optional `parentId` to create a reply
   - UI: "Reply" button on each comment, opens inline reply form

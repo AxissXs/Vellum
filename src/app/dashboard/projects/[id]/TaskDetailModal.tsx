@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Trash2, Calendar, User, Send, Edit2, Check, X as XIcon } from "lucide-react";
+import { X, Loader2, Trash2, Calendar, User, Send, Edit2, Check, X as XIcon, MessageCircle } from "lucide-react";
 import { clsx } from "clsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -32,6 +32,7 @@ type Comment = {
   content: string;
   taskId: string;
   authorId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   authorName: string | null;
@@ -80,6 +81,9 @@ export default function TaskDetailModal({
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
+
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
 
   const queryClient = useQueryClient();
   const { data: comments = [], refetch } = useQuery({
@@ -137,14 +141,30 @@ export default function TaskDetailModal({
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment.trim()) return;
-    createCommentMutation.mutate({ content: newComment.trim(), taskId: task.id }, {
+    createCommentMutation.mutate({ content: newComment.trim(), taskId: task.id, parentId: null }, {
       onSuccess: () => setNewComment(""),
     });
+  }
+
+  function handleAddReply(e: React.FormEvent) {
+    e.preventDefault();
+    if (!replyContent.trim() || !replyingToId) return;
+    createCommentMutation.mutate(
+      { content: replyContent.trim(), taskId: task.id, parentId: replyingToId },
+      {
+        onSuccess: () => {
+          setReplyContent("");
+          setReplyingToId(null);
+        },
+      }
+    );
   }
 
   function startEditComment(comment: Comment) {
     setEditingCommentId(comment.id);
     setEditCommentContent(comment.content);
+    setReplyingToId(null);
+    setReplyContent("");
   }
 
   function cancelEditComment() {
@@ -180,6 +200,19 @@ export default function TaskDetailModal({
       hour: "2-digit", minute: "2-digit",
     });
   }
+
+  // Group comments by parentId
+  const topLevelComments = comments.filter((c) => !c.parentId);
+  const repliesByParent = new Map<string, Comment[]>();
+  for (const c of comments) {
+    if (c.parentId) {
+      const list = repliesByParent.get(c.parentId) || [];
+      list.push(c);
+      repliesByParent.set(c.parentId, list);
+    }
+  }
+
+  const totalReplyCount = comments.filter((c) => c.parentId).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -343,80 +376,200 @@ export default function TaskDetailModal({
           {/* Comments */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-3">
-              Comments ({comments.length})
+              Comments ({comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""})
             </h4>
 
             <div className="space-y-3 mb-4">
-              {comments.length === 0 && (
+              {topLevelComments.length === 0 && (
                 <p className="text-sm text-slate-600 text-center py-4">No comments yet</p>
               )}
-              {comments.map((c) => (
-                <div key={c.id} className="flex gap-3">
-                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
-                    {getInitials(c.authorName)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {editingCommentId === c.id ? (
-                      <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="space-y-2">
+              {topLevelComments.map((c) => {
+                const replies = repliesByParent.get(c.id) || [];
+                const replyCount = replies.length;
+                return (
+                  <div key={c.id}>
+                    <div className="flex gap-3">
+                      <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
+                        {getInitials(c.authorName)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {editingCommentId === c.id ? (
+                          <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="space-y-2">
+                            <RichTextEditor
+                              value={editCommentContent}
+                              onChange={setEditCommentContent}
+                              rows={3}
+                              placeholder="Edit your comment..."
+                              users={users}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                type="button"
+                                onClick={cancelEditComment}
+                                className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
+                                className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                              >
+                                {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-slate-300">{c.authorName || "Unknown"}</span>
+                              <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
+                              {c.authorId === currentUserId && (
+                                <div className="flex items-center gap-1 ml-auto">
+                                  <button
+                                    onClick={() => startEditComment(c)}
+                                    className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
+                                    title="Edit"
+                                  >
+                                    <Edit2 size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteComment(c.id)}
+                                    disabled={deleteCommentMutation.isPending}
+                                    className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                    title="Delete"
+                                  >
+                                    {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-0.5">
+                              <RichTextPreview value={c.content} empty="" />
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <button
+                                onClick={() => {
+                                  setReplyingToId(replyingToId === c.id ? null : c.id);
+                                  setReplyContent("");
+                                }}
+                                className="text-[11px] text-slate-500 hover:text-brand-400 transition flex items-center gap-1"
+                              >
+                                <MessageCircle size={12} />
+                                {replyingToId === c.id ? "Cancel reply" : replyCount > 0 ? `Reply (${replyCount})` : "Reply"}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Inline reply form */}
+                    {replyingToId === c.id && editingCommentId !== c.id && (
+                      <form onSubmit={handleAddReply} className="mt-2 ml-10 space-y-2">
                         <RichTextEditor
-                          value={editCommentContent}
-                          onChange={setEditCommentContent}
+                          value={replyContent}
+                          onChange={setReplyContent}
                           rows={3}
-                          placeholder="Edit your comment..."
+                          placeholder={`Reply to ${c.authorName || "Unknown"}...`}
                           users={users}
                         />
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex justify-end gap-2">
                           <button
                             type="button"
-                            onClick={cancelEditComment}
+                            onClick={() => { setReplyingToId(null); setReplyContent(""); }}
                             className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
-                            disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                            disabled={createCommentMutation.isPending || !replyContent.trim()}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-500 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition"
                           >
-                            {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+                            {createCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                            Reply
                           </button>
                         </div>
                       </form>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-slate-300">{c.authorName || "Unknown"}</span>
-                          <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
-                          {c.authorId === currentUserId && (
-                            <div className="flex items-center gap-1 ml-auto">
-                              <button
-                                onClick={() => startEditComment(c)}
-                                className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
-                                title="Edit"
-                              >
-                                <Edit2 size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteComment(c.id)}
-                                disabled={deleteCommentMutation.isPending}
-                                className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
-                                title="Delete"
-                              >
-                                {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                              </button>
+                    )}
+
+                    {/* Nested replies */}
+                    {replyCount > 0 && (
+                      <div className="mt-2 ml-10 space-y-2 border-l-2 border-white/5 pl-3">
+                        {replies.map((reply) => (
+                          <div key={reply.id} className="flex gap-3">
+                            <div className="h-6 w-6 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-[9px] font-bold text-brand-400 flex-shrink-0">
+                              {getInitials(reply.authorName)}
                             </div>
-                          )}
-                        </div>
-                        <div className="mt-0.5">
-                          <RichTextPreview value={c.content} empty="" />
-                        </div>
-                      </>
+                            <div className="flex-1 min-w-0">
+                              {editingCommentId === reply.id ? (
+                                <form onSubmit={(e) => { e.preventDefault(); saveEditComment(reply); }} className="space-y-2">
+                                  <RichTextEditor
+                                    value={editCommentContent}
+                                    onChange={setEditCommentContent}
+                                    rows={3}
+                                    placeholder="Edit your reply..."
+                                    users={users}
+                                  />
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={cancelEditComment}
+                                      className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
+                                      className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                                    >
+                                      {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+                                    </button>
+                                  </div>
+                                </form>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-slate-300">{reply.authorName || "Unknown"}</span>
+                                    <span className="text-[10px] text-slate-600">{formatTime(reply.createdAt)}</span>
+                                    {reply.authorId === currentUserId && (
+                                      <div className="flex items-center gap-1 ml-auto">
+                                        <button
+                                          onClick={() => startEditComment(reply)}
+                                          className="p-0.5 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
+                                          title="Edit"
+                                        >
+                                          <Edit2 size={10} />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteComment(reply.id)}
+                                          disabled={deleteCommentMutation.isPending}
+                                          className="p-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                                          title="Delete"
+                                        >
+                                          {deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="mt-0.5">
+                                    <RichTextPreview value={reply.content} empty="" />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
+            {/* Top-level comment form */}
             <form onSubmit={handleAddComment} className="space-y-2">
               <RichTextEditor
                 value={newComment}

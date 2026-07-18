@@ -64,6 +64,20 @@
       "when": 1784285601256,
       "tag": "0008_lumpy_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784350049353,
+      "tag": "0009_thankful_infant_terrible",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784373429884,
+      "tag": "0010_past_kingpin",
+      "breakpoints": true
     }
   ]
 }

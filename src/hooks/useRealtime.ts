@@ -31,6 +31,7 @@ type Comment = {
   content: string;
   taskId: string;
   authorId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   authorName: string | null;

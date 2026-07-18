@@ -11,6 +11,7 @@ type Comment = {
   content: string;
   taskId: string;
   authorId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   authorName: string | null;
@@ -20,6 +21,7 @@ type Comment = {
 type CommentCreateInput = {
   content: string;
   taskId: string;
+  parentId?: string | null;
 };
 
 type CommentUpdateInput = { id: string; taskId: string; content?: string };
@@ -33,13 +35,13 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: async (input: CommentCreateInput) => {
-      const toastId = toast.loading("Adding comment...");
+      const toastId = toast.loading(input.parentId ? "Adding reply..." : "Adding comment...");
       try {
         const res = await api.post<{ comment: Comment }>("/api/comments", input);
-        toast.success("Comment added", { id: toastId });
+        toast.success(input.parentId ? "Reply added" : "Comment added", { id: toastId });
         return res.comment;
       } catch (err) {
-        toast.error("Failed to add comment", { id: toastId });
+        toast.error(input.parentId ? "Failed to add reply" : "Failed to add comment", { id: toastId });
         throw err;
       }
     },
@@ -54,6 +56,7 @@ export function useCreateComment() {
         content: newComment.content,
         taskId: newComment.taskId,
         authorId: "",
+        parentId: newComment.parentId || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         authorName: null,
@@ -145,7 +148,8 @@ export function useDeleteComment() {
         const data = queryClient.getQueryData<Comment[]>(query.queryKey);
         if (data) {
           previousData.set(query.queryKey, data);
-          queryClient.setQueryData(query.queryKey, data.filter((c) => c.id !== commentId));
+          // Also remove child replies
+          queryClient.setQueryData(query.queryKey, data.filter((c) => c.id !== commentId && c.parentId !== commentId));
         }
       }
 

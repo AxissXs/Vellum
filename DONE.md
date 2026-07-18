@@ -299,6 +299,18 @@ This document tracks features and tasks that have been fully implemented, tested
 - **Auth**: Exported `IMPERSONATOR_SESSION_COOKIE` constant from `src/lib/auth.ts`
 - **Audit panels**: Added "Impersonation" to `tagLabels` and tag filter in `SuperAdminAuditPanel` and `AuditLogDetailModal`
 
+### Comment Replies (July 2026)
+> Threaded 1-level-deep replies on task comments with notifications and real-time updates.
+
+- **DB**: Added `parentId` nullable self-referencing FK to `comments` table (migration `0010_past_kingpin.sql`)
+- **API**: `POST /api/comments` accepts optional `parentId`; validates it exists, is not already a reply (enforces 1-level max nesting)
+- **Notifications**: Replies notify parent comment author via `sendNotification()`; top-level comments still notify task assignee
+- **Activity logging**: Log action descriptions distinguish replies (`"Replied to a comment on task: ..."`) vs top-level comments
+- **Pusher broadcast**: Reply events broadcast on `task-${taskId}` channel for real-time updates across clients
+- **Optimistic updates**: `useCreateComment` hook updated to include `parentId`; temp IDs replaced on success; `useDeleteComment` now also removes child replies optimistically
+- **UI**: Reply button with count badge on each top-level comment; inline RichTextEditor reply form; nested replies displayed with left border indent (1 level deep); edit/delete still work on replies
+- **Files**: `src/db/schema.ts`, `src/app/api/comments/route.ts`, `src/hooks/useComments.ts`, `src/hooks/useRealtime.ts`, `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
+
 ### Keyboard Shortcuts (July 2026)
 > Power-user keyboard shortcuts across the dashboard.
 

@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       content: comments.content,
       taskId: comments.taskId,
       authorId: comments.authorId,
+      parentId: comments.parentId,
       createdAt: comments.createdAt,
       updatedAt: comments.updatedAt,
       authorName: users.name,
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { content, taskId } = await req.json();
+  const { content, taskId, parentId } = await req.json();
   if (!content || !taskId) {
     return NextResponse.json(
       { error: "Content and taskId are required" },
@@ -48,9 +49,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Validate parentId if provided
+  if (parentId) {
+    const [parent] = await db
+      .select()
+      .from(comments)
+      .where(and(eq(comments.id, parentId), isNull(comments.deletedAt)))
+      .limit(1);
+    if (!parent) {
+      return NextResponse.json({ error: "Parent comment not found" }, { status: 400 });
+    }
+    if (parent.parentId) {
+      return NextResponse.json({ error: "Cannot nest replies more than 1 level deep" }, { status: 400 });
+    }
+  }
+
   const [comment] = await db
     .insert(comments)
-    .values({ content, taskId, authorId: user.id })
+    .values({ content, taskId, authorId: user.id, parentId: parentId || null })
     .returning();
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId, assigneeId: tasks.assigneeId }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
@@ -60,7 +76,9 @@ export async function POST(req: NextRequest) {
     action: "created_comment",
     entityType: "comment",
     entityId: comment.id,
-    details: `Commented on task: ${task?.title || taskId}`,
+    details: parentId
+      ? `Replied to a comment on task: ${task?.title || taskId}`
+      : `Commented on task: ${task?.title || taskId}`,
     ipAddress: getClientIP(req),
     snapshots: [{ tableName: "comments", recordId: comment.id, snapshot: comment, snapshotType: "after" }],
   });
@@ -93,8 +111,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Send notification to task assignee
-  if (task?.assigneeId && task.assigneeId !== user.id) {
+  // Send notification to task assignee (only for top-level comments, not replies)
+  if (!parentId && task?.assigneeId && task.assigneeId !== user.id) {
     await sendNotification({
       userId: task.assigneeId,
       type: "new_comment",
@@ -112,12 +130,38 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Send notification to parent comment author for replies
+  if (parentId) {
+    const [parentAuthor] = await db
+      .select({ authorId: comments.authorId })
+      .from(comments)
+      .where(eq(comments.id, parentId))
+      .limit(1);
+    if (parentAuthor && parentAuthor.authorId !== user.id) {
+      await sendNotification({
+        userId: parentAuthor.authorId,
+        type: "new_comment",
+        title: "New Reply",
+        content: `${user.name || "Someone"} replied to your comment on "${task?.title || taskId}"`,
+        entityType: "task",
+        entityId: taskId,
+        actorUserId: user.id,
+        pushPayload: {
+          title: "New Reply",
+          body: `${user.name || "Someone"} replied to your comment on "${task?.title || taskId}"`,
+          tag: `comment-${comment.id}`,
+        },
+        url: `/dashboard/projects/${task.projectId}`,
+      });
+    }
+  }
+
   // Broadcast to supergroup/channel (always)
   if (task) {
     await broadcastEvent({
       type: "new_comment",
-      title: "New Comment",
-      content: `${user.name || "Someone"} commented on "${task.title}"`,
+      title: parentId ? "New Reply" : "New Comment",
+      content: `${user.name || "Someone"} ${parentId ? "replied on" : "commented on"} "${task.title}"`,
       url: `/dashboard/projects/${task.projectId}`,
     });
   }
