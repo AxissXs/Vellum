@@ -637,13 +637,13 @@ src/
 #### `src/app/api/comments/route.ts`
 
 **Methods**: `GET`, `POST`
-**Purpose**: Task comments
+**Purpose**: Task comments and replies
 **Functions**:
 
-- `GET(req)` - List comments (query: `taskId`)
-- `POST(req)` - Create comment
+- `GET(req)` - List comments (query: `taskId`), includes `parentId`
+- `POST(req)` - Create comment with optional `parentId` for replies; validates max 1-level nesting; notifies parent comment author on reply, task assignee on top-level comment
 
-#### `src/app/api/activity/route.ts`
+#### `src/app/api/comments/[id]/route.ts`
 
 **Methods**: `GET`
 **Purpose**: Activity logs
@@ -1049,7 +1049,7 @@ src/
 - `projectMilestones` - Project milestones
 - `projectNotes` - Project notes
 - `tasks` - Kanban tasks
-- `comments` - Task comments
+- `comments` - Task comments (includes `parentId` for 1-level threaded replies, `deletedAt` for soft delete)
 - `sessions` - Auth sessions
 - `userSessions` - Login history (IP, user agent, success/failure)
 - `activityLogs` - Activity audit trail (includes `tag`, `severity`, `deletedAt`, `deletedBy` on entities)
@@ -1094,13 +1094,13 @@ src/
 
 #### `src/hooks/useComments.ts`
 
-**Purpose**: React Query mutations for comment operations with optimistic updates
+**Purpose**: React Query mutations for comment operations with optimistic updates (supports replies)
 **Exports**:
-- `useCreateComment()` - Create comment with optimistic UI update
+- `useCreateComment()` - Create comment or reply (supports `parentId`)
 - `useUpdateComment()` - Update comment with optimistic UI update
-- `useDeleteComment()` - Delete comment with optimistic UI update
+- `useDeleteComment()` - Delete comment with optimistic UI update (also removes child replies)
 
-**Pattern**: All hooks use `useMutation` with `onMutate` for optimistic updates, `onError` for rollback with toast, `onSettled` for cache invalidation
+**Pattern**: All hooks use `useMutation` with `onMutate` for optimistic updates, `onError` for rollback with toast, `onSettled` for cache invalidation. Replies get `"Reply added"` toast instead of `"Comment added"`.
 
 #### `src/hooks/useTasks.ts`
 
