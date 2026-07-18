@@ -136,6 +136,28 @@ export default function TaskAssigneePopover({
           </div>
 
           <div className="max-h-48 overflow-y-auto px-1">
+            {/* Unassigned option */}
+            <button
+              onClick={() => {
+                mutation.mutate(null);
+                setOpen(false);
+              }}
+              className={clsx(
+                "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition",
+                localAssigneeId === null || localAssigneeId === undefined
+                  ? "bg-brand-500/10 text-brand-400"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              <div className="h-6 w-6 rounded-full bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-slate-500">
+                <User size={12} />
+              </div>
+              <span className="flex-1 text-left truncate">Unassigned</span>
+              {(localAssigneeId === null || localAssigneeId === undefined) && <Check size={12} />}
+            </button>
+
+            <div className="border-t border-white/5 my-1" />
+
             {filtered.length === 0 && (
               <p className="text-xs text-slate-600 text-center py-2">No users found</p>
             )}
@@ -145,8 +167,8 @@ export default function TaskAssigneePopover({
                 <button
                   key={u.id}
                   onClick={() => {
-                    mutation.mutate(isSelected ? null : u.id);
-                    if (isSelected) setOpen(false);
+                    mutation.mutate(u.id);
+                    setOpen(false);
                   }}
                   className={clsx(
                     "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition",

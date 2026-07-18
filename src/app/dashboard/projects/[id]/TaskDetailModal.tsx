@@ -146,7 +146,6 @@ export default function TaskDetailModal({
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState("");
 
   const queryClient = useQueryClient();
   const { data: comments = [], refetch } = useQuery({
@@ -216,25 +215,26 @@ export default function TaskDetailModal({
     e.preventDefault();
     if (!newComment.trim()) return;
     createCommentMutation.mutate(
-      { content: newComment.trim(), taskId: task.id, parentId: null },
-      { onSuccess: () => setNewComment("") }
+      { content: newComment.trim(), taskId: task.id, parentId: replyingToId },
+      {
+        onSuccess: () => {
+          setNewComment("");
+          setReplyingToId(null);
+        },
+      }
     );
   }
 
-  function handleAddReply(e: React.FormEvent) {
-    e.preventDefault();
-    if (!replyContent.trim() || !replyingToId) return;
-    createCommentMutation.mutate(
-      { content: replyContent.trim(), taskId: task.id, parentId: replyingToId },
-      { onSuccess: () => { setReplyContent(""); setReplyingToId(null); } }
-    );
+  function cancelReply() {
+    setReplyingToId(null);
+    setNewComment("");
   }
 
   function startEditComment(comment: Comment) {
     setEditingCommentId(comment.id);
     setEditCommentContent(comment.content);
     setReplyingToId(null);
-    setReplyContent("");
+    setNewComment("");
   }
 
   function cancelEditComment() {
@@ -292,7 +292,7 @@ export default function TaskDetailModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-slate-900 border border-white/10 md:rounded-2xl w-full max-w-4xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
+      <div className="relative bg-slate-900 border border-white/10 md:rounded-2xl w-full max-w-5xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between p-5 md:p-6 border-b border-white/5 gap-4">
           <div className="flex-1 min-w-0">
@@ -344,9 +344,9 @@ export default function TaskDetailModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col md:grid md:grid-cols-5 md:gap-0">
+          <div className="flex flex-col md:grid md:grid-cols-2 md:gap-0">
             {/* Left: Details */}
-            <div className="md:col-span-3 p-5 md:p-6 space-y-6 border-b md:border-b-0 md:border-r border-white/5">
+            <div className="p-5 md:p-6 space-y-6 border-b md:border-b-0 md:border-r border-white/5 min-w-0">
               {/* Assignee + Due Date */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
@@ -483,7 +483,7 @@ export default function TaskDetailModal({
             </div>
 
             {/* Right: Activity */}
-            <div className="md:col-span-2 p-5 md:p-6 space-y-5 bg-slate-950/30">
+            <div className="p-5 md:p-6 space-y-5 bg-slate-950/30 min-w-0">
               <h4 className="text-sm font-semibold text-white flex items-center gap-2">
                 <MessageCircle size={16} className="text-brand-400" />
                 Activity
@@ -526,23 +526,12 @@ export default function TaskDetailModal({
                           )}
 
                           {editingCommentId !== c.id && (
-                            <button onClick={() => { setReplyingToId(replyingToId === c.id ? null : c.id); setReplyContent(""); }} className="text-[11px] text-slate-500 hover:text-brand-400 transition mt-1">
+                            <button onClick={() => { setReplyingToId(replyingToId === c.id ? null : c.id); setNewComment(""); }} className="text-[11px] text-slate-500 hover:text-brand-400 transition mt-1">
                               {replyingToId === c.id ? "Cancel reply" : replies.length > 0 ? `Reply (${replies.length})` : "Reply"}
                             </button>
                           )}
                         </div>
                       </div>
-
-                      {/* Reply form */}
-                      {replyingToId === c.id && editingCommentId !== c.id && (
-                        <form onSubmit={handleAddReply} className="ml-9 space-y-2">
-                          <RichTextEditor value={replyContent} onChange={setReplyContent} rows={2} placeholder={`Reply to ${c.authorName || "Unknown"}...`} users={users} />
-                          <div className="flex justify-end gap-2">
-                            <button type="button" onClick={() => { setReplyingToId(null); setReplyContent(""); }} className="px-2.5 py-1 text-[11px] rounded bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
-                            <button type="submit" disabled={createCommentMutation.isPending || !replyContent.trim()} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-brand-500 text-[11px] font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}Reply</button>
-                          </div>
-                        </form>
-                      )}
 
                       {/* Nested replies */}
                       {replies.length > 0 && (
@@ -586,9 +575,17 @@ export default function TaskDetailModal({
 
               {/* Comment form */}
               <form onSubmit={handleAddComment} className="space-y-2 pt-2 border-t border-white/5">
-                <RichTextEditor value={newComment} onChange={setNewComment} rows={3} placeholder="Write an update, decision, blocker, or link..." users={users} />
+                {replyingToId ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-brand-400">
+                      Replying to {topLevelComments.find((c) => c.id === replyingToId)?.authorName || "Unknown"}
+                    </span>
+                    <button type="button" onClick={cancelReply} className="text-[11px] text-slate-500 hover:text-slate-300 transition">Cancel</button>
+                  </div>
+                ) : null}
+                <RichTextEditor value={newComment} onChange={setNewComment} rows={3} placeholder={replyingToId ? "Write a reply..." : "Write an update, decision, blocker, or link..."} users={users} />
                 <div className="flex justify-end">
-                  <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}Add comment</button>
+                  <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}{replyingToId ? "Reply" : "Add comment"}</button>
                 </div>
               </form>
             </div>

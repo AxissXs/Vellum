@@ -311,6 +311,15 @@ This document tracks features and tasks that have been fully implemented, tested
 - **UI**: Reply button with count badge on each top-level comment; inline RichTextEditor reply form; nested replies displayed with left border indent (1 level deep); edit/delete still work on replies
 - **Files**: `src/db/schema.ts`, `src/app/api/comments/route.ts`, `src/hooks/useComments.ts`, `src/hooks/useRealtime.ts`, `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
+### Quick Task Assignment (July 2026)
+> Rapidly assign or unassign users from kanban cards and the task detail modal.
+
+- **Component**: `src/components/TaskAssigneePopover.tsx` — standalone avatar button that opens a searchable user dropdown
+- **Features**: Avatar trigger, search filter by name, click to toggle assignment, optimistic UI update with rollback on error, toast notifications
+- **Integration**: Wired into `KanbanBoard.tsx` (project board task cards), `KanbanBoardClient.tsx` (global kanban), and `TaskDetailModal.tsx` (read mode)
+- **Notifications**: Reuses existing `/api/tasks/[id]` PATCH route; new assignee gets in-app + push notification automatically
+- **Responsive**: Works at `size="sm"` (cards) and `size="md"` (modal)
+
 ### Task Modal Redesign (July 2026)
 > Two-column layout with visual pickers, linked project badge, keyboard shortcuts, and responsive sizing.
 

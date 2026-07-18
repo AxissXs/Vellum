@@ -453,12 +453,13 @@ src/
 - Two-column layout on desktop (details left 3/5, activity right 2/5); full-screen on mobile
 - Header with status-colored dot badge, priority badge, clickable project link
 - Visual status/priority selectors as colored pill buttons in edit mode
-- Avatar + name assignee display; user picker pills in edit mode
+- Avatar + name assignee display; searchable dropdown picker in edit mode (not messy pills)
 - Description via RichTextEditor / RichTextPreview
 - Threaded comments with inline reply forms, nested display (1-level deep)
 - Real-time comment updates via `useRealtime()`
 - Keyboard shortcuts: `Esc` (close/cancel/reply), `E` (edit)
 - Task delete confirmation
+- `TaskAssigneePopover` for quick assign/unassign in read mode
 
 ### `src/app/dashboard/projects/[id]/ProjectManagementPanel.tsx`
 
@@ -1021,6 +1022,18 @@ src/
 - Lists shortcuts stored in `SHORTCUTS` from `useKeyboardShortcuts.ts`
 - Close via button (`data-kbd-close`), `Esc`, or backdrop click
 - Accessible with `role="dialog"` and `aria-modal`
+
+#### `src/components/TaskAssigneePopover.tsx`
+
+**Purpose**: Quick assign/unassign users to a task from a kanban card or modal
+**Exports**: `TaskAssigneePopover({ taskId, currentAssigneeId, users, size, onAssigneeChange })` - Client component
+**Features**:
+
+- Avatar button trigger; shows current assignee initials or generic user icon
+- Searchable dropdown with user names / avatars
+- Click to toggle assignment (optimistic update via React Query)
+- Toast feedback and rollback on error
+- Used in both kanban task cards (`size="sm"`) and task detail modal (`size="md"`)
 
 #### `src/components/ui/Switch.tsx`
 

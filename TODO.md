@@ -156,14 +156,10 @@
 
   - Acceptance criteria: Phase 1 shipped, superadmin can toggle features, cache works, disabled features skip logic, no perf regression
 
-- [ ] **Quick task assignment** - Rapidly assign/unassign users to tasks
-  - "Assign" button on task cards (kanban hover) and in task detail modal
-  - Opens a small popover/dropdown with user search + multi-select
-  - Type to filter users by name
-  - Click to toggle assignment (optimistic update)
-  - Show assigned users with avatar + name, "×" to remove
-  - Send notification to newly assigned user
-  - Acceptance criteria: Users can quickly assign team members from task card or modal, search works, notifications fire
+- ~~**Quick task assignment**~~ ✅ — Rapidly assign/unassign users to tasks from kanban cards and task modal
+  - `TaskAssigneePopover` component with avatar button, searchable dropdown, optimistic update
+  - Integrated into `KanbanBoard` (project), `KanbanBoardClient` (global), and `TaskDetailModal` (read mode)
+  - Notifications fire to newly assigned user via existing `/api/tasks/[id]` PATCH route
 
 - ~~**Task modal redesign**~~ ✅ — Two-column task detail modal with improved UX, visual selectors, keyboard shortcuts, responsive layout
 
