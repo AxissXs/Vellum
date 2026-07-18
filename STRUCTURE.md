@@ -141,6 +141,7 @@ src/
 │       ├── telegram/
 │       │   ├── config/route.ts       # GET - Check if bot is configured (public, no auth)
 │       │   ├── pairing-code/route.ts  # GET - Generate pairing code
+│       │   ├── supergroup-code/route.ts # POST - Generate supergroup pairing code
 │       │   ├── unlink/route.ts        # DELETE - Unlink Telegram account
 │       │   ├── status/route.ts        # GET - Check Telegram link status
 │       │   └── webhook/route.ts       # POST - Receive Telegram Bot API updates
@@ -408,14 +409,13 @@ src/
 **Purpose**: Telegram bot configuration and stats
 **Exports**: `SuperAdminTelegramPanel()` - Client component
 
-- Bot token input (masked), supergroup ID, channel ID
+- Bot token input (masked), supergroup ID with "Pair supergroup" button, channel ID
 - Webhook URL display with copy button; auto-sets webhook on save
 - Test connectivity with optional token override
-- Topic mapping: per-event forum topic ID inputs with inline "Create topic" buttons
-- Channel broadcast events: checkboxes per notification type
-- Message templates: per-event customizable HTML with `{title}`, `{content}`, `{url}` variables
+- Topic mapping: per-event forum topic ID inputs with inline "Create topic" and "Bind existing topic" buttons + per-section Save
+- Channel broadcast events: checkboxes per notification type + per-section Save
+- Message templates: per-event customizable HTML with `{title}`, `{content}`, `{url}` variables + per-section Save
 - Paired user count stat card
-- Save settings with mutation
 
 ### `src/app/dashboard/projects/page.tsx`
 
@@ -868,6 +868,14 @@ src/
 
 - `POST(req)` - Requires superadmin auth. Accepts `{ eventType }`, creates a 6-char code in `telegram_topic_codes`, returns `{ code, eventType }`
 
+#### `src/app/api/telegram/supergroup-code/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Generate a single-use code for pairing a supergroup
+**Functions**:
+
+- `POST(req)` - Requires superadmin auth. Creates a 6-char code stored in `platform_settings` with 10-minute expiry, returns `{ code }`
+
 #### `src/app/api/telegram/unlink/route.ts`
 
 **Methods**: `DELETE`
@@ -898,7 +906,7 @@ src/
 **Purpose**: Receive Telegram Bot API updates
 **Functions**:
 
-- `POST(req)` - Verifies `X-Telegram-Bot-Api-Secret-Token` header, then parses update JSON; handles `/start <code>` to link accounts, `/bindtopic <code>` to bind a forum topic to an event type
+- `POST(req)` - Verifies `X-Telegram-Bot-Api-Secret-Token` header, then parses update JSON; handles `/start <code>` to link accounts, `/bindtopic <code>` to bind a forum topic to an event type, `/pairgroup <code>` to pair a supergroup
 
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
@@ -1264,11 +1272,12 @@ src/
 
 #### `src/lib/notifications.ts`
 
-**Purpose**: Unified notification dispatch (in-app + push + telegram)
+**Purpose**: Unified notification dispatch (in-app + push + telegram + supergroup/channel broadcast)
 **Exports**:
 - `isInAppEnabled(userId, eventType)` - Checks notification preferences for in-app channel
 - `sendInAppNotification({ userId, type, title, content, ... })` - Creates notification row + broadcasts to user-specific Pusher channel
 - `sendNotification({ userId, type, title, content, pushPayload, url, ... })` - Dispatches in-app, push, and Telegram notifications in one call
+- `broadcastEvent({ type, title, content, url })` - Broadcasts to supergroup and channel independently (no user gating)
 
 #### `src/lib/telegram.ts`
 
@@ -1281,8 +1290,13 @@ src/
 - `getWebhookSecretToken()` - Returns or auto-generates the webhook secret token (stored in `platform_settings`)
 - `sendTelegramMessage(chatId, text, options)` - Raw `sendMessage` API call
 - `sendTelegramNotification({ userId, eventType, title, content, url })` - Sends DM if user has enabled Telegram for event type
-- `broadcastToSupergroup(text, topicId?)` - Posts to configured supergroup
-- `broadcastToChannel(text)` - Posts to configured channel
+- `broadcastToSupergroup(eventType, text)` - Posts to configured supergroup with topic routing
+- `maybeBroadcastToChannel(eventType, title, content, url?)` - Posts to configured channel if event type is enabled
+- `isTelegramEnabled(userId, eventType)` - Checks if user has Telegram enabled for event type
+- `getTelegramTopicMapping(eventType)` - Reads topic ID for event type from platform_settings
+- `getChannelEvents()` / `setChannelEvents(events)` - Read/write channel broadcast event types
+- `getTelegramTemplate(eventType)` / `setTelegramTemplate(eventType, template)` - Read/write custom message templates
+- `getDefaultTemplate(eventType)` - Returns default HTML template for event type
 
 ---
 

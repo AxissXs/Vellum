@@ -135,6 +135,9 @@ This document tracks features and tasks that have been fully implemented, tested
 - Components: `SuperAdminTelegramPanel.tsx`, `useTelegram.ts` hook
 - **Bug fix:** Webhook handler no longer auto-generates a new secret when the DB row is missing — prevents permanent 401 loop after DB resets. Split `getWebhookSecretToken()` into a setup variant (generates if absent) and `readWebhookSecretToken()` (read-only, returns null if absent).
 - **Topic binding via bot command:** Superadmin can generate a one-time code per event type; anyone sends `/bindtopic <code>` inside a forum topic to bind it. Uses `telegram_topic_codes` table (code, eventType, used, expiresAt). Code expires in 10 minutes. UI button "Bind existing topic" next to each topic input in superadmin panel.
+- **Supergroup pairing via bot command:** Superadmin generates a code, sends `/pairgroup <code>` inside the supergroup to auto-detect and save the supergroup ID. Pairing code stored in `platform_settings` with 10-minute expiry.
+- **Supergroup broadcast fix:** `broadcastToSupergroup` and `maybeBroadcastToChannel` are now called independently via `broadcastEvent()`, no longer gated on a specific user assignment. All events (task creation, status change, comments) always broadcast to the supergroup regardless of assignee.
+- **Per-section save buttons:** Config, Topic Mappings, Channel Events, and Message Templates each have their own Save button instead of a single "Save All" at the bottom.
 ---
 
 ## Admin & Super Admin
