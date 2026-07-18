@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   X, Loader2, Trash2, Calendar, Send, Edit2,
-  Check, MessageCircle, Pencil, Keyboard,
+  Check, MessageCircle, Pencil, ChevronDown,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/useComments";
 import { useRealtime } from "@/hooks/useRealtime";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
+import TaskAssigneePopover from "@/components/TaskAssigneePopover";
 
 type UserInfo = { id: string; name: string; avatarUrl: string | null };
 type Task = {
@@ -131,7 +132,8 @@ export default function TaskDetailModal({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const [assigneeSearch, setAssigneeSearch] = useState("");
 
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || "");
@@ -160,6 +162,20 @@ export default function TaskDetailModal({
 
   useEffect(() => { refetch(); }, [task.id, refetch]);
   useKeyboardShortcuts({ onClose, editing, setEditing, replyingToId, setReplyingToId });
+
+  // Close assignee dropdown when clicking outside
+  useEffect(() => {
+    if (!showAssigneeDropdown) return;
+    function onClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-assignee-dropdown]")) {
+        setShowAssigneeDropdown(false);
+        setAssigneeSearch("");
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [showAssigneeDropdown]);
 
   async function handleSave() {
     setSaving(true);
@@ -276,7 +292,7 @@ export default function TaskDetailModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-slate-900 border border-white/10 md:rounded-2xl w-full max-w-3xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
+      <div className="relative bg-slate-900 border border-white/10 md:rounded-2xl w-full max-w-4xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between p-5 md:p-6 border-b border-white/5 gap-4">
           <div className="flex-1 min-w-0">
@@ -313,7 +329,7 @@ export default function TaskDetailModal({
             {!editing ? (
               <>
                 <button onClick={() => setEditing(true)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Edit (E)"><Pencil size={14} /></button>
-                <button onClick={() => setShowShortcuts(true)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Shortcuts (?)"><Keyboard size={14} /></button>
+
               </>
             ) : (
               <>
@@ -336,21 +352,71 @@ export default function TaskDetailModal({
                 <div className="flex-1">
                   <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Assignee</label>
                   {editing ? (
-                    <div className="flex flex-wrap gap-2">
-                      {users.map((u) => (
-                        <button key={u.id} onClick={() => setEditAssignee(u.id)} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border transition", editAssignee === u.id ? "bg-brand-500/10 border-brand-500/30 text-brand-400" : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>
-                          <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-400">{getInitials(u.name)}</div>{u.name}
-                        </button>
-                      ))}
-                      <button onClick={() => setEditAssignee("")} className={clsx("px-3 py-1.5 rounded-lg text-xs border transition", editAssignee === "" ? "bg-brand-500/10 border-brand-500/30 text-brand-400" : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>Unassigned</button>
+                    <div className="relative" data-assignee-dropdown>
+                      <button
+                        onClick={() => setShowAssigneeDropdown((v) => !v)}
+                        className="w-full flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/[0.07] transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          {editAssignee ? (
+                            <>
+                              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-400">{getInitials(users.find((u) => u.id === editAssignee)?.name || "?")}</div>
+                              <span>{users.find((u) => u.id === editAssignee)?.name || "Unknown"}</span>
+                            </>
+                          ) : (
+                            <span className="text-slate-500">Unassigned</span>
+                          )}
+                        </div>
+                        <ChevronDown size={14} className="text-slate-500" />
+                      </button>
+                      {showAssigneeDropdown && (
+                        <div className="absolute z-50 mt-1 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-2 max-h-64 overflow-hidden animate-slide-in">
+                          <div className="px-2 pb-2">
+                            <input
+                              type="text"
+                              value={assigneeSearch}
+                              onChange={(e) => setAssigneeSearch(e.target.value)}
+                              placeholder="Search users..."
+                              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="overflow-y-auto max-h-48 px-1">
+                            <button
+                              onClick={() => { setEditAssignee(""); setShowAssigneeDropdown(false); setAssigneeSearch(""); }}
+                              className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === "" ? "bg-brand-500/10 text-brand-400" : "text-slate-300 hover:bg-white/5")}
+                            >
+                              <div className="h-5 w-5 rounded-full bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-slate-500 text-[9px]">—</div>
+                              Unassigned
+                            </button>
+                            {users
+                              .filter((u) => u.name.toLowerCase().includes(assigneeSearch.toLowerCase()))
+                              .map((u) => (
+                                <button
+                                  key={u.id}
+                                  onClick={() => { setEditAssignee(u.id); setShowAssigneeDropdown(false); setAssigneeSearch(""); }}
+                                  className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === u.id ? "bg-brand-500/10 text-brand-400" : "text-slate-300 hover:bg-white/5")}
+                                >
+                                  <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-400">{getInitials(u.name)}</div>
+                                  {u.name}
+                                  {editAssignee === u.id && <Check size={12} className="ml-auto" />}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
+                      <TaskAssigneePopover
+                        taskId={task.id}
+                        currentAssigneeId={task.assigneeId}
+                        users={users}
+                        onAssigneeChange={(id) => setTask((t) => ({ ...t, assigneeId: id, assigneeName: users.find((u) => u.id === id)?.name || null }))}
+                        size="md"
+                      />
                       {task.assigneeName ? (
-                        <>
-                          <div className="h-6 w-6 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400">{getInitials(task.assigneeName)}</div>
-                          <span className="text-sm text-slate-200">{task.assigneeName}</span>
-                        </>
+                        <span className="text-sm text-slate-200">{task.assigneeName}</span>
                       ) : <span className="text-sm text-slate-600">Unassigned</span>}
                     </div>
                   )}

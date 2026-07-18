@@ -40,6 +40,7 @@ import { clsx } from "clsx";
 import TaskDetailModal from "@/app/dashboard/projects/[id]/TaskDetailModal";
 import { useCreateTask, useUpdateTask, useReorderTasks } from "@/hooks/useTasks";
 import { useRealtime } from "@/hooks/useRealtime";
+import TaskAssigneePopover from "@/components/TaskAssigneePopover";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Project = { id: string; name: string; color: string | null };
@@ -148,19 +149,18 @@ function TaskCard({
         <p className="mt-2 text-xs text-slate-400 line-clamp-2">{task.description}</p>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
-            {task.priority}
-          </span>
-          {task.assigneeName && (
-            <div className="flex -space-x-1.5">
-              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400">
-                {task.assigneeName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-              </div>
-            </div>
-          )}
-        </div>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
+              {task.priority}
+            </span>
+            <TaskAssigneePopover
+              taskId={task.id}
+              currentAssigneeId={task.assigneeId}
+              users={users}
+              size="sm"
+            />
+          </div>
 
         {task.dueDate && (
           <div className="flex items-center gap-1 text-[10px] text-slate-500">
