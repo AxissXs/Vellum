@@ -7,6 +7,7 @@ import {
   readWebhookSecretToken,
   sendTelegramMessage,
   setPlatformSetting,
+  getPlatformSetting,
 } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
@@ -121,6 +122,39 @@ export async function POST(req: NextRequest) {
 
     await reply(
       `This topic is now bound to <b>${topicCode.eventType}</b> notifications.`
+    );
+
+    return NextResponse.json({ ok: true });
+  }
+
+  // Handle /pairgroup <code>
+  if (text.startsWith("/pairgroup ")) {
+    const code = text.slice(11).trim().toUpperCase();
+
+    if (message.chat.type !== "supergroup") {
+      await reply("This command must be sent inside the supergroup you want to pair.");
+      return NextResponse.json({ ok: true });
+    }
+
+    const storedCode = await getPlatformSetting("telegram_supergroup_pairing_code");
+    const expiresRaw = await getPlatformSetting("telegram_supergroup_pairing_expires");
+
+    if (!storedCode || storedCode !== code) {
+      await reply("Invalid pairing code. Generate a new one in the Vellum super admin panel.");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (!expiresRaw || Date.now() > Number(expiresRaw)) {
+      await reply("Pairing code has expired. Generate a new one in the Vellum super admin panel.");
+      return NextResponse.json({ ok: true });
+    }
+
+    await setPlatformSetting("telegram_supergroup_id", chatId);
+    await setPlatformSetting("telegram_supergroup_pairing_code", null);
+    await setPlatformSetting("telegram_supergroup_pairing_expires", null);
+
+    await reply(
+      `This supergroup <b>${message.chat.title}</b> is now paired with Vellum. Supergroup ID: <code>${chatId}</code>`
     );
 
     return NextResponse.json({ ok: true });

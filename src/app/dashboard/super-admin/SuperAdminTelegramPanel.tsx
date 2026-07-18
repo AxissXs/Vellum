@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare, Plus, Unplug } from "lucide-react";
+import { Loader2, Send, Settings, Users, Bot, Link, Check, Copy, MessageSquare, Plus, Unplug, QrCode } from "lucide-react";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -176,6 +176,69 @@ function TopicBinder({ eventType }: { eventType: string }) {
   );
 }
 
+function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
+  const [code, setCode] = useState<string | null>(null);
+
+  const generateCode = useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{ code: string }>("/api/telegram/supergroup-code");
+      return res;
+    },
+    onSuccess: (data) => {
+      setCode(data.code);
+    },
+    onError: () => {
+      toast.error("Failed to generate pairing code");
+    },
+  });
+
+  if (code) {
+    return (
+      <div className="mt-2 bg-slate-900 border border-white/10 rounded-lg p-3 space-y-1.5">
+        <p className="text-xs text-slate-400">
+          Add the bot to your supergroup as an admin, then send this command inside the group:
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="text-sm text-emerald-400 font-mono bg-slate-800 px-2 py-1 rounded">
+            /pairgroup {code}
+          </code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`/pairgroup ${code}`);
+              toast.success("Copied");
+            }}
+            className="text-slate-400 hover:text-white transition"
+          >
+            <Copy size={14} />
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">Expires in 10 minutes</p>
+        <button
+          onClick={() => setCode(null)}
+          className="text-xs text-slate-400 hover:text-white transition"
+        >
+          Dismiss
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => generateCode.mutate()}
+      disabled={generateCode.isPending}
+      className="text-xs text-slate-400 hover:text-sky-400 transition flex items-center gap-1"
+    >
+      {generateCode.isPending ? (
+        <Loader2 size={12} className="animate-spin" />
+      ) : (
+        <QrCode size={12} />
+      )}
+      Pair supergroup
+    </button>
+  );
+}
+
 function TelegramConfigForm({
   initialData,
   onSave,
@@ -213,15 +276,24 @@ function TelegramConfigForm({
   });
   const [copiedWebhook, setCopiedWebhook] = useState(false);
 
-  function handleSave() {
+  function handleSaveConfig() {
     const body: Record<string, unknown> = {};
     if (tokenInput.trim()) body.telegram_bot_token = tokenInput.trim();
     body.telegram_supergroup_id = supergroupInput.trim() || null;
     body.telegram_channel_id = channelInput.trim() || null;
-    body.topics = topics;
-    body.channelEvents = Object.keys(channelEvents).filter((k) => channelEvents[k]);
-    body.templates = templates;
     onSave(body);
+  }
+
+  function handleSaveTopics() {
+    onSave({ topics });
+  }
+
+  function handleSaveChannelEvents() {
+    onSave({ channelEvents: Object.keys(channelEvents).filter((k) => channelEvents[k]) });
+  }
+
+  function handleSaveTemplates() {
+    onSave({ templates });
   }
 
   function copyWebhook(url: string) {
@@ -290,6 +362,7 @@ function TelegramConfigForm({
               placeholder="-123456789"
               className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             />
+            <SupergroupPairer onPaired={(id) => setSupergroupInput(id)} />
           </div>
 
           <div>
@@ -308,12 +381,12 @@ function TelegramConfigForm({
 
         <div className="flex items-center gap-3 pt-2">
           <button
-            onClick={handleSave}
+            onClick={handleSaveConfig}
             disabled={isSaving}
             className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
           >
             {isSaving && <Loader2 size={16} className="animate-spin" />}
-            Save Settings
+            Save
           </button>
 
           <button
@@ -367,6 +440,15 @@ function TelegramConfigForm({
             </div>
           ))}
         </div>
+
+        <button
+          onClick={handleSaveTopics}
+          disabled={isSaving}
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+        >
+          {isSaving && <Loader2 size={16} className="animate-spin" />}
+          Save
+        </button>
       </div>
 
       {/* Channel Events */}
@@ -401,6 +483,15 @@ function TelegramConfigForm({
             </label>
           ))}
         </div>
+
+        <button
+          onClick={handleSaveChannelEvents}
+          disabled={isSaving}
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+        >
+          {isSaving && <Loader2 size={16} className="animate-spin" />}
+          Save
+        </button>
       </div>
 
       {/* Message Templates */}
@@ -434,12 +525,12 @@ function TelegramConfigForm({
         </div>
 
         <button
-          onClick={handleSave}
+          onClick={handleSaveTemplates}
           disabled={isSaving}
           className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
         >
           {isSaving && <Loader2 size={16} className="animate-spin" />}
-          Save All Settings
+          Save
         </button>
       </div>
     </div>
