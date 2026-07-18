@@ -311,6 +311,17 @@ This document tracks features and tasks that have been fully implemented, tested
 - **UI**: Reply button with count badge on each top-level comment; inline RichTextEditor reply form; nested replies displayed with left border indent (1 level deep); edit/delete still work on replies
 - **Files**: `src/db/schema.ts`, `src/app/api/comments/route.ts`, `src/hooks/useComments.ts`, `src/hooks/useRealtime.ts`, `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
+### Task Modal Redesign (July 2026)
+> Two-column layout with visual pickers, linked project badge, keyboard shortcuts, and responsive sizing.
+
+- **Layout**: Two-column body on desktop (details left 3/5, activity right 2/5), stacked on mobile; full-screen on mobile, centered modal with max-w-3xl on desktop
+- **Header**: Status badge with colored dot next to title, priority badge, clickable project link with color dot
+- **Visual selectors**: Status and priority shown as pill buttons with colored dots in edit mode; read mode shows dot + label
+- **Assignee**: Avatar + name display; edit mode shows user picker as clickable avatar/name pills
+- **Keyboard shortcuts**: `Esc` to close/cancel/reply, `E` to enter edit mode
+- **Activity section**: Right column shows comments and replies with relative timestamps, inline reply forms, nested display with left border
+- **Files updated**: `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
+
 ### Keyboard Shortcuts (July 2026)
 > Power-user keyboard shortcuts across the dashboard.
 

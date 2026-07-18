@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Loader2, Trash2, Calendar, User, Send, Edit2, Check, X as XIcon, MessageCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  X, Loader2, Trash2, Calendar, Send, Edit2,
+  Check, MessageCircle, Pencil, Keyboard,
+} from "lucide-react";
 import { clsx } from "clsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -9,7 +12,7 @@ import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/us
 import { useRealtime } from "@/hooks/useRealtime";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
 
-type User = { id: string; name: string; avatarUrl: string | null };
+type UserInfo = { id: string; name: string; avatarUrl: string | null };
 type Task = {
   id: string;
   title: string;
@@ -25,6 +28,8 @@ type Task = {
   updatedAt: string;
   assigneeName: string | null;
   assigneeAvatar: string | null;
+  projectName?: string | null;
+  projectColor?: string | null;
 };
 
 type Comment = {
@@ -39,7 +44,22 @@ type Comment = {
   authorAvatar: string | null;
 };
 
-const priorityBadges: Record<string, string> = {
+const STATUS_CONFIG: { key: string; label: string; color: string; dot: string }[] = [
+  { key: "backlog", label: "Backlog", color: "bg-slate-500/10 text-slate-400 border-slate-500/20", dot: "bg-slate-500" },
+  { key: "todo", label: "To Do", color: "bg-blue-500/10 text-blue-400 border-blue-500/20", dot: "bg-blue-500" },
+  { key: "in_progress", label: "In Progress", color: "bg-amber-500/10 text-amber-400 border-amber-500/20", dot: "bg-amber-500" },
+  { key: "review", label: "Review", color: "bg-purple-500/10 text-purple-400 border-purple-500/20", dot: "bg-purple-500" },
+  { key: "done", label: "Done", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", dot: "bg-emerald-500" },
+];
+
+const PRIORITY_CONFIG: { key: string; label: string; color: string }[] = [
+  { key: "low", label: "Low", color: "bg-emerald-500" },
+  { key: "medium", label: "Medium", color: "bg-amber-500" },
+  { key: "high", label: "High", color: "bg-orange-500" },
+  { key: "urgent", label: "Urgent", color: "bg-red-500" },
+];
+
+const PriorityBadge: Record<string, string> = {
   urgent: "bg-red-500/10 text-red-400 border-red-500/20",
   high: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -51,6 +71,47 @@ async function fetchComments(taskId: string) {
   return data.comments;
 }
 
+function useKeyboardShortcuts({
+  onClose,
+  editing,
+  setEditing,
+  replyingToId,
+  setReplyingToId,
+}: {
+  onClose: () => void;
+  editing: boolean;
+  setEditing: (v: boolean) => void;
+  replyingToId: string | null;
+  setReplyingToId: (v: string | null) => void;
+}) {
+  useEffect(() => {
+    function isInputActive() {
+      const target = document.activeElement;
+      if (!target) return false;
+      return (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        (target as HTMLElement).isContentEditable
+      );
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (editing) { setEditing(false); return; }
+        if (replyingToId) { setReplyingToId(null); return; }
+        onClose();
+        return;
+      }
+      if (e.key.toLowerCase() === "e" && !editing && !isInputActive()) {
+        e.preventDefault();
+        setEditing(true);
+        return;
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose, editing, setEditing, replyingToId, setReplyingToId]);
+}
+
 export default function TaskDetailModal({
   task: initialTask,
   users,
@@ -60,7 +121,7 @@ export default function TaskDetailModal({
   onDelete,
 }: {
   task: Task;
-  users: User[];
+  users: UserInfo[];
   currentUserId: string;
   onClose: () => void;
   onChange: () => void;
@@ -70,6 +131,7 @@ export default function TaskDetailModal({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || "");
@@ -81,7 +143,6 @@ export default function TaskDetailModal({
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
-
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
@@ -95,12 +156,10 @@ export default function TaskDetailModal({
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
 
-  // Subscribe to real-time comment and task updates
   useRealtime(undefined, task.id);
 
-  useEffect(() => {
-    refetch();
-  }, [task.id, refetch]);
+  useEffect(() => { refetch(); }, [task.id, refetch]);
+  useKeyboardShortcuts({ onClose, editing, setEditing, replyingToId, setReplyingToId });
 
   async function handleSave() {
     setSaving(true);
@@ -116,7 +175,6 @@ export default function TaskDetailModal({
         dueDate: editDueDate || null,
       }),
     });
-
     if (res.ok) {
       const data = await res.json();
       setTask(data.task);
@@ -141,9 +199,10 @@ export default function TaskDetailModal({
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment.trim()) return;
-    createCommentMutation.mutate({ content: newComment.trim(), taskId: task.id, parentId: null }, {
-      onSuccess: () => setNewComment(""),
-    });
+    createCommentMutation.mutate(
+      { content: newComment.trim(), taskId: task.id, parentId: null },
+      { onSuccess: () => setNewComment("") }
+    );
   }
 
   function handleAddReply(e: React.FormEvent) {
@@ -151,12 +210,7 @@ export default function TaskDetailModal({
     if (!replyContent.trim() || !replyingToId) return;
     createCommentMutation.mutate(
       { content: replyContent.trim(), taskId: task.id, parentId: replyingToId },
-      {
-        onSuccess: () => {
-          setReplyContent("");
-          setReplyingToId(null);
-        },
-      }
+      { onSuccess: () => { setReplyContent(""); setReplyingToId(null); } }
     );
   }
 
@@ -184,24 +238,26 @@ export default function TaskDetailModal({
     deleteCommentMutation.mutate(commentId);
   }
 
-  function getInitials(name: string | null) {
+  const getInitials = useCallback((name: string | null) => {
     if (!name) return "?";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  }
+  }, []);
 
-  function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short", day: "numeric", year: "numeric",
-    });
-  }
+  const formatDate = useCallback((dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }, []);
 
-  function formatTime(dateStr: string) {
-    return new Date(dateStr).toLocaleTimeString("en-US", {
-      hour: "2-digit", minute: "2-digit",
-    });
-  }
+  const formatRelative = useCallback((dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }, []);
 
-  // Group comments by parentId
   const topLevelComments = comments.filter((c) => !c.parentId);
   const repliesByParent = new Map<string, Comment[]>();
   for (const c of comments) {
@@ -211,15 +267,18 @@ export default function TaskDetailModal({
       repliesByParent.set(c.parentId, list);
     }
   }
-
   const totalReplyCount = comments.filter((c) => c.parentId).length;
 
+  const statusCfg = STATUS_CONFIG.find((s) => s.key === task.status) || STATUS_CONFIG[0];
+  const priorityCfg = PRIORITY_CONFIG.find((p) => p.key === task.priority) || PRIORITY_CONFIG[1];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-slide-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative bg-slate-900 border border-white/10 md:rounded-2xl w-full max-w-3xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-white/5">
+        <div className="flex items-start justify-between p-5 md:p-6 border-b border-white/5 gap-4">
           <div className="flex-1 min-w-0">
             {editing ? (
               <input
@@ -230,365 +289,243 @@ export default function TaskDetailModal({
                 autoFocus
               />
             ) : (
-              <h3 className="text-lg font-semibold text-white">{task.title}</h3>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-lg font-semibold text-white break-words">{task.title}</h3>
+                <span className={clsx("text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border shrink-0", statusCfg.color)}>
+                  <span className={clsx("inline-block h-1.5 w-1.5 rounded-full mr-1", statusCfg.dot)} />
+                  {statusCfg.label}
+                </span>
+              </div>
             )}
-            <div className="flex items-center gap-2 mt-2">
-              <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
-                {task.priority}
-              </span>
-              <span className="text-xs text-slate-500">Created {formatDate(task.createdAt)}</span>
+            <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-slate-500">
+              <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", PriorityBadge[task.priority])}>{task.priority}</span>
+              <span>Created {formatDate(task.createdAt)}</span>
+              {task.projectName && (
+                <a href={`/dashboard/projects/${task.projectId}`} className="inline-flex items-center gap-1 text-slate-400 hover:text-brand-400 transition" onClick={(e) => e.stopPropagation()}>
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: task.projectColor || "#6366f1" }} />
+                  {task.projectName}
+                </a>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-1 shrink-0">
             {!editing ? (
-              <button
-                onClick={() => setEditing(true)}
-                className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition"
-              >
-                Edit
-              </button>
+              <>
+                <button onClick={() => setEditing(true)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Edit (E)"><Pencil size={14} /></button>
+                <button onClick={() => setShowShortcuts(true)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Shortcuts (?)"><Keyboard size={14} /></button>
+              </>
             ) : (
               <>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                >
-                  {saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
-                >
-                  Cancel
-                </button>
+                <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}</button>
+                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
               </>
             )}
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
-            >
-              {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            </button>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white transition">
-              <X size={18} />
-            </button>
+            <button onClick={handleDelete} disabled={deleting} className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete"><Trash2 size={14} /></button>
+            <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-white transition"><X size={18} /></button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Status</label>
-              {editing ? (
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="backlog">Backlog</option>
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="review">Review</option>
-                  <option value="done">Done</option>
-                </select>
-              ) : (
-                <p className="text-sm text-slate-300 capitalize">{task.status.replace("_", " ")}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Priority</label>
-              {editing ? (
-                <select
-                  value={editPriority}
-                  onChange={(e) => setEditPriority(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              ) : (
-                <p className="text-sm text-slate-300 capitalize">{task.priority}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Assignee</label>
-              {editing ? (
-                <select
-                  value={editAssignee}
-                  onChange={(e) => setEditAssignee(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">Unassigned</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-sm text-slate-300">
-                  {task.assigneeName || <span className="text-slate-600">Unassigned</span>}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Due Date</label>
-              {editing ? (
-                <input
-                  type="date"
-                  value={editDueDate}
-                  onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              ) : (
-                <p className="text-sm text-slate-300">
-                  {task.dueDate ? formatDate(task.dueDate) : <span className="text-slate-600">None</span>}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            {editing ? (
-              <RichTextEditor
-                label="Description"
-                value={editDescription}
-                onChange={setEditDescription}
-                rows={6}
-                placeholder="Add context, acceptance criteria, links, or implementation notes..."
-              />
-            ) : (
-              <>
-                <label className="text-xs text-slate-500 block mb-1">Description</label>
-                <RichTextPreview value={task.description || ""} empty="No description" />
-              </>
-            )}
-          </div>
-
-          {/* Comments */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-3">
-              Comments ({comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""})
-            </h4>
-
-            <div className="space-y-3 mb-4">
-              {topLevelComments.length === 0 && (
-                <p className="text-sm text-slate-600 text-center py-4">No comments yet</p>
-              )}
-              {topLevelComments.map((c) => {
-                const replies = repliesByParent.get(c.id) || [];
-                const replyCount = replies.length;
-                return (
-                  <div key={c.id}>
-                    <div className="flex gap-3">
-                      <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
-                        {getInitials(c.authorName)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {editingCommentId === c.id ? (
-                          <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="space-y-2">
-                            <RichTextEditor
-                              value={editCommentContent}
-                              onChange={setEditCommentContent}
-                              rows={3}
-                              placeholder="Edit your comment..."
-                              users={users}
-                            />
-                            <div className="flex gap-2 justify-end">
-                              <button
-                                type="button"
-                                onClick={cancelEditComment}
-                                className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="submit"
-                                disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
-                                className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                              >
-                                {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
-                              </button>
-                            </div>
-                          </form>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-slate-300">{c.authorName || "Unknown"}</span>
-                              <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
-                              {c.authorId === currentUserId && (
-                                <div className="flex items-center gap-1 ml-auto">
-                                  <button
-                                    onClick={() => startEditComment(c)}
-                                    className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
-                                    title="Edit"
-                                  >
-                                    <Edit2 size={12} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteComment(c.id)}
-                                    disabled={deleteCommentMutation.isPending}
-                                    className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
-                                    title="Delete"
-                                  >
-                                    {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            <div className="mt-0.5">
-                              <RichTextPreview value={c.content} empty="" />
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <button
-                                onClick={() => {
-                                  setReplyingToId(replyingToId === c.id ? null : c.id);
-                                  setReplyContent("");
-                                }}
-                                className="text-[11px] text-slate-500 hover:text-brand-400 transition flex items-center gap-1"
-                              >
-                                <MessageCircle size={12} />
-                                {replyingToId === c.id ? "Cancel reply" : replyCount > 0 ? `Reply (${replyCount})` : "Reply"}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col md:grid md:grid-cols-5 md:gap-0">
+            {/* Left: Details */}
+            <div className="md:col-span-3 p-5 md:p-6 space-y-6 border-b md:border-b-0 md:border-r border-white/5">
+              {/* Assignee + Due Date */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Assignee</label>
+                  {editing ? (
+                    <div className="flex flex-wrap gap-2">
+                      {users.map((u) => (
+                        <button key={u.id} onClick={() => setEditAssignee(u.id)} className={clsx("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border transition", editAssignee === u.id ? "bg-brand-500/10 border-brand-500/30 text-brand-400" : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>
+                          <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-400">{getInitials(u.name)}</div>{u.name}
+                        </button>
+                      ))}
+                      <button onClick={() => setEditAssignee("")} className={clsx("px-3 py-1.5 rounded-lg text-xs border transition", editAssignee === "" ? "bg-brand-500/10 border-brand-500/30 text-brand-400" : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>Unassigned</button>
                     </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {task.assigneeName ? (
+                        <>
+                          <div className="h-6 w-6 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400">{getInitials(task.assigneeName)}</div>
+                          <span className="text-sm text-slate-200">{task.assigneeName}</span>
+                        </>
+                      ) : <span className="text-sm text-slate-600">Unassigned</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="sm:w-40">
+                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Due Date</label>
+                  {editing ? (
+                    <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-sm text-slate-300"><Calendar size={14} className="text-slate-500" />{task.dueDate ? formatDate(task.dueDate) : <span className="text-slate-600">None</span>}</div>
+                  )}
+                </div>
+              </div>
 
-                    {/* Inline reply form */}
-                    {replyingToId === c.id && editingCommentId !== c.id && (
-                      <form onSubmit={handleAddReply} className="mt-2 ml-10 space-y-2">
-                        <RichTextEditor
-                          value={replyContent}
-                          onChange={setReplyContent}
-                          rows={3}
-                          placeholder={`Reply to ${c.authorName || "Unknown"}...`}
-                          users={users}
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => { setReplyingToId(null); setReplyContent(""); }}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            disabled={createCommentMutation.isPending || !replyContent.trim()}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-500 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                          >
-                            {createCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                            Reply
-                          </button>
-                        </div>
-                      </form>
-                    )}
-
-                    {/* Nested replies */}
-                    {replyCount > 0 && (
-                      <div className="mt-2 ml-10 space-y-2 border-l-2 border-white/5 pl-3">
-                        {replies.map((reply) => (
-                          <div key={reply.id} className="flex gap-3">
-                            <div className="h-6 w-6 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-[9px] font-bold text-brand-400 flex-shrink-0">
-                              {getInitials(reply.authorName)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              {editingCommentId === reply.id ? (
-                                <form onSubmit={(e) => { e.preventDefault(); saveEditComment(reply); }} className="space-y-2">
-                                  <RichTextEditor
-                                    value={editCommentContent}
-                                    onChange={setEditCommentContent}
-                                    rows={3}
-                                    placeholder="Edit your reply..."
-                                    users={users}
-                                  />
-                                  <div className="flex gap-2 justify-end">
-                                    <button
-                                      type="button"
-                                      onClick={cancelEditComment}
-                                      className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      type="submit"
-                                      disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
-                                      className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                                    >
-                                      {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
-                                    </button>
-                                  </div>
-                                </form>
-                              ) : (
-                                <>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-slate-300">{reply.authorName || "Unknown"}</span>
-                                    <span className="text-[10px] text-slate-600">{formatTime(reply.createdAt)}</span>
-                                    {reply.authorId === currentUserId && (
-                                      <div className="flex items-center gap-1 ml-auto">
-                                        <button
-                                          onClick={() => startEditComment(reply)}
-                                          className="p-0.5 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition"
-                                          title="Edit"
-                                        >
-                                          <Edit2 size={10} />
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeleteComment(reply.id)}
-                                          disabled={deleteCommentMutation.isPending}
-                                          className="p-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
-                                          title="Delete"
-                                        >
-                                          {deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="mt-0.5">
-                                    <RichTextPreview value={reply.content} empty="" />
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              {/* Status */}
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Status</label>
+                {editing ? (
+                  <div className="flex flex-wrap gap-2">
+                    {STATUS_CONFIG.map((s) => (
+                      <button key={s.key} onClick={() => setEditStatus(s.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editStatus === s.key ? s.color : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>
+                        <span className={clsx("h-2 w-2 rounded-full", s.dot)} />{s.label}{editStatus === s.key && <Check size={12} className="ml-1" />}
+                      </button>
+                    ))}
                   </div>
-                );
-              })}
+                ) : (
+                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", statusCfg.dot)} /><span className="text-sm text-slate-200">{statusCfg.label}</span></div>
+                )}
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Priority</label>
+                {editing ? (
+                  <div className="flex flex-wrap gap-2">
+                    {PRIORITY_CONFIG.map((p) => (
+                      <button key={p.key} onClick={() => setEditPriority(p.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editPriority === p.key ? PriorityBadge[p.key] : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>
+                        <span className={clsx("h-2.5 w-2.5 rounded-full", p.color)} />{p.label}{editPriority === p.key && <Check size={12} className="ml-1" />}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", priorityCfg.color)} /><span className="text-sm text-slate-200">{priorityCfg.label}</span></div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Description</label>
+                {editing ? (
+                  <RichTextEditor value={editDescription} onChange={setEditDescription} rows={6} placeholder="Add context, acceptance criteria, links, or implementation notes..." />
+                ) : (
+                  <RichTextPreview value={task.description || ""} empty="No description" />
+                )}
+              </div>
+
+              {/* Footer meta */}
+              <div className="pt-2 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <Calendar size={12} />
+                  <span>Created {formatDate(task.createdAt)} · Updated {formatRelative(task.updatedAt)}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Top-level comment form */}
-            <form onSubmit={handleAddComment} className="space-y-2">
-              <RichTextEditor
-                value={newComment}
-                onChange={setNewComment}
-                rows={3}
-                placeholder="Write an update, decision, blocker, or link..."
-                users={users}
-              />
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={createCommentMutation.isPending || !newComment.trim()}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                >
-                  {createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  Add comment
-                </button>
+            {/* Right: Activity */}
+            <div className="md:col-span-2 p-5 md:p-6 space-y-5 bg-slate-950/30">
+              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                <MessageCircle size={16} className="text-brand-400" />
+                Activity
+                <span className="text-xs text-slate-600 font-normal">{comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""}</span>
+              </h4>
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                {topLevelComments.length === 0 && <p className="text-sm text-slate-600 text-center py-4">No activity yet</p>}
+                {topLevelComments.map((c) => {
+                  const replies = repliesByParent.get(c.id) || [];
+                  return (
+                    <div key={c.id} className="space-y-2">
+                      {/* Comment */}
+                      <div className="flex gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">{getInitials(c.authorName)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs font-medium text-slate-200 truncate">{c.authorName || "Unknown"}</span>
+                              <span className="text-[10px] text-slate-600 shrink-0">{formatRelative(c.createdAt)}</span>
+                            </div>
+                            {c.authorId === currentUserId && editingCommentId !== c.id && (
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <button onClick={() => startEditComment(c)} className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
+                                <button onClick={() => handleDeleteComment(c.id)} disabled={deleteCommentMutation.isPending} className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
+                              </div>
+                            )}
+                          </div>
+
+                          {editingCommentId === c.id ? (
+                            <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="mt-1.5 space-y-2">
+                              <RichTextEditor value={editCommentContent} onChange={setEditCommentContent} rows={3} placeholder="Edit your comment..." users={users} />
+                              <div className="flex gap-2 justify-end">
+                                <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
+                                <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
+                              </div>
+                            </form>
+                          ) : (
+                            <div className="mt-1"><RichTextPreview value={c.content} empty="" /></div>
+                          )}
+
+                          {editingCommentId !== c.id && (
+                            <button onClick={() => { setReplyingToId(replyingToId === c.id ? null : c.id); setReplyContent(""); }} className="text-[11px] text-slate-500 hover:text-brand-400 transition mt-1">
+                              {replyingToId === c.id ? "Cancel reply" : replies.length > 0 ? `Reply (${replies.length})` : "Reply"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Reply form */}
+                      {replyingToId === c.id && editingCommentId !== c.id && (
+                        <form onSubmit={handleAddReply} className="ml-9 space-y-2">
+                          <RichTextEditor value={replyContent} onChange={setReplyContent} rows={2} placeholder={`Reply to ${c.authorName || "Unknown"}...`} users={users} />
+                          <div className="flex justify-end gap-2">
+                            <button type="button" onClick={() => { setReplyingToId(null); setReplyContent(""); }} className="px-2.5 py-1 text-[11px] rounded bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
+                            <button type="submit" disabled={createCommentMutation.isPending || !replyContent.trim()} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-brand-500 text-[11px] font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}Reply</button>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Nested replies */}
+                      {replies.length > 0 && (
+                        <div className="ml-4 pl-4 border-l-2 border-white/5 space-y-3">
+                          {replies.map((reply) => (
+                            <div key={reply.id} className="flex gap-2">
+                              <div className="h-5 w-5 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-[8px] font-bold text-brand-400 flex-shrink-0 mt-0.5">{getInitials(reply.authorName)}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-xs font-medium text-slate-200 truncate">{reply.authorName || "Unknown"}</span>
+                                    <span className="text-[10px] text-slate-600 shrink-0">{formatRelative(reply.createdAt)}</span>
+                                  </div>
+                                  {reply.authorId === currentUserId && editingCommentId !== reply.id && (
+                                    <div className="flex items-center gap-0.5 shrink-0">
+                                      <button onClick={() => startEditComment(reply)} className="p-0.5 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
+                                      <button onClick={() => handleDeleteComment(reply.id)} disabled={deleteCommentMutation.isPending} className="p-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
+                                    </div>
+                                  )}
+                                </div>
+                                {editingCommentId === reply.id ? (
+                                  <form onSubmit={(e) => { e.preventDefault(); saveEditComment(reply); }} className="mt-1 space-y-2">
+                                    <RichTextEditor value={editCommentContent} onChange={setEditCommentContent} rows={3} placeholder="Edit your reply..." users={users} />
+                                    <div className="flex gap-2 justify-end">
+                                      <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
+                                      <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <div className="mt-0.5"><RichTextPreview value={reply.content} empty="" /></div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </form>
+
+              {/* Comment form */}
+              <form onSubmit={handleAddComment} className="space-y-2 pt-2 border-t border-white/5">
+                <RichTextEditor value={newComment} onChange={setNewComment} rows={3} placeholder="Write an update, decision, blocker, or link..." users={users} />
+                <div className="flex justify-end">
+                  <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}Add comment</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>

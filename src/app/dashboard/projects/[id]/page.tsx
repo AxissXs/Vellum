@@ -97,6 +97,8 @@ export default async function ProjectDetailPage({
         dueDate: t.dueDate?.toISOString() || null,
         createdAt: t.createdAt.toISOString(),
         updatedAt: t.updatedAt.toISOString(),
+        projectName: project.name,
+        projectColor: project.color,
       })),
   }));
 

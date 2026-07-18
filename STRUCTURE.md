@@ -447,13 +447,17 @@ src/
 
 ### `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
-**Purpose**: Modal for task details (description, comments, activity)
-**Exports**: `TaskDetailModal({ task, users, currentUserId, onClose, onChange })` - Client component
+**Purpose**: Modal for task details with two-column layout and threaded comments
+**Exports**: `TaskDetailModal({ task, users, currentUserId, onClose, onChange, onDelete })` - Client component
 
-- Rich text editor for description
-- Inline task editing (title, status, priority, assignee, due date)
-- Comments section with CRUD
+- Two-column layout on desktop (details left 3/5, activity right 2/5); full-screen on mobile
+- Header with status-colored dot badge, priority badge, clickable project link
+- Visual status/priority selectors as colored pill buttons in edit mode
+- Avatar + name assignee display; user picker pills in edit mode
+- Description via RichTextEditor / RichTextPreview
+- Threaded comments with inline reply forms, nested display (1-level deep)
 - Real-time comment updates via `useRealtime()`
+- Keyboard shortcuts: `Esc` (close/cancel/reply), `E` (edit)
 - Task delete confirmation
 
 ### `src/app/dashboard/projects/[id]/ProjectManagementPanel.tsx`

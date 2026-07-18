@@ -48,6 +48,8 @@ type Task = {
   updatedAt: string;
   assigneeName: string | null;
   assigneeAvatar: string | null;
+  projectName?: string | null;
+  projectColor?: string | null;
 };
 type Column = { key: string; label: string; color: string; tasks: Task[] };
 

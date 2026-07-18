@@ -165,15 +165,7 @@
   - Send notification to newly assigned user
   - Acceptance criteria: Users can quickly assign team members from task card or modal, search works, notifications fire
 
-- [ ] **Task modal redesign** - Better task detail modal with improved UX
-  - Redesign layout: cleaner header with task title + status badge, two-column body (details left, activity right)
-  - Linked assignee: clickable avatar/name that opens user detail or profile
-  - Linked project: clickable project badge
-  - Better status/priority selectors (visual, not plain dropdowns)
-  - Activity timeline section: shows comments, status changes, assignments in chronological order
-  - Keyboard shortcuts: `Esc` to close, `E` to edit, `Delete` to delete
-  - Responsive: full-screen on mobile, centered modal on desktop
-  - Acceptance criteria: Modal feels polished, all links work, keyboard shortcuts work, responsive layout
+- ~~**Task modal redesign**~~ ✅ — Two-column task detail modal with improved UX, visual selectors, keyboard shortcuts, responsive layout
 
 - [ ] **API tokens** - Per-user API key authentication for external integrations
   > Full plan: [`TODO/api-tokens.md`](TODO/api-tokens.md)
