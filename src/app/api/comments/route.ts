@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { comments, users, tasks } from "@/db/schema";
 import { eq, asc, isNull, and } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
-import { sendNotification } from "@/lib/notifications";
+import { sendNotification, broadcastEvent } from "@/lib/notifications";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
@@ -108,6 +108,16 @@ export async function POST(req: NextRequest) {
         body: `${user.name || "Someone"} commented on "${task.title}"`,
         tag: `comment-${comment.id}`,
       },
+      url: `/dashboard/projects/${task.projectId}`,
+    });
+  }
+
+  // Broadcast to supergroup/channel (always)
+  if (task) {
+    await broadcastEvent({
+      type: "new_comment",
+      title: "New Comment",
+      content: `${user.name || "Someone"} commented on "${task.title}"`,
       url: `/dashboard/projects/${task.projectId}`,
     });
   }

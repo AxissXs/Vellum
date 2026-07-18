@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { tasks, users } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
-import { sendNotification } from "@/lib/notifications";
+import { sendNotification, broadcastEvent } from "@/lib/notifications";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function PATCH(
@@ -112,6 +112,17 @@ export async function PATCH(
     });
   }
 
+  // Broadcast status change to supergroup/channel (always)
+  if (status !== undefined) {
+    const label = statusLabels[status] || "updated";
+    await broadcastEvent({
+      type: "status_changed",
+      title: "Task Status Changed",
+      content: `${user.name || "Someone"} ${label} "${task.title}"`,
+      url: `/dashboard/tasks`,
+    });
+  }
+
   // Send notification for assignee changes
   if (assigneeId !== undefined && assigneeId && assigneeId !== user.id) {
     await sendNotification({
@@ -127,6 +138,16 @@ export async function PATCH(
         body: `${user.name || "Someone"} assigned you: ${task.title}`,
         tag: `task-${task.id}`,
       },
+      url: `/dashboard/tasks`,
+    });
+  }
+
+  // Broadcast assignee change to supergroup/channel (always)
+  if (assigneeId !== undefined && assigneeId) {
+    await broadcastEvent({
+      type: "task_assigned",
+      title: "Task Assigned",
+      content: `${user.name || "Someone"} assigned "${task.title}"`,
       url: `/dashboard/tasks`,
     });
   }

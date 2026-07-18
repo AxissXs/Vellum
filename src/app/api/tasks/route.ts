@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { tasks, users } from "@/db/schema";
 import { eq, and, asc, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
-import { sendNotification } from "@/lib/notifications";
+import { sendNotification, broadcastEvent } from "@/lib/notifications";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
@@ -114,6 +114,16 @@ export async function POST(req: NextRequest) {
         body: `${user.name || "Someone"} assigned you: ${task.title}`,
         tag: `task-${task.id}`,
       },
+      url: `/dashboard/tasks`,
+    });
+  }
+
+  // Broadcast to supergroup/channel (always, regardless of assignee)
+  if (task.assigneeId) {
+    await broadcastEvent({
+      type: "task_assigned",
+      title: "New Task Assigned",
+      content: `${user.name || "Someone"} assigned "${task.title}" to ${task.assigneeId === user.id ? "themselves" : "someone"}`,
       url: `/dashboard/tasks`,
     });
   }

@@ -39,6 +39,12 @@ export async function POST(req: NextRequest) {
   const text: string = message.text;
   const chatId = String(message.chat.id);
   const username = message.from?.username || null;
+  const threadId = message.message_thread_id
+    ? String(message.message_thread_id)
+    : undefined;
+
+  const reply = (msg: string) =>
+    sendTelegramMessage(chatId, msg, { topicId: threadId });
 
   // Handle /start <code>
   if (text.startsWith("/start ")) {
@@ -57,7 +63,7 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (!pairing) {
-      await sendTelegramMessage(chatId, "Invalid or expired pairing code. Please generate a new code in Vellum settings.");
+      await reply("Invalid or expired pairing code. Please generate a new code in Vellum settings.");
       return NextResponse.json({ ok: true });
     }
 
@@ -73,8 +79,7 @@ export async function POST(req: NextRequest) {
       .set({ used: true })
       .where(eq(telegramPairingCodes.id, pairing.id));
 
-    await sendTelegramMessage(
-      chatId,
+    await reply(
       "Your Telegram has been linked to Vellum. You will now receive notifications here based on your preferences."
     );
 
@@ -84,10 +89,9 @@ export async function POST(req: NextRequest) {
   // Handle /bindtopic <code>
   if (text.startsWith("/bindtopic ")) {
     const code = text.slice(11).trim().toUpperCase();
-    const threadId = message.message_thread_id;
 
     if (!threadId) {
-      await sendTelegramMessage(chatId, "This command must be sent inside a forum topic.");
+      await reply("This command must be sent inside a forum topic.");
       return NextResponse.json({ ok: true });
     }
 
@@ -104,19 +108,18 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (!topicCode) {
-      await sendTelegramMessage(chatId, "Invalid or expired binding code. Generate a new one in the Vellum super admin panel.");
+      await reply("Invalid or expired binding code. Generate a new one in the Vellum super admin panel.");
       return NextResponse.json({ ok: true });
     }
 
-    await setPlatformSetting(`telegram_topic_${topicCode.eventType}`, String(threadId));
+    await setPlatformSetting(`telegram_topic_${topicCode.eventType}`, threadId);
 
     await db
       .update(telegramTopicCodes)
       .set({ used: true })
       .where(eq(telegramTopicCodes.id, topicCode.id));
 
-    await sendTelegramMessage(
-      chatId,
+    await reply(
       `This topic is now bound to <b>${topicCode.eventType}</b> notifications.`
     );
 
@@ -125,8 +128,7 @@ export async function POST(req: NextRequest) {
 
   // Handle plain /start
   if (text === "/start") {
-    await sendTelegramMessage(
-      chatId,
+    await reply(
       "Welcome to Vellum! To link your account, go to Settings in Vellum and generate a pairing code, then send it here with /start <code>."
     );
     return NextResponse.json({ ok: true });

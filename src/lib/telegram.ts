@@ -265,7 +265,13 @@ export async function sendTelegramNotification({
     text += `\n\n<a href="${escapeHtml(url)}">Open in Vellum</a>`;
   }
 
-  await sendTelegramMessage(chatId, text, { parseMode: "HTML" });
+  const result = await sendTelegramMessage(chatId, text, { parseMode: "HTML" });
+  if (!result.ok) {
+    console.error(
+      `[telegram] sendTelegramNotification failed for user "${userId}" event "${eventType}":`,
+      result.description
+    );
+  }
 }
 
 export async function broadcastToSupergroup(
@@ -273,14 +279,26 @@ export async function broadcastToSupergroup(
   text: string
 ) {
   const supergroupId = await getPlatformSetting("telegram_supergroup_id");
-  if (!supergroupId) return { ok: false, description: "Supergroup not configured" };
+  if (!supergroupId) {
+    console.warn("[telegram] broadcastToSupergroup: supergroup not configured");
+    return { ok: false, description: "Supergroup not configured" };
+  }
 
   const topicId = await getTelegramTopicMapping(eventType);
 
-  return sendTelegramMessage(supergroupId, text, {
+  const result = await sendTelegramMessage(supergroupId, text, {
     parseMode: "HTML",
     topicId: topicId ?? undefined,
   });
+
+  if (!result.ok) {
+    console.error(
+      `[telegram] broadcastToSupergroup failed for event "${eventType}":`,
+      result.description
+    );
+  }
+
+  return result;
 }
 
 export async function maybeBroadcastToChannel(
@@ -306,7 +324,14 @@ export async function maybeBroadcastToChannel(
     text += `\n\n<a href="${escapeHtml(url)}">Open in Vellum</a>`;
   }
 
-  return sendTelegramMessage(channelId, text, { parseMode: "HTML" });
+  const result = await sendTelegramMessage(channelId, text, { parseMode: "HTML" });
+  if (!result.ok) {
+    console.error(
+      `[telegram] maybeBroadcastToChannel failed for event "${eventType}":`,
+      result.description
+    );
+  }
+  return result;
 }
 
 function escapeHtml(text: string): string {

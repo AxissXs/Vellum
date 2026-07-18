@@ -114,8 +114,26 @@ export async function sendNotification({
   await sendTelegramNotification({ userId, eventType: type, title, content, url });
 
   // Supergroup broadcast (if configured)
-  await broadcastToSupergroup(type, title + "\n\n" + content);
+  const supergroupResult = await broadcastToSupergroup(type, title + "\n\n" + content);
+  if (!supergroupResult.ok) {
+    console.warn(`[notifications] Supergroup broadcast skipped for "${type}":`, supergroupResult.description);
+  }
 
   // Channel broadcast (if configured and enabled for this event type)
+  await maybeBroadcastToChannel(type, title, content, url);
+}
+
+export async function broadcastEvent({
+  type,
+  title,
+  content,
+  url,
+}: {
+  type: string;
+  title: string;
+  content: string;
+  url?: string;
+}) {
+  await broadcastToSupergroup(type, title + "\n\n" + content);
   await maybeBroadcastToChannel(type, title, content, url);
 }
