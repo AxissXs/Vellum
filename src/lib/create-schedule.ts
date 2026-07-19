@@ -4,6 +4,7 @@ import { scheduleEvents, tasks, users } from "@/db/schema";
 import type { AuthUser } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { sendNotification } from "@/lib/notifications";
+import { broadcastScheduleEvent } from "@/lib/pusher-broadcast";
 
 export type ScheduleType = "work" | "meeting" | "leave" | "training" | "other";
 export type ScheduleVisibility = "team" | "private";
@@ -97,6 +98,24 @@ export async function createScheduleForUser(
       url: "/dashboard/calendar",
     });
   }
+
+  await broadcastScheduleEvent({
+    type: "created",
+    scheduleId: schedule.id,
+    userId: targetUserId,
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
+    schedule: {
+      id: schedule.id,
+      userId: schedule.userId,
+      title: schedule.title,
+      type: schedule.type,
+      startsAt: schedule.startsAt.toISOString(),
+      endsAt: schedule.endsAt.toISOString(),
+      allDay: schedule.allDay,
+      visibility: schedule.visibility,
+    },
+  });
 
   let conflicts: Awaited<ReturnType<typeof findDueDateConflicts>> = [];
   if (schedule.type === "leave") {

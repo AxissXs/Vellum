@@ -43,7 +43,7 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
 
 - [x] **Real-time updates** - Add WebSocket/SSE for live task updates across clients
   - Use Pusher for managed WebSocket/pub-sub
-  - Update Kanban board in real-time when tasks change
+  - Update Kanban board in real-time when tasks change (`applyTaskEventToColumns` + `onTaskEvent` in `useRealtime`)
   - Broadcast task moves, status changes, new comments
 
 - [x] **Kanban Add task button UX fix** - Fix broken Add task button and improve placement

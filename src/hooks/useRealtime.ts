@@ -2,7 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getPusherClient } from "@/lib/pusher-client";
+import type Pusher from "pusher-js";
+import {
+  getPusherClientAsync,
+  subscribeChannel,
+  unsubscribeChannel,
+} from "@/lib/pusher-client";
 import { getTaskQueryKey } from "@/hooks/useTasks";
 import { getCommentQueryKey } from "@/hooks/useComments";
 import { toast } from "sonner";
@@ -62,15 +67,21 @@ export type CommentUpdatePayload = {
  *
  * @param projectId - Optional project ID to scope task events. If omitted, listens globally.
  * @param taskId - Optional task ID to scope comment events. If omitted, no comment channel is subscribed.
+ * @param onTaskEvent - Optional handler for local UI (e.g. Kanban columns). Remote actors only.
  */
-export function useRealtime(projectId?: string, taskId?: string) {
+export function useRealtime(
+  projectId?: string,
+  taskId?: string,
+  onTaskEvent?: (payload: TaskUpdatePayload) => void
+) {
   const queryClient = useQueryClient();
   const userIdRef = useRef<string | null>(null);
+  const onTaskEventRef = useRef(onTaskEvent);
+  onTaskEventRef.current = onTaskEvent;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Get current user ID to avoid self-notifications
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
@@ -82,112 +93,119 @@ export function useRealtime(projectId?: string, taskId?: string) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const client = getPusherClient();
-    if (!client) return;
-
-    const channels: string[] = [];
+    let cancelled = false;
+    const state: { client: Pusher | null; channels: string[] } = {
+      client: null,
+      channels: [],
+    };
 
     const isSelf = (actorUserId: string) => actorUserId === userIdRef.current;
 
-    // ── Task updates ──
-    const projectChannel = projectId ? `project-${projectId}` : null;
-    const globalChannel = "task-updates";
+    const handleTaskEvent = (payload: TaskUpdatePayload) => {
+      const projectIdFromPayload = payload.projectId || payload.task?.projectId;
+      if (projectIdFromPayload) {
+        queryClient.invalidateQueries({
+          queryKey: getTaskQueryKey(projectIdFromPayload),
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: getTaskQueryKey(undefined) });
 
-    // Subscribe to project-specific channel if provided
-    if (projectChannel) {
-      const taskChannel = client.subscribe(projectChannel);
-      channels.push(projectChannel);
+      if (!isSelf(payload.actorUserId)) {
+        onTaskEventRef.current?.(payload);
 
-      taskChannel.bind("task-event", (payload: TaskUpdatePayload) => {
-        const projectIdFromPayload = payload.projectId || payload.task?.projectId;
-        if (projectIdFromPayload) {
-          queryClient.invalidateQueries({ queryKey: getTaskQueryKey(projectIdFromPayload) });
+        // Skip toast for "updated" — status moves already fire an in-app
+        // notification toast for the assignee/creator (duplicate otherwise).
+        // Board columns still patch via onTaskEvent.
+        switch (payload.type) {
+          case "created":
+            if (payload.task) {
+              toast.info(
+                `${payload.actorName} created task: ${payload.task.title}`
+              );
+            }
+            break;
+          case "deleted":
+            if (payload.taskId) {
+              toast.info(`${payload.actorName} deleted a task`);
+            }
+            break;
+          case "reordered":
+            toast.info(`${payload.actorName} reordered tasks`);
+            break;
         }
-        queryClient.invalidateQueries({ queryKey: getTaskQueryKey(undefined) });
+      }
+    };
 
-        if (!isSelf(payload.actorUserId)) {
-          switch (payload.type) {
-            case "created":
-              if (payload.task) toast.info(`${payload.actorName} created task: ${payload.task.title}`);
-              break;
-            case "updated":
-              if (payload.task) toast.info(`${payload.actorName} updated task: ${payload.task.title}`);
-              break;
-            case "deleted":
-              if (payload.taskId) toast.info(`${payload.actorName} deleted a task`);
-              break;
-            case "reordered":
-              toast.info(`${payload.actorName} reordered tasks`);
-              break;
-          }
-        }
+    const handleCommentEvent = (payload: CommentUpdatePayload) => {
+      queryClient.invalidateQueries({
+        queryKey: getCommentQueryKey(payload.taskId),
       });
-    }
 
-    // Always also subscribe to global task-updates for non-project-scoped contexts
-    if (!projectChannel) {
-      const globalTaskChannel = client.subscribe(globalChannel);
-      channels.push(globalChannel);
-
-      globalTaskChannel.bind("task-event", (payload: TaskUpdatePayload) => {
-        const projectIdFromPayload = payload.projectId || payload.task?.projectId;
-        if (projectIdFromPayload) {
-          queryClient.invalidateQueries({ queryKey: getTaskQueryKey(projectIdFromPayload) });
+      if (!isSelf(payload.actorUserId)) {
+        switch (payload.type) {
+          case "created":
+            toast.info(`${payload.actorName} added a comment`);
+            break;
+          case "updated":
+            toast.info(`${payload.actorName} updated a comment`);
+            break;
+          case "deleted":
+            toast.info(`${payload.actorName} deleted a comment`);
+            break;
         }
-        queryClient.invalidateQueries({ queryKey: getTaskQueryKey(undefined) });
+      }
+    };
 
-        if (!isSelf(payload.actorUserId)) {
-          switch (payload.type) {
-            case "created":
-              if (payload.task) toast.info(`${payload.actorName} created task: ${payload.task.title}`);
-              break;
-            case "updated":
-              if (payload.task) toast.info(`${payload.actorName} updated task: ${payload.task.title}`);
-              break;
-            case "deleted":
-              if (payload.taskId) toast.info(`${payload.actorName} deleted a task`);
-              break;
-            case "reordered":
-              toast.info(`${payload.actorName} reordered tasks`);
-              break;
-          }
+    void (async () => {
+      const client = await getPusherClientAsync();
+      if (!client || cancelled) return;
+      state.client = client;
+
+      const bindTaskChannel = (name: string) => {
+        subscribeChannel(name, client);
+        state.channels.push(name);
+        client.subscribe(name).bind("task-event", handleTaskEvent);
+      };
+
+      if (projectId) {
+        bindTaskChannel(`project-${projectId}`);
+      } else if (!taskId) {
+        // Global board only — task-detail (taskId alone) must not join
+        // task-updates or the same move toasts twice (project + global).
+        bindTaskChannel("task-updates");
+      }
+
+      if (taskId) {
+        const commentChannelName = `task-${taskId}`;
+        subscribeChannel(commentChannelName, client);
+        state.channels.push(commentChannelName);
+        client
+          .subscribe(commentChannelName)
+          .bind("comment-event", handleCommentEvent);
+      }
+
+      if (cancelled) {
+        // Effect cleaned up while we were subscribing
+        for (const name of state.channels) {
+          const ch = client.channel(name);
+          ch?.unbind("task-event", handleTaskEvent);
+          ch?.unbind("comment-event", handleCommentEvent);
+          unsubscribeChannel(name, client);
         }
-      });
-    }
-
-    // ── Comment updates ──
-    if (taskId) {
-      const commentChannelName = `task-${taskId}`;
-      const commentChannel = client.subscribe(commentChannelName);
-      channels.push(commentChannelName);
-
-      commentChannel.bind("comment-event", (payload: CommentUpdatePayload) => {
-        queryClient.invalidateQueries({ queryKey: getCommentQueryKey(payload.taskId) });
-
-        if (!isSelf(payload.actorUserId)) {
-          switch (payload.type) {
-            case "created":
-              toast.info(`${payload.actorName} added a comment`);
-              break;
-            case "updated":
-              toast.info(`${payload.actorName} updated a comment`);
-              break;
-            case "deleted":
-              toast.info(`${payload.actorName} deleted a comment`);
-              break;
-          }
-        }
-      });
-    }
+        state.channels = [];
+      }
+    })();
 
     return () => {
-      channels.forEach((name) => {
-        try {
-          client.unsubscribe(name);
-        } catch (_e) {
-          // channel may not exist
-        }
-      });
+      cancelled = true;
+      const { client, channels } = state;
+      if (!client) return;
+      for (const name of channels) {
+        const ch = client.channel(name);
+        ch?.unbind("task-event", handleTaskEvent);
+        ch?.unbind("comment-event", handleCommentEvent);
+        unsubscribeChannel(name, client);
+      }
     };
   }, [projectId, taskId, queryClient]);
 }

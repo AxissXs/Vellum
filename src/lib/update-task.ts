@@ -90,7 +90,7 @@ export async function updateTaskForUser(
     details: actionDetail,
   });
 
-  broadcastTaskEvent(task.projectId, {
+  await broadcastTaskEvent(task.projectId, {
     type: "updated",
     task: {
       ...task,

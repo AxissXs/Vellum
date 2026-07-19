@@ -35,7 +35,8 @@ import { clsx } from "clsx";
 import TaskDetailModal from "./TaskDetailModal";
 import RichTextEditor from "@/components/RichTextEditor";
 import { useCreateTask, useReorderTasks } from "@/hooks/useTasks";
-import { useRealtime } from "@/hooks/useRealtime";
+import { useRealtime, type TaskUpdatePayload } from "@/hooks/useRealtime";
+import { applyTaskEventToColumns } from "@/lib/kanban-realtime";
 import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
@@ -407,8 +408,35 @@ export default function KanbanBoard({
   const createTask = useCreateTask();
   const reorderTasks = useReorderTasks();
 
+  const handleRemoteTaskEvent = useCallback(
+    (payload: TaskUpdatePayload) => {
+      const next = applyTaskEventToColumns(
+        columnsRef.current,
+        payload,
+        { projectId }
+      ) as Column[];
+      if (next === columnsRef.current) return;
+      columnsRef.current = next;
+      setColumns(next);
+      emitTasksChange(next);
+
+      if (payload.type === "deleted" && payload.taskId) {
+        setSelectedTask((t) => (t?.id === payload.taskId ? null : t));
+      } else if (
+        (payload.type === "created" || payload.type === "updated") &&
+        payload.task
+      ) {
+        setSelectedTask((t) =>
+          t?.id === payload.task!.id ? ({ ...t, ...payload.task } as Task) : t
+        );
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [projectId, onTasksChange]
+  );
+
   // Subscribe to real-time task updates for this project
-  useRealtime(projectId);
+  useRealtime(projectId, undefined, handleRemoteTaskEvent);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;

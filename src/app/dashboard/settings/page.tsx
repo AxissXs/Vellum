@@ -36,13 +36,10 @@ function TelegramUserGuide({
   configured: boolean;
 }) {
   const botLabel = botUsername ? `@${botUsername}` : "the Perfect bot";
+  const title = linked ? "Telegram tips" : "How to link Telegram";
 
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
-      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-        <BookOpen size={13} className="text-brand-600" />
-        How to link Telegram
-      </p>
+  const body = (
+    <div className="space-y-2">
       {!configured && (
         <p className="text-xs text-amber-700">
           Bot is not configured yet. Ask a super admin (Super Admin → Telegram).
@@ -63,10 +60,13 @@ function TelegramUserGuide({
           </li>
           <li>Unlink anytime if you no longer want bot DMs.</li>
           <li>
-            Send <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">/help</code>{" "}
-            in {botLabel}, or type naturally (e.g. lunch tomorrow 1pm). The bot asks if
-            details are missing. Use phone keyboard dictation — Telegram voice notes are
-            not supported.
+            Send{" "}
+            <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">
+              /help
+            </code>{" "}
+            in {botLabel}, or type naturally (e.g. lunch tomorrow 1pm). The bot
+            asks if details are missing. Use phone keyboard dictation — Telegram
+            voice notes are not supported.
           </li>
         </ol>
       ) : (
@@ -98,6 +98,34 @@ function TelegramUserGuide({
         Your toggles control private bot DMs only. Team group/channel posts are
         configured by super admins separately.
       </p>
+    </div>
+  );
+
+  if (linked) {
+    return (
+      <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 group">
+        <summary className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+          <BookOpen size={13} className="text-brand-600 shrink-0" />
+          {title}
+          <span className="ml-auto text-[11px] font-normal text-slate-400 group-open:hidden">
+            Show
+          </span>
+          <span className="ml-auto text-[11px] font-normal text-slate-400 hidden group-open:inline">
+            Hide
+          </span>
+        </summary>
+        <div className="mt-2 pt-2 border-t border-slate-200">{body}</div>
+      </details>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
+      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+        <BookOpen size={13} className="text-brand-600" />
+        {title}
+      </p>
+      {body}
     </div>
   );
 }

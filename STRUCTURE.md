@@ -240,6 +240,7 @@ src/
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
 │   ├── pusher-client.ts    # Pusher client singleton + ref counting
+│   ├── kanban-realtime.ts  # Apply Pusher task events to Kanban columns
 │   ├── mentions.ts         # Parse @FirstName mentions from comment markdown
 │   ├── telegram.ts         # Telegram bot API + pairing helpers
 │   ├── telegram-bot/       # Inbound bot command flows (DM)
@@ -1215,13 +1216,21 @@ src/
 
 **Purpose**: Real-time task and comment updates via Pusher
 **Exports**:
-- `useRealtime(projectId?, taskId?)` - Subscribe to live updates
+- `useRealtime(projectId?, taskId?, onTaskEvent?)` - Subscribe to live updates
+- `TaskUpdatePayload`, `CommentUpdatePayload` - Event payload types
 
 **Behavior**:
-- Subscribes to `project-${projectId}` and `task-updates` channels for task events
-- Subscribes to `task-${taskId}` channel for comment events
-- Invalidates relevant React Query caches on incoming events
-- Shows toast notifications for updates from other users (skips self)
+- Project board: `project-${projectId}`; global board: `task-updates`
+- Invalidates React Query task/comment caches
+- Calls `onTaskEvent` for remote actors (Kanban applies to local `columns`)
+- Toast for other users' changes (skips self)
+
+#### `src/lib/kanban-realtime.ts`
+
+**Purpose**: Apply Pusher task events to local Kanban column state
+**Exports**:
+- `applyTaskEventToColumns(columns, payload, options?)` - Merge create/update/delete/reorder into columns
+- `KanbanColumn`, `KanbanTask` types
 
 #### `src/hooks/useMilestones.ts`
 
@@ -1466,14 +1475,15 @@ src/
 
 #### `src/lib/pusher-broadcast.ts`
 
-**Purpose**: Broadcast task and comment events to Pusher channels
+**Purpose**: Broadcast task/comment/schedule events to Pusher channels (awaited in-request)
 **Exports**:
-- `broadcastTaskEvent(projectId, payload)` - Schedule task broadcast via Next.js `after()` (non-blocking)
-- `broadcastCommentEvent(taskId, payload)` - Schedule comment broadcast via Next.js `after()` (non-blocking)
+- `broadcastTaskEvent(projectId, payload)` - Trigger on `project-${id}` + `task-updates` (must await; Deno Deploy drops `after()`)
+- `broadcastCommentEvent(taskId, payload)` - Trigger on `task-${id}` (must await)
+- `broadcastScheduleEvent(payload)` - Trigger on `calendar-updates` (must await)
 
 #### `src/lib/pusher-channels.ts`
 
-**Purpose**: Server-side channel subscription reference counting (side-effects module)
+**Purpose**: Legacy channel ref counting module (prefer `pusher-client.ts` helpers)
 **Exports**:
 - `subscribeChannel(name)` - Increment ref count and subscribe
 - `unsubscribeChannel(name)` - Decrement ref count and unsubscribe when 0
@@ -1482,9 +1492,15 @@ src/
 
 **Purpose**: Pusher client singleton and channel ref counting for browser
 **Exports**:
-- `getPusherClient()` - Shared Pusher-js instance, or `null` when `NEXT_PUBLIC_PUSHER_KEY` / `NEXT_PUBLIC_PUSHER_CLUSTER` unset (realtime no-ops; page must not crash)
-- `subscribeChannel(name)` - Client-side subscribe with ref counting (no-op if client null)
-- `unsubscribeChannel(name)` - Client-side unsubscribe with ref counting
+- `getPusherClientAsync()` - Shared Pusher-js instance; build-time `NEXT_PUBLIC_*` or runtime `GET /api/pusher/config`
+- `getPusherClient()` - Sync accessor after async init (may be null before init)
+- `subscribeChannel(name, client)` / `unsubscribeChannel(name, client)` - Ref-counted subscribe
+
+#### `src/app/api/pusher/config/route.ts`
+
+**Purpose**: Runtime public Pusher key/cluster for the browser
+**Exports**:
+- `GET()` - `{ configured, key?, cluster? }` from `PUSHER_KEY` / `PUSHER_CLUSTER`
 
 ---
 

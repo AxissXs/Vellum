@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { scheduleEvents, tasks, users } from "@/db/schema";
 import { hasPermission } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
+import { broadcastScheduleEvent } from "@/lib/pusher-broadcast";
+import { sendNotification } from "@/lib/notifications";
 
 const SCHEDULE_TYPES = ["work", "meeting", "leave", "training", "other"] as const;
 const VISIBILITIES = ["team", "private"] as const;
@@ -152,6 +154,44 @@ export async function PATCH(
     details: `Updated schedule: ${schedule.title}`,
   });
 
+  const assigneeChanged =
+    body.userId !== undefined && body.userId !== existing.userId;
+  if (assigneeChanged && schedule.userId !== user.id) {
+    await sendNotification({
+      userId: schedule.userId,
+      type: "schedule_assigned",
+      title: "Schedule Assigned",
+      content: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
+      entityType: "schedule",
+      entityId: schedule.id,
+      actorUserId: user.id,
+      pushPayload: {
+        title: "Schedule Assigned",
+        body: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
+        tag: `schedule-${schedule.id}`,
+      },
+      url: "/dashboard/calendar",
+    });
+  }
+
+  await broadcastScheduleEvent({
+    type: "updated",
+    scheduleId: schedule.id,
+    userId: schedule.userId,
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
+    schedule: {
+      id: schedule.id,
+      userId: schedule.userId,
+      title: schedule.title,
+      type: schedule.type,
+      startsAt: schedule.startsAt.toISOString(),
+      endsAt: schedule.endsAt.toISOString(),
+      allDay: schedule.allDay,
+      visibility: schedule.visibility,
+    },
+  });
+
   const nextType = schedule.type;
   let conflicts: Awaited<ReturnType<typeof findDueDateConflicts>> = [];
   if (nextType === "leave") {
@@ -212,6 +252,14 @@ export async function DELETE(
     entityType: "schedule",
     entityId: id,
     details: `Deleted schedule: ${existing.title}`,
+  });
+
+  await broadcastScheduleEvent({
+    type: "deleted",
+    scheduleId: id,
+    userId: existing.userId,
+    actorUserId: user.id,
+    actorName: user.name || "Someone",
   });
 
   return NextResponse.json({ success: true });

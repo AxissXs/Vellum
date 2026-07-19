@@ -61,8 +61,10 @@ Vellum deploys to **Deno Deploy** with a managed **Prisma Postgres** database.
 3. Deno Deploy auto-injects `DATABASE_URL` (plus `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`) per environment — do NOT set `DATABASE_URL` in prod.
 4. App config lives in [`deno.json`](deno.json) `deploy` key (`org` / `app`; overrides dashboard app identity). Keep `deno.json` **tracked** — do **not** gitignore it. `deno deploy` skips gitignored files; without `deno.json` the remote builder runs `deno task build` against `package.json` (no scripts) → `No tasks found in configuration file` / `Task not found: build`.
 5. **Migrations on Deno Deploy**: Pre-deploy partition (cwd `/app/src`) has **no** `node_modules`, `deno.json`, or accessible `.next/` tree — `node …/drizzle-kit`, `deno task`, and `deno run -A .next/standalone/migrate.ts` all fail there. **Do not use `deploy.predeploy`**. Migrations run on **server boot** via [`src/instrumentation.ts`](src/instrumentation.ts) → [`src/db/run-migrations.ts`](src/db/run-migrations.ts). Build traces `drizzle/**/*` into standalone via `outputFileTracingIncludes`; `copy-deploy-migrations.mjs` also copies them. If migration fails, boot throws → Deno Deploy won't route traffic (safe). Local: `deno task db:migrate` / `db:push` use drizzle-kit as usual.
-6. Add non-injected env vars: `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`, `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`.
+6. Add non-injected env vars: `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`, `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`. Put `NEXT_PUBLIC_PUSHER_*` in the **Build** context too (Next inlines them at `next build`). Client also loads key/cluster at runtime from `GET /api/pusher/config` (uses `PUSHER_KEY` / `PUSHER_CLUSTER`) so Production-only env still works.
 7. Deno Deploy serves the app via `jsr:@deno/nextjs-start/v16` (`next start` on the Node runtime). Do NOT set `runtime = "edge"` on routes — `pg` needs the Node runtime.
+
+Pusher broadcasts must be **awaited** in the request (not `next/server` `after()`). Deno Deploy may drop deferred work when the isolate ends after the response.
 
 Note: `drizzle.config.ts` skips loading `.env` in production so the injected `DATABASE_URL` is used. Demo seeding (`ensureDemoData`) is disabled in production.
 
@@ -379,6 +381,7 @@ See `src/db/schema.ts` for:
 | `/api/notifications/mark-all-read`      | POST               | Mark all notifications read    |
 | `/api/push/subscribe`                   | POST, DELETE       | Web Push subscribe/unsubscribe |
 | `/api/push/preferences`                 | GET, PATCH         | Notification channel prefs     |
+| `/api/pusher/config`                    | GET                | Public Pusher key/cluster      |
 | `/api/telegram/status`                  | GET                | Telegram link status           |
 | `/api/telegram/pairing-code`            | GET                | Generate Telegram pairing code |
 | `/api/telegram/unlink`                  | DELETE             | Unlink Telegram account        |

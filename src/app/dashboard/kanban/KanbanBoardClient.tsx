@@ -44,7 +44,8 @@ import {
 import { clsx } from "clsx";
 import TaskDetailModal from "@/app/dashboard/projects/[id]/TaskDetailModal";
 import { useCreateTask, useReorderTasks } from "@/hooks/useTasks";
-import { useRealtime } from "@/hooks/useRealtime";
+import { useRealtime, type TaskUpdatePayload } from "@/hooks/useRealtime";
+import { applyTaskEventToColumns } from "@/lib/kanban-realtime";
 import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
@@ -404,8 +405,27 @@ export default function KanbanBoardClient({
   const createTask = useCreateTask();
   const reorderTasks = useReorderTasks();
 
+  const handleRemoteTaskEvent = useCallback((payload: TaskUpdatePayload) => {
+    setColumns((prev) => {
+      const next = applyTaskEventToColumns(prev, payload) as Column[];
+      if (next !== prev) columnsRef.current = next;
+      return next;
+    });
+
+    if (payload.type === "deleted" && payload.taskId) {
+      setSelectedTask((t) => (t?.id === payload.taskId ? null : t));
+    } else if (
+      (payload.type === "created" || payload.type === "updated") &&
+      payload.task
+    ) {
+      setSelectedTask((t) =>
+        t?.id === payload.task!.id ? ({ ...t, ...payload.task } as Task) : t
+      );
+    }
+  }, []);
+
   // Subscribe to global real-time task updates (cross-project board view)
-  useRealtime();
+  useRealtime(undefined, undefined, handleRemoteTaskEvent);
 
   const filteredColumns = useMemo(() => {
     if (selectedProjectId === "all" && !searchQuery) {

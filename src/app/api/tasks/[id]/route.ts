@@ -83,7 +83,7 @@ export async function DELETE(
     details: `Deleted task: ${task.title}`,
   });
 
-  broadcastTaskEvent(task.projectId, {
+  await broadcastTaskEvent(task.projectId, {
     type: "deleted",
     taskId: id,
     actorUserId: user.id,

@@ -66,7 +66,7 @@ export async function createCommentForUser(
     authorAvatar: user.avatarUrl,
   };
 
-  broadcastCommentEvent(taskId, {
+  await broadcastCommentEvent(taskId, {
     type: "created",
     comment: {
       ...result,
@@ -78,7 +78,7 @@ export async function createCommentForUser(
   });
 
   if (task?.projectId) {
-    broadcastTaskEvent(task.projectId, {
+    await broadcastTaskEvent(task.projectId, {
       type: "updated",
       taskId,
       actorUserId: user.id,
