@@ -12,6 +12,7 @@ import {
   interpretTelegramText,
   isInterpretConfigured,
 } from "@/lib/telegram-interpret/ollama";
+import { isLlmHealthyForNl } from "@/lib/telegram-interpret/health";
 import type {
   InterpretTurn,
   TelegramIntent,
@@ -480,6 +481,14 @@ export async function handleNaturalLanguage(
     await sendTelegramMessage(
       chatId,
       "Natural language isn't configured. Use /event, /task, or /help."
+    );
+    return;
+  }
+
+  if (!(await isLlmHealthyForNl())) {
+    await sendTelegramMessage(
+      chatId,
+      "Couldn't reach the language model. Try /event or /task, or try again later."
     );
     return;
   }

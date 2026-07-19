@@ -1,5 +1,14 @@
 import { getAppTimezone } from "@/lib/timezone-server";
 import {
+  getInterpretThinkEnabled,
+  interpretModelName,
+  interpretRequestHeaders,
+  isInterpretUrlConfigured,
+  isLlmHealthyForNl,
+  recordInterpretFailure,
+  recordInterpretSuccess,
+} from "./health";
+import {
   normalizeInterpretResult,
   TELEGRAM_INTERPRET_JSON_SCHEMA,
   type InterpretTurn,
@@ -7,20 +16,15 @@ import {
   type TelegramInterpretResult,
 } from "./schema";
 
-const DEFAULT_MODEL = "gemma4:e2b";
 const TIMEOUT_MS = 30_000;
 const MIN_CONFIDENCE = 0.5;
 
 export function isInterpretConfigured(): boolean {
-  return Boolean(process.env.LLM_INTERPRET_URL?.trim());
+  return isInterpretUrlConfigured();
 }
 
 function interpretBaseUrl(): string {
   return (process.env.LLM_INTERPRET_URL || "").replace(/\/$/, "");
-}
-
-function interpretModel(): string {
-  return process.env.LLM_INTERPRET_MODEL?.trim() || DEFAULT_MODEL;
 }
 
 function formatLocalDateTime(date: Date, timezone: string): string {
@@ -114,23 +118,27 @@ export async function interpretTelegramText(
     return { ok: false, error: "LLM interpret is not configured." };
   }
 
+  if (!(await isLlmHealthyForNl())) {
+    return {
+      ok: false,
+      error: "Language model is temporarily unavailable.",
+    };
+  }
+
   const timezone = await getAppTimezone();
   const localDateTime = formatLocalDateTime(new Date(), timezone);
+  const think = await getInterpretThinkEnabled();
 
   const url = `${interpretBaseUrl()}/api/chat`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
+    ...interpretRequestHeaders(),
   };
-  const secret = process.env.LLM_INTERPRET_SECRET?.trim();
-  if (secret) {
-    headers.Authorization = `Bearer ${secret}`;
-  }
 
   const body = {
-    model: interpretModel(),
+    model: interpretModelName(),
     stream: false,
-    think: false,
+    think,
     format: TELEGRAM_INTERPRET_JSON_SCHEMA,
     options: { temperature: 0 },
     messages: [
@@ -162,10 +170,9 @@ export async function interpretTelegramText(
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      return {
-        ok: false,
-        error: `Ollama HTTP ${res.status}: ${errText.slice(0, 200)}`,
-      };
+      const error = `Ollama HTTP ${res.status}: ${errText.slice(0, 200)}`;
+      await recordInterpretFailure(error);
+      return { ok: false, error };
     }
 
     const data = (await res.json()) as {
@@ -173,14 +180,18 @@ export async function interpretTelegramText(
     };
     const content = data.message?.content;
     if (!content) {
-      return { ok: false, error: "Empty model response." };
+      const error = "Empty model response.";
+      await recordInterpretFailure(error);
+      return { ok: false, error };
     }
 
     let parsed: unknown;
     try {
       parsed = JSON.parse(content);
     } catch {
-      return { ok: false, error: "Model returned non-JSON." };
+      const error = "Model returned non-JSON.";
+      await recordInterpretFailure(error);
+      return { ok: false, error };
     }
 
     let result = normalizeInterpretResult(parsed, text);
@@ -197,6 +208,7 @@ export async function interpretTelegramText(
     // Preserve original user text as raw root
     if (!result.raw) result.raw = text;
 
+    await recordInterpretSuccess();
     return { ok: true, result };
   } catch (err) {
     const msg =
@@ -206,6 +218,7 @@ export async function interpretTelegramText(
           : err.message
         : "LLM request failed.";
     console.error("[telegram-interpret]", msg);
+    await recordInterpretFailure(msg);
     return { ok: false, error: msg };
   } finally {
     clearTimeout(timer);

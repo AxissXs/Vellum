@@ -4,25 +4,25 @@ overview: Add an Ollama/ngrok health probe persisted in platform_settings, a cir
 todos:
   - id: health-module
     content: Add telegram-interpret/health.ts (probe /api/tags, persist platform_settings, isLlmHealthyForNl)
-    status: pending
+    status: completed
   - id: breaker
     content: Wire circuit breaker + gate in ollama.ts and nl-flow fail-fast
-    status: pending
+    status: completed
   - id: think-toggle
     content: platform_settings llm_interpret_think; ollama reads it; Super Admin toggle
-    status: pending
+    status: completed
   - id: cron-route
     content: Add POST/GET /api/cron/llm-health with CRON_SECRET
-    status: pending
+    status: completed
   - id: gha
     content: Add .github/workflows/llm-health-cron.yml every 5m
-    status: pending
+    status: completed
   - id: admin-ui
     content: Super-admin llm-health API + Telegram panel status card + think toggle
-    status: pending
+    status: completed
   - id: docs
     content: Update AGENTS.md + STRUCTURE.md for CRON_SECRET, think setting, routes
-    status: pending
+    status: completed
 isProject: false
 ---
 
