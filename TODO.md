@@ -2,17 +2,6 @@
 
 ## Priority: High
 
-- [ ] **Fix notification system bugs** — Resolve duplicate, missing, and incorrect notifications
-
-  Several notification-related issues need addressing: missing notifications on Kanban moves, spurious notifications on no-op saves, duplicate broadcasts, and missing deep links.
-
-  - Add a link (with or without ID) to notifications pointing to the triggering object/change
-  - Ensure moving a task between Kanban columns fires a notification
-  - Prevent saving a task without changes from firing a notification
-  - Fix "task assigned" and "task assigned to you" both being sent to the supergroup topic — only the assignee should receive the direct assignment notification
-  - Fix status changed notification being sent twice
-  - Acceptance criteria: No duplicate notifications; correct routing; no-op saves are silent; Kanban moves notify; all notifications include relevant links
-
 - [ ] **Role & Permission Manager** — Dynamic roles, granular permissions, and presets for superadmin
   > Full plan: [`TODO/role-permission-manager.md`](TODO/role-permission-manager.md)
 

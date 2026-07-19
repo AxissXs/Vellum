@@ -32,6 +32,7 @@ export async function sendInAppNotification({
   entityType,
   entityId,
   actorUserId,
+  url,
 }: {
   userId: string;
   type: string;
@@ -40,6 +41,7 @@ export async function sendInAppNotification({
   entityType?: string;
   entityId?: string;
   actorUserId?: string;
+  url?: string;
 }) {
   if (!userId) return;
 
@@ -56,6 +58,7 @@ export async function sendInAppNotification({
       read: false,
       entityType: entityType ?? null,
       entityId: entityId ?? null,
+      url: url ?? null,
       actorUserId: actorUserId ?? null,
     })
     .returning();
@@ -71,6 +74,10 @@ export async function sendInAppNotification({
   }
 }
 
+/**
+ * Send a notification to a specific user via all configured channels
+ * (in-app, push, Telegram DM). Does NOT broadcast to supergroup/channel.
+ */
 export async function sendNotification({
   userId,
   type,
@@ -95,7 +102,7 @@ export async function sendNotification({
   if (!userId) return;
 
   // In-app notification (checks its own preferences internally)
-  await sendInAppNotification({ userId, type, title, content, entityType, entityId, actorUserId });
+  await sendInAppNotification({ userId, type, title, content, entityType, entityId, actorUserId, url });
 
   // Push notification
   if (pushPayload) {
@@ -112,17 +119,12 @@ export async function sendNotification({
 
   // Telegram DM notification (checks its own preferences internally)
   await sendTelegramNotification({ userId, eventType: type, title, content, url });
-
-  // Supergroup broadcast (if configured)
-  const supergroupResult = await broadcastToSupergroup(type, title + "\n\n" + content);
-  if (!supergroupResult.ok) {
-    console.warn(`[notifications] Supergroup broadcast skipped for "${type}":`, supergroupResult.description);
-  }
-
-  // Channel broadcast (if configured and enabled for this event type)
-  await maybeBroadcastToChannel(type, title, content, url);
 }
 
+/**
+ * Broadcast a generic event to supergroup/channel.
+ * Use this for public/objective events that are NOT specific to one user.
+ */
 export async function broadcastEvent({
   type,
   title,

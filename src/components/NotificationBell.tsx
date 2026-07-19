@@ -1,13 +1,15 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, ExternalLink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useRouter } from "next/navigation";
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const { notifications, unreadCount, markRead, markAllRead, isLoading } = useNotifications();
 
   useEffect(() => {
@@ -69,12 +71,15 @@ export default function NotificationBell() {
                   <li
                     key={n.id}
                     className={clsx(
-                      "px-4 py-3 hover:bg-white/5 transition cursor-pointer",
+                      "px-4 py-3 hover:bg-white/5 transition group",
                       !n.read && "bg-white/[0.02]"
                     )}
                     onClick={() => {
                       if (!n.read) markRead(n.id);
-                      setOpen(false);
+                      if (n.url) {
+                        router.push(n.url);
+                        setOpen(false);
+                      }
                     }}
                   >
                     <div className="flex items-start gap-3">
@@ -93,9 +98,14 @@ export default function NotificationBell() {
                         >
                           {n.content}
                         </p>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          {formatTimeAgo(n.createdAt)}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[11px] text-slate-500">
+                            {formatTimeAgo(n.createdAt)}
+                          </p>
+                          {n.url && (
+                            <ExternalLink size={10} className="text-slate-600 group-hover:text-brand-400 transition-colors" />
+                          )}
+                        </div>
                       </div>
                       {!n.read && (
                         <button

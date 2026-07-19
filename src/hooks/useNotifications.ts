@@ -20,6 +20,7 @@ type NotificationItem = {
   read: boolean;
   entityType: string | null;
   entityId: string | null;
+  url: string | null;
   actorUserId: string | null;
   actorName: string | null;
   createdAt: string;

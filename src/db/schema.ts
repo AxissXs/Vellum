@@ -265,6 +265,7 @@ export const notifications = pgTable("notifications", {
   read: boolean("read").default(false).notNull(),
   entityType: text("entity_type"),
   entityId: text("entity_id"),
+  url: text("url"),
   actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -114,19 +114,17 @@ export async function POST(req: NextRequest) {
         body: `${user.name || "Someone"} assigned you: ${task.title}`,
         tag: `task-${task.id}`,
       },
-      url: `/dashboard/tasks`,
+      url: `/dashboard/projects/${task.projectId}`,
     });
   }
 
-  // Broadcast to supergroup/channel (always, regardless of assignee)
-  if (task.assigneeId) {
-    await broadcastEvent({
-      type: "task_assigned",
-      title: "New Task Assigned",
-      content: `${user.name || "Someone"} assigned "${task.title}" to ${task.assigneeId === user.id ? "themselves" : "someone"}`,
-      url: `/dashboard/tasks`,
-    });
-  }
+  // Broadcast to supergroup/channel (public event)
+  await broadcastEvent({
+    type: "task_assigned",
+    title: "New Task Assigned",
+    content: `${user.name || "Someone"} assigned "${task.title}"${task.assigneeId ? "" : " (unassigned)"}`,
+    url: `/dashboard/projects/${task.projectId}`,
+  });
 
   return NextResponse.json({ task }, { status: 201 });
 }

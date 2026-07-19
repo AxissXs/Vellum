@@ -47,14 +47,23 @@ export async function PATCH(
     done: "marked as Done",
   };
 
+  // Determine what actually changed
+  const statusChanged = status !== undefined && before && before.status !== status;
+  const assigneeChanged = assigneeId !== undefined && before && before.assigneeId !== assigneeId;
+  const hasContentChanges =
+    title !== undefined && before && before.title !== title ||
+    description !== undefined && before && before.description !== description ||
+    priority !== undefined && before && before.priority !== priority ||
+    dueDate !== undefined && before && before.dueDate !== (dueDate ? new Date(dueDate) : null);
+
   const actionDetail =
-    status !== undefined && statusLabels[status]
+    statusChanged
       ? `${task.title}: ${statusLabels[status]}`
       : `Updated task: ${task.title}`;
 
   await writeActivityLog({
     userId: user.id,
-    action: status !== undefined ? "changed_task_status" : "updated_task",
+    action: statusChanged ? "changed_task_status" : "updated_task",
     entityType: "task",
     entityId: task.id,
     details: actionDetail,
@@ -92,39 +101,39 @@ export async function PATCH(
     actorName: user.name || "Someone",
   });
 
-  // Send notification for status changes
-  if (status !== undefined && task.assigneeId && task.assigneeId !== user.id) {
+  // Send notification for status changes only when status actually changed
+  if (statusChanged) {
     const label = statusLabels[status] || "updated";
-    await sendNotification({
-      userId: task.assigneeId,
-      type: "status_changed",
-      title: "Task Status Changed",
-      content: `${user.name || "Someone"} ${label} "${task.title}"`,
-      entityType: "task",
-      entityId: task.id,
-      actorUserId: user.id,
-      pushPayload: {
+    const notifyUserId = task.assigneeId ?? task.creatorId;
+    if (notifyUserId && notifyUserId !== user.id) {
+      await sendNotification({
+        userId: notifyUserId,
+        type: "status_changed",
         title: "Task Status Changed",
-        body: `${user.name || "Someone"} ${label} "${task.title}"`,
-        tag: `task-${task.id}`,
-      },
-      url: `/dashboard/tasks`,
-    });
-  }
+        content: `${user.name || "Someone"} ${label} "${task.title}"`,
+        entityType: "task",
+        entityId: task.id,
+        actorUserId: user.id,
+        pushPayload: {
+          title: "Task Status Changed",
+          body: `${user.name || "Someone"} ${label} "${task.title}"`,
+          tag: `task-${task.id}`,
+        },
+        url: `/dashboard/projects/${task.projectId}`,
+      });
+    }
 
-  // Broadcast status change to supergroup/channel (always)
-  if (status !== undefined) {
-    const label = statusLabels[status] || "updated";
+    // Broadcast status change to supergroup/channel (public event)
     await broadcastEvent({
       type: "status_changed",
       title: "Task Status Changed",
       content: `${user.name || "Someone"} ${label} "${task.title}"`,
-      url: `/dashboard/tasks`,
+      url: `/dashboard/projects/${task.projectId}`,
     });
   }
 
-  // Send notification for assignee changes
-  if (assigneeId !== undefined && assigneeId && assigneeId !== user.id) {
+  // Send notification for assignee changes only when assignee actually changed
+  if (assigneeChanged && assigneeId) {
     await sendNotification({
       userId: assigneeId,
       type: "task_assigned",
@@ -138,17 +147,15 @@ export async function PATCH(
         body: `${user.name || "Someone"} assigned you: ${task.title}`,
         tag: `task-${task.id}`,
       },
-      url: `/dashboard/tasks`,
+      url: `/dashboard/projects/${task.projectId}`,
     });
-  }
 
-  // Broadcast assignee change to supergroup/channel (always)
-  if (assigneeId !== undefined && assigneeId) {
+    // Broadcast assignee change to supergroup/channel (public event)
     await broadcastEvent({
       type: "task_assigned",
       title: "Task Assigned",
       content: `${user.name || "Someone"} assigned "${task.title}"`,
-      url: `/dashboard/tasks`,
+      url: `/dashboard/projects/${task.projectId}`,
     });
   }
 

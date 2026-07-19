@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
       read: notifications.read,
       entityType: notifications.entityType,
       entityId: notifications.entityId,
+      url: notifications.url,
       actorUserId: notifications.actorUserId,
       actorName: users.name,
       createdAt: notifications.createdAt,

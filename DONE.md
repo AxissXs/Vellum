@@ -376,4 +376,35 @@ Fixed critical column-locking bug and DnD performance issues.
 
 ---
 
+## Notification System Bug Fixes (July 2026)
+
+Resolved duplicate, missing, and incorrect notifications across the platform.
+
+**Root Causes:**
+1. **Duplicate broadcasts** — `sendNotification()` internally called `broadcastToSupergroup()` AND `maybeBroadcastToChannel()`, but every API route that called `sendNotification()` ALSO separately called `broadcastEvent()`. This meant every status change, assignment, and comment got broadcast twice to the Telegram supergroup.
+2. **Personal messages leaked to supergroup** — In `sendNotification()`, the personal assignment message "Task Assigned to **You**" was broadcast to the entire supergroup alongside the DM to the user.
+3. **No-op saves fired notifications** — The task PATCH route checked `if (status !== undefined)` instead of `if (statusChanged && before.status !== status)`. Saving a task without actually changing its status would still trigger a "status changed" notification.
+4. **Missing notifications on Kanban moves** — If a task was unassigned, moving it between columns (status change) sent no notification at all because it was gated behind `task.assigneeId`.
+5. **Missing deep links** — The `notifications` table had no `url` column, so in-app notification items could not navigate to the relevant task/project.
+
+**Fixes Applied:**
+- **Schema**: Added `url text` column to `notifications` table.
+- **Separation of concerns**: Removed `broadcastToSupergroup` and `maybeBroadcastToChannel` from `sendNotification()`. `sendNotification()` now only sends direct-to-user notifications (in-app, push, Telegram DM). `broadcastEvent()` is called separately by API routes only for public/objective events.
+- **No-op guard**: Task PATCH now tracks `statusChanged` and `assigneeChanged` by comparing the `before` snapshot to the request body. Notifications fire only when values actually change.
+- **Kanban move fallback**: Status change notifications now fall back to the task creator when no assignee exists (instead of silently dropping).
+- **Deep links**: All notification calls now include `url` pointing to the relevant task/project. `NotificationBell.tsx` navigates on click and shows an `ExternalLink` icon for linked notifications. API GET returns `url` field.
+- **Better routing**: URLs changed from generic `/dashboard/tasks` to specific project paths (`/dashboard/projects/{projectId}`).
+
+**Files Changed:**
+- `src/db/schema.ts` — added `url` column to `notifications`
+- `src/lib/notifications.ts` — removed internal broadcast from `sendNotification()`, added `url` to `sendInAppNotification()`
+- `src/app/api/tasks/[id]/route.ts` — no-op guards, fallback to creator, proper broadcast separation
+- `src/app/api/tasks/route.ts` — always broadcast task creation, removed conditional skip
+- `src/app/api/notifications/route.ts` — return `url` field
+- `src/hooks/useNotifications.ts` — added `url` to `NotificationItem` type
+- `src/components/NotificationBell.tsx` — navigate on click, show link icon
+- `drizzle/0012_confused_epoch.sql` — migration for new column
+
+---
+
 *Last updated: July 2026*
