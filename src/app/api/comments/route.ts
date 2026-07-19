@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { db } from "@/db";
-import { comments, users, tasks } from "@/db/schema";
-import { logActivity } from "@/lib/activity";
-import { eq, asc } from "drizzle-orm";
-import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
-import { sendNotification } from "@/lib/notifications";
-import { resolveMentionedUserIds } from "@/lib/mentions";
+import { createCommentForUser, queryCommentsForTask } from "@/lib/create-comment";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -18,21 +12,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "taskId is required" }, { status: 400 });
   }
 
-  const rows = await db
-    .select({
-      id: comments.id,
-      content: comments.content,
-      taskId: comments.taskId,
-      authorId: comments.authorId,
-      createdAt: comments.createdAt,
-      updatedAt: comments.updatedAt,
-      authorName: users.name,
-      authorAvatar: users.avatarUrl,
-    })
-    .from(comments)
-    .leftJoin(users, eq(comments.authorId, users.id))
-    .where(eq(comments.taskId, taskId))
-    .orderBy(asc(comments.createdAt));
+  const rows = await queryCommentsForTask(taskId);
 
   return NextResponse.json({ comments: rows });
 }
@@ -49,100 +29,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const [comment] = await db
-    .insert(comments)
-    .values({ content, taskId, authorId: user.id })
-    .returning();
-
-  const [task] = await db
-    .select({
-      title: tasks.title,
-      projectId: tasks.projectId,
-      assigneeId: tasks.assigneeId,
-    })
-    .from(tasks)
-    .where(eq(tasks.id, taskId))
-    .limit(1);
-
-  logActivity({
-    userId: user.id,
-    action: "created_comment",
-    entityType: "comment",
-    entityId: comment.id,
-    details: `Commented on task: ${task?.title || taskId}`,
-  });
-
-  const result = {
-    ...comment,
-    authorName: user.name,
-    authorAvatar: user.avatarUrl,
-  };
-
-  // Broadcast real-time event for comments
-  broadcastCommentEvent(taskId, {
-    type: "created",
-    comment: {
-      ...result,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString(),
-    },
-    actorUserId: user.id,
-    actorName: user.name || "Someone",
-  });
-
-  // Also broadcast a task update so viewers on the project board see activity
-  if (task?.projectId) {
-    broadcastTaskEvent(task.projectId, {
-      type: "updated",
-      taskId,
-      actorUserId: user.id,
-      actorName: user.name || "Someone",
-    });
-  }
-
-  if (task?.assigneeId && task.assigneeId !== user.id) {
-    await sendNotification({
-      userId: task.assigneeId,
-      type: "new_comment",
-      title: "New Comment",
-      content: `${user.name || "Someone"} commented on "${task.title}"`,
-      entityType: "task",
-      entityId: taskId,
-      actorUserId: user.id,
-      pushPayload: {
-        title: "New Comment",
-        body: `${user.name || "Someone"} commented on "${task.title}"`,
-        tag: `task-${taskId}`,
-      },
-      url: `/dashboard/tasks`,
-    });
-  }
-
-  // @mentions → comment_mention (Telegram / push / in-app per prefs)
-  const allUsers = await db
-    .select({ id: users.id, name: users.name })
-    .from(users);
-  const mentionedIds = resolveMentionedUserIds(content, allUsers).filter(
-    (id) => id !== user.id
-  );
-
-  for (const mentionedId of mentionedIds) {
-    await sendNotification({
-      userId: mentionedId,
-      type: "comment_mention",
-      title: "You were mentioned",
-      content: `${user.name || "Someone"} mentioned you on "${task?.title || "a task"}"`,
-      entityType: "task",
-      entityId: taskId,
-      actorUserId: user.id,
-      pushPayload: {
-        title: "You were mentioned",
-        body: `${user.name || "Someone"} mentioned you on "${task?.title || "a task"}"`,
-        tag: `mention-${taskId}`,
-      },
-      url: `/dashboard/tasks`,
-    });
-  }
+  const result = await createCommentForUser(user, taskId, content);
 
   return NextResponse.json({ comment: result }, { status: 201 });
 }

@@ -50,6 +50,13 @@
       "when": 1784243993288,
       "tag": "0006_charming_crusher_hogan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784272709963,
+      "tag": "0007_slimy_kylun",
+      "breakpoints": true
     }
   ]
 }

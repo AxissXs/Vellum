@@ -366,6 +366,23 @@ export const telegramPairingCodes = pgTable("telegram_pairing_codes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const telegramBotSessions = pgTable(
+  "telegram_bot_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    chatId: text("chat_id").notNull(),
+    flow: text("flow").notNull(),
+    step: text("step").notNull(),
+    payload: text("payload").notNull().default("{}"),
+    expiresAt: timestamp("expires_at").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [index("telegram_bot_sessions_chat_id_idx").on(table.chatId)]
+);
+
 export const platformSettings = pgTable("platform_settings", {
   id: uuid("id").primaryKey().defaultRandom(),
   key: text("key").notNull().unique(),

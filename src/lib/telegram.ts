@@ -152,33 +152,88 @@ export async function setTelegramWebhook(webhookUrl: string, token?: string) {
     "setWebhook",
     {
       url: webhookUrl,
-      allowed_updates: ["message"],
+      allowed_updates: ["message", "callback_query"],
       secret_token: secretToken,
     },
     token
   );
 }
 
+export type InlineKeyboardButton = {
+  text: string;
+  callback_data?: string;
+  url?: string;
+};
+
+export type InlineKeyboardMarkup = {
+  inline_keyboard: InlineKeyboardButton[][];
+};
+
 export async function sendTelegramMessage(
   chatId: string,
   text: string,
   options?: {
-    parseMode?: "HTML" | "Markdown" | "MarkdownV2";
+    parseMode?: "HTML" | "Markdown" | "MarkdownV2" | null;
     disablePreview?: boolean;
     topicId?: string;
+    replyMarkup?: InlineKeyboardMarkup;
   },
   token?: string
 ) {
   const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
-    parse_mode: options?.parseMode ?? "HTML",
     disable_web_page_preview: options?.disablePreview ?? true,
   };
+  if (options?.parseMode !== null) {
+    body.parse_mode = options?.parseMode ?? "HTML";
+  }
   if (options?.topicId) {
     body.message_thread_id = Number(options.topicId);
   }
+  if (options?.replyMarkup) {
+    body.reply_markup = options.replyMarkup;
+  }
   return telegramApi("sendMessage", body, token);
+}
+
+export async function answerCallbackQuery(
+  callbackQueryId: string,
+  options?: { text?: string; showAlert?: boolean },
+  token?: string
+) {
+  return telegramApi(
+    "answerCallbackQuery",
+    {
+      callback_query_id: callbackQueryId,
+      text: options?.text,
+      show_alert: options?.showAlert ?? false,
+    },
+    token
+  );
+}
+
+export async function editMessageText(
+  chatId: string,
+  messageId: number,
+  text: string,
+  options?: {
+    parseMode?: "HTML" | "Markdown" | "MarkdownV2";
+    replyMarkup?: InlineKeyboardMarkup;
+  },
+  token?: string
+) {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: options?.parseMode ?? "HTML",
+    disable_web_page_preview: true,
+  };
+  if (options?.replyMarkup) {
+    body.reply_markup = options.replyMarkup;
+  }
+  return telegramApi("editMessageText", body, token);
 }
 
 export async function isTelegramEnabled(

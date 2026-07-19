@@ -789,10 +789,10 @@ src/
 #### `src/app/api/telegram/webhook/route.ts`
 
 **Methods**: `POST`
-**Purpose**: Telegram bot webhook (pairing commands); verifies `X-Telegram-Bot-Api-Secret-Token`
+**Purpose**: Telegram bot webhook (pairing + inbound commands); verifies `X-Telegram-Bot-Api-Secret-Token`
 **Functions**:
 
-- `POST(req)` - Handle Telegram updates
+- `POST(req)` - Pairing via `/start <code>`; delegates other messages/callbacks to `handleTelegramUpdate` in `src/lib/telegram-bot/`
 
 #### `src/app/api/telegram/config/route.ts`
 
@@ -1332,9 +1332,31 @@ src/
 - `getBotToken` / `isTelegramConfigured` / `getWebhookUrl` / `getWebhookSecretToken`
 - `getTelegramTopicMapping` / `getChannelEvents` / `setChannelEvents`
 - `getTelegramTemplate` / `setTelegramTemplate` / `getDefaultTemplate`
-- `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage`
+- `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage` / `answerCallbackQuery` / `editMessageText`
+- `InlineKeyboardMarkup` / `InlineKeyboardButton` types
 - `isTelegramEnabled` / `sendTelegramNotification`
 - `broadcastToSupergroup(eventType, text)` / `maybeBroadcastToChannel` / `broadcastToChannel`
+
+#### `src/lib/telegram-bot/`
+
+**Purpose**: Inbound Telegram bot — create/view tasks & calendar, standup, retro, comments, status, inbox (private DM only)
+**Entry**: `handleTelegramUpdate(update)` from `index.ts`
+**Key modules**: `auth`, `sessions`, `task-flow`, `event-flow`, `list-*`, `status-flow`, `comment-flow`, `inbox-flow`, `standup-flow`, `leave-flow`, `retro-flow`
+
+#### Shared entity services (Telegram + REST)
+
+- `src/lib/create-task.ts` — `createTaskForUser`
+- `src/lib/create-schedule.ts` — `createScheduleForUser`
+- `src/lib/update-task.ts` — `updateTaskForUser`
+- `src/lib/create-comment.ts` — `createCommentForUser`, `queryCommentsForTask`
+- `src/lib/query-tasks.ts` — `queryTasks`, `resolveTaskRef`
+- `src/lib/query-calendar.ts` — `queryCalendar`
+- `src/lib/query-notifications.ts` — inbox helpers
+- `src/lib/upsert-standup.ts` — `upsertStandupForUser`
+- `src/lib/create-retro-item.ts` — retro + active sprint queries
+- `src/lib/telegram-dates.ts` — date/range parsing for bot commands
+
+**Schema**: `telegram_bot_sessions` — wizard state (task/event/standup/retro flows)
 
 #### `src/lib/api.ts`
 

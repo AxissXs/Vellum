@@ -60,6 +60,10 @@ function TelegramUserGuide({
             <span className="font-medium text-slate-800">Comment Mention</span>.
           </li>
           <li>Unlink anytime if you no longer want bot DMs.</li>
+          <li>
+            Send <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">/help</code>{" "}
+            in {botLabel} to create/view tasks, calendar events, standups, and more.
+          </li>
         </ol>
       ) : (
         <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1">

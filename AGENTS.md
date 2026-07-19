@@ -370,7 +370,7 @@ See `src/db/schema.ts` for:
 | `/api/telegram/status`                  | GET                | Telegram link status           |
 | `/api/telegram/pairing-code`            | GET                | Generate Telegram pairing code |
 | `/api/telegram/unlink`                  | DELETE             | Unlink Telegram account        |
-| `/api/telegram/webhook`                 | POST               | Telegram bot webhook (secret)  |
+| `/api/telegram/webhook`                 | POST               | Telegram bot webhook (pairing + bot commands; secret)  |
 | `/api/telegram/config`                  | GET                | Public bot configured + username |
 | `/api/super-admin/users`                | GET                | Super-admin user list          |
 | `/api/super-admin/users/[id]`           | PATCH              | Update user status/role        |

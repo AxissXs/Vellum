@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { retroItems } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { logActivity } from "@/lib/activity";
 import { eq, asc } from "drizzle-orm";
+import { createRetroItemForUser, type RetroCategory } from "@/lib/create-retro-item";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -37,28 +37,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const validCategories = ["went_well", "went_wrong", "action_item"];
-  if (!validCategories.includes(category)) {
-    return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-  }
-
-  const [item] = await db
-    .insert(retroItems)
-    .values({
+  try {
+    const item = await createRetroItemForUser(
+      user,
       sprintId,
-      authorId: user.id,
-      category,
-      content,
-    })
-    .returning();
-
-  logActivity({
-    userId: user.id,
-    action: "created_retro_item",
-    entityType: "retro",
-    entityId: item.id,
-    details: `Added retro item (${category})`,
-  });
-
-  return NextResponse.json({ retroItem: item }, { status: 201 });
+      category as RetroCategory,
+      content
+    );
+    return NextResponse.json({ retroItem: item }, { status: 201 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Invalid retro item";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

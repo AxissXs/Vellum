@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { standups } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { logActivity } from "@/lib/activity";
 import { eq, desc, gte, lte, and } from "drizzle-orm";
+import { upsertStandupForUser } from "@/lib/upsert-standup";
 
 function startOfDay(d: Date) {
   const copy = new Date(d);
@@ -50,69 +50,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { sprintId, yesterday, today, blockers, date } = body;
 
-  // Always write as the authenticated user — no impersonation.
-  const targetUserId = user.id;
-
-  if (!yesterday && !today && !blockers) {
-    return NextResponse.json(
-      { error: "At least one of yesterday/today/blockers is required" },
-      { status: 400 }
-    );
+  try {
+    const standup = await upsertStandupForUser(user, {
+      sprintId,
+      yesterday,
+      today,
+      blockers,
+      date: date ? new Date(date) : undefined,
+    });
+    return NextResponse.json({ standup }, { status: 200 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Invalid standup";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  const day = date ? new Date(date) : new Date();
-  const start = startOfDay(day);
-  const end = endOfDay(day);
-
-  // Upsert: one standup per user per day.
-  const [match] = await db
-    .select()
-    .from(standups)
-    .where(
-      and(
-        eq(standups.userId, targetUserId),
-        gte(standups.date, start),
-        lte(standups.date, end)
-      )
-    )
-    .limit(1);
-
-  let standup;
-  if (match) {
-    const [updated] = await db
-      .update(standups)
-      .set({
-        sprintId: sprintId || null,
-        yesterday: yesterday ?? match.yesterday,
-        today: today ?? match.today,
-        blockers: blockers ?? match.blockers,
-        date: day,
-      })
-      .where(eq(standups.id, match.id))
-      .returning();
-    standup = updated;
-  } else {
-    const [created] = await db
-      .insert(standups)
-      .values({
-        userId: targetUserId,
-        sprintId: sprintId || null,
-        date: day,
-        yesterday: yesterday || null,
-        today: today || null,
-        blockers: blockers || null,
-      })
-      .returning();
-    standup = created;
-  }
-
-  logActivity({
-    userId: user.id,
-    action: "created_standup",
-    entityType: "standup",
-    entityId: standup.id,
-    details: `Logged standup for ${day.toISOString().slice(0, 10)}`,
-  });
-
-  return NextResponse.json({ standup }, { status: match ? 200 : 201 });
 }
