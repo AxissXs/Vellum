@@ -1,4 +1,7 @@
 import type { AuthUser } from "@/lib/auth";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { hasPermission } from "@/lib/permissions";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { createScheduleForUser } from "@/lib/create-schedule";
@@ -29,6 +32,7 @@ import {
   listActiveProjects,
   resolveProjectByName,
 } from "@/lib/telegram-bot/projects";
+import { resolveUsersByTelegramRef } from "@/lib/query-tasks";
 import { choiceKeyboard, confirmKeyboard } from "@/lib/telegram-bot/keyboards";
 import { escapeHtml } from "@/lib/telegram-bot/format";
 import {
@@ -46,6 +50,7 @@ type NlPayload = {
   clarifyCount: number;
   originalText: string;
   projectId?: string;
+  assigneeId?: string;
 };
 
 function asNlPayload(payload: Record<string, unknown>): NlPayload | null {
@@ -64,6 +69,8 @@ function asNlPayload(payload: Record<string, unknown>): NlPayload | null {
         : draft.raw || "",
     projectId:
       typeof payload.projectId === "string" ? payload.projectId : undefined,
+    assigneeId:
+      typeof payload.assigneeId === "string" ? payload.assigneeId : undefined,
   };
 }
 
@@ -75,7 +82,8 @@ async function askMissing(
   turns: InterpretTurn[],
   clarifyCount: number,
   originalText: string,
-  projectId?: string
+  projectId?: string,
+  assigneeId?: string
 ) {
   const field = missing[0];
   const question = questionForField(field, draft);
@@ -92,6 +100,7 @@ async function askMissing(
       originalText,
       pendingField: field,
       projectId,
+      assigneeId,
     },
   });
 
@@ -116,10 +125,13 @@ async function showConfirm(
   chatId: string,
   draft: TelegramInterpretResult,
   originalText: string,
-  projectId?: string
+  projectId?: string,
+  assigneeId?: string,
+  assigneeName?: string
 ) {
   const tz = await getAppTimezone();
   const lines = ["<b>Confirm</b>"];
+  const forName = assigneeName || user.name;
 
   if (draft.intent === "create_event" || draft.intent === "create_leave") {
     const title =
@@ -127,6 +139,7 @@ async function showConfirm(
       (draft.intent === "create_leave" ? "Leave" : "Event");
     lines.push(`Type: ${draft.intent === "create_leave" ? "leave" : "event"}`);
     lines.push(`Title: ${escapeHtml(title)}`);
+    if (forName) lines.push(`For: ${escapeHtml(forName)}`);
     if (draft.startsAt) {
       lines.push(
         `Start: ${formatTelegramDateTime(new Date(draft.startsAt), tz)}`
@@ -139,6 +152,7 @@ async function showConfirm(
   } else if (draft.intent === "create_task") {
     lines.push(`Task: ${escapeHtml(draft.title || "")}`);
     lines.push(`Project: ${escapeHtml(draft.projectName || "")}`);
+    if (forName) lines.push(`Assignee: ${escapeHtml(forName)}`);
     if (draft.priority) lines.push(`Priority: ${draft.priority}`);
     if (draft.dueDate) {
       lines.push(
@@ -158,6 +172,7 @@ async function showConfirm(
       clarifyCount: 0,
       originalText,
       projectId,
+      assigneeId,
     },
   });
 
@@ -185,6 +200,38 @@ async function resolveTaskProject(
   }
   if (match.ambiguous) {
     return { ok: false, missing: true, ambiguous: match.ambiguous };
+  }
+  return { ok: false, missing: true };
+}
+
+async function resolveAssignee(
+  draft: TelegramInterpretResult
+): Promise<
+  | { ok: true; assigneeId: string; assigneeName: string }
+  | {
+      ok: false;
+      missing: true;
+      ambiguous?: Array<{ id: string; name: string }>;
+    }
+  | { ok: true; assigneeId: undefined; assigneeName: undefined }
+> {
+  if (!draft.assigneeName?.trim()) {
+    return { ok: true, assigneeId: undefined, assigneeName: undefined };
+  }
+  const matches = await resolveUsersByTelegramRef(draft.assigneeName);
+  if (matches.length === 1) {
+    return {
+      ok: true,
+      assigneeId: matches[0].id,
+      assigneeName: matches[0].name,
+    };
+  }
+  if (matches.length > 1) {
+    return {
+      ok: false,
+      missing: true,
+      ambiguous: matches.map((u) => ({ id: u.id, name: u.name })),
+    };
   }
   return { ok: false, missing: true };
 }
@@ -298,11 +345,91 @@ async function processResult(
     }
   }
 
+  let assigneeId: string | undefined;
+  let assigneeName: string | undefined;
+  if (
+    result.intent === "create_event" ||
+    result.intent === "create_leave" ||
+    result.intent === "create_task"
+  ) {
+    const resolved = await resolveAssignee(result);
+    if (!resolved.ok) {
+      if (resolved.ambiguous?.length) {
+        await upsertSession({
+          userId: user.id,
+          chatId,
+          flow: "nl",
+          step: "clarify",
+          payload: {
+            draft: result,
+            turns,
+            clarifyCount,
+            originalText,
+            pendingField: "assigneeName",
+            projectId,
+          },
+        });
+        await sendTelegramMessage(chatId, "Multiple people match. Pick one:", {
+          replyMarkup: choiceKeyboard(
+            "nu",
+            resolved.ambiguous.slice(0, 12).map((u) => ({
+              id: u.id,
+              label: u.name,
+            }))
+          ),
+        });
+        return;
+      }
+      result = {
+        ...result,
+        assigneeName: null,
+        needsClarification: true,
+        missingFields: [
+          ...new Set([...(result.missingFields || []), "assigneeName"]),
+        ],
+      };
+    } else if (resolved.assigneeId) {
+      const schedulingOther = resolved.assigneeId !== user.id;
+      if (
+        schedulingOther &&
+        (result.intent === "create_event" || result.intent === "create_leave") &&
+        !hasPermission(user.role, "manage_schedules")
+      ) {
+        await sendTelegramMessage(
+          chatId,
+          "You don't have permission to schedule for others."
+        );
+        return;
+      }
+      if (
+        schedulingOther &&
+        result.intent === "create_task" &&
+        !hasPermission(user.role, "assign_tasks")
+      ) {
+        await sendTelegramMessage(
+          chatId,
+          "You don't have permission to assign tasks to others."
+        );
+        return;
+      }
+      assigneeId = resolved.assigneeId;
+      assigneeName = resolved.assigneeName;
+      result = { ...result, assigneeName: resolved.assigneeName };
+    }
+  }
+
   if (result.intent === "create_leave" && !result.title?.trim()) {
     result = { ...result, title: "Leave", scheduleType: "leave", allDay: true };
   }
 
   const missing = getMissingFields(result);
+  if (
+    result.missingFields.includes("assigneeName") &&
+    !missing.includes("assigneeName")
+  ) {
+    missing.push("assigneeName");
+  }
+
   if (missing.length) {
     if (clarifyCount >= MAX_CLARIFY_TURNS) {
       await clearSession(chatId);
@@ -320,13 +447,22 @@ async function processResult(
       turns,
       clarifyCount,
       originalText,
-      projectId
+      projectId,
+      assigneeId
     );
     return;
   }
 
   void preferredIntent;
-  await showConfirm(user, chatId, result, originalText, projectId);
+  await showConfirm(
+    user,
+    chatId,
+    result,
+    originalText,
+    projectId,
+    assigneeId,
+    assigneeName
+  );
 }
 
 export async function handleNaturalLanguage(
@@ -464,6 +600,40 @@ export async function handleNlCallback(
     return;
   }
 
+  if (data.startsWith("nu:")) {
+    const assigneeId = data.slice(3);
+    const session = await getSession(chatId);
+    if (!session || session.flow !== "nl") return;
+    const nl = asNlPayload(session.payload);
+    if (!nl) return;
+
+    const [pickedUser] = await db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(eq(users.id, assigneeId))
+      .limit(1);
+
+    if (!pickedUser) {
+      await sendTelegramMessage(chatId, "User not found.");
+      return;
+    }
+
+    const draft: TelegramInterpretResult = {
+      ...nl.draft,
+      assigneeName: pickedUser.name,
+    };
+
+    await processResult(
+      user,
+      chatId,
+      draft,
+      nl.originalText,
+      nl.turns,
+      nl.clarifyCount
+    );
+    return;
+  }
+
   if (!data.startsWith("nl:")) return;
 
   const session = await getSession(chatId);
@@ -487,11 +657,20 @@ export async function handleNlCallback(
   if (data !== "nl:yes") return;
 
   const draft = nl.draft;
+  const targetUserId = nl.assigneeId || user.id;
 
   try {
     if (draft.intent === "create_event" || draft.intent === "create_leave") {
       if (!hasPermission(user.role, "create_own_schedule")) {
         await sendTelegramMessage(chatId, "Forbidden.");
+        await clearSession(chatId);
+        return;
+      }
+      if (
+        targetUserId !== user.id &&
+        !hasPermission(user.role, "manage_schedules")
+      ) {
+        await sendTelegramMessage(chatId, "Cannot schedule for others.");
         await clearSession(chatId);
         return;
       }
@@ -509,9 +688,13 @@ export async function handleNlCallback(
           draft.intent === "create_leave"
             ? "leave"
             : draft.scheduleType || "work",
+        userId: targetUserId,
       });
       await clearSession(chatId);
       let msg = `✅ Created: <b>${escapeHtml(schedule.title)}</b>`;
+      if (schedule.userName) {
+        msg += `\nFor: ${escapeHtml(schedule.userName)}`;
+      }
       if (conflicts.length) {
         msg += `\n⚠ ${conflicts.length} due-date conflict(s).`;
       }
@@ -523,6 +706,14 @@ export async function handleNlCallback(
     if (draft.intent === "create_task") {
       if (!hasPermission(user.role, "create_tasks")) {
         await sendTelegramMessage(chatId, "Forbidden.");
+        await clearSession(chatId);
+        return;
+      }
+      if (
+        targetUserId !== user.id &&
+        !hasPermission(user.role, "assign_tasks")
+      ) {
+        await sendTelegramMessage(chatId, "Cannot assign tasks to others.");
         await clearSession(chatId);
         return;
       }
@@ -543,11 +734,12 @@ export async function handleNlCallback(
         priority: draft.priority || "medium",
         dueDate: draft.dueDate ? new Date(draft.dueDate) : null,
         status: draft.status || "todo",
+        assigneeId: targetUserId,
       });
       await clearSession(chatId);
       await sendTelegramMessage(
         chatId,
-        `✅ Task created: <b>${escapeHtml(task.title)}</b>\n<a href="${taskDeepLink(task.projectId)}">Open project</a>`
+        `✅ Task created: <b>${escapeHtml(task.title)}</b>\nAssignee: ${escapeHtml(draft.assigneeName || user.name || "—")}\n<a href="${taskDeepLink(task.projectId)}">Open project</a>`
       );
       return;
     }

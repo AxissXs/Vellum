@@ -39,6 +39,7 @@ export type TelegramInterpretResult = {
   endsAt: string | null;
   allDay: boolean;
   scheduleType: ScheduleTypeIntent | null;
+  assigneeName: string | null;
   projectName: string | null;
   priority: (typeof TASK_PRIORITIES)[number] | null;
   dueDate: string | null;
@@ -67,6 +68,7 @@ export const TELEGRAM_INTERPRET_JSON_SCHEMA = {
       type: ["string", "null"],
       enum: [...SCHEDULE_TYPES, null],
     },
+    assigneeName: { type: ["string", "null"] },
     projectName: { type: ["string", "null"] },
     priority: {
       type: ["string", "null"],
@@ -98,6 +100,7 @@ export const TELEGRAM_INTERPRET_JSON_SCHEMA = {
     "endsAt",
     "allDay",
     "scheduleType",
+    "assigneeName",
     "projectName",
     "priority",
     "dueDate",
@@ -120,6 +123,7 @@ export function emptyInterpretResult(raw: string): TelegramInterpretResult {
     endsAt: null,
     allDay: false,
     scheduleType: null,
+    assigneeName: null,
     projectName: null,
     priority: null,
     dueDate: null,
@@ -178,6 +182,7 @@ export function normalizeInterpretResult(
     endsAt: typeof o.endsAt === "string" ? o.endsAt : null,
     allDay: Boolean(o.allDay),
     scheduleType,
+    assigneeName: typeof o.assigneeName === "string" ? o.assigneeName : null,
     projectName: typeof o.projectName === "string" ? o.projectName : null,
     priority,
     dueDate: typeof o.dueDate === "string" ? o.dueDate : null,

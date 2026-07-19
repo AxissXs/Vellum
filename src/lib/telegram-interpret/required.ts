@@ -5,6 +5,7 @@ const FIELD_QUESTIONS: Record<string, string> = {
   startsAt: "When should this start? (e.g. tomorrow 2pm)",
   endsAt: "How long, or when does it end? (e.g. 1h or 3pm)",
   projectName: "Which project should this task belong to?",
+  assigneeName: "Who is this for? Send a name or @username.",
 };
 
 export function getMissingFields(result: TelegramInterpretResult): string[] {

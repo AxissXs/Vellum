@@ -131,9 +131,9 @@ export async function resolveTaskRef(
   return { task: null };
 }
 
-export async function resolveUserByTelegramRef(ref: string) {
+export async function resolveUsersByTelegramRef(ref: string) {
   const trimmed = ref.replace(/^@/, "").trim().toLowerCase();
-  if (!trimmed) return null;
+  if (!trimmed) return [];
 
   const rows = await db
     .select({
@@ -145,13 +145,18 @@ export async function resolveUserByTelegramRef(ref: string) {
       avatarUrl: users.avatarUrl,
       telegramUsername: users.telegramUsername,
     })
-    .from(users);
+    .from(users)
+    .where(eq(users.status, "active"));
 
-  const match = rows.find(
+  return rows.filter(
     (u) =>
       u.telegramUsername?.toLowerCase() === trimmed ||
       u.name.toLowerCase().includes(trimmed) ||
       u.email.toLowerCase().startsWith(trimmed)
   );
-  return match ?? null;
+}
+
+export async function resolveUserByTelegramRef(ref: string) {
+  const matches = await resolveUsersByTelegramRef(ref);
+  return matches[0] ?? null;
 }
