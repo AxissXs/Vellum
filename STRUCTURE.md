@@ -60,7 +60,8 @@ src/
 │   │   ├── layout.tsx      # Dashboard layout (auth + sidebar)
 │   │   ├── page.tsx        # Dashboard home
 │   │   ├── activity/
-│   │   │   └── page.tsx    # Activity log page
+│   │   │   ├── page.tsx              # Activity page (server auth gate)
+│   │   │   └── ActivityClient.tsx    # Insight strip + filterable feed
 │   │   ├── calendar/
 │   │   │   ├── page.tsx              # Calendar page (server)
 │   │   │   └── CalendarClient.tsx    # Month grid My/Team + schedule modal
@@ -200,6 +201,7 @@ src/
 │   ├── seed.ts             # Full demo data seeding
 │   └── bootstrap.ts        # Auto-seed on first API call
 ├── hooks/                  # React Query Hooks
+│   ├── useActivity.ts      # Activity feed infinite query + summary
 │   ├── useCalendar.ts      # Calendar query + schedule mutations
 │   ├── useComments.ts      # Comment mutations (create/update/delete) with optimistic updates
 │   ├── useMilestones.ts    # Milestone mutations with optimistic updates
@@ -217,6 +219,7 @@ src/
 │   └── useUsers.ts         # User mutations with optimistic updates
 ├── lib/                    # Utilities
 │   ├── activity.ts         # Deferred activity-log writes (`after()`)
+│   ├── activity-ui.ts      # Activity icons, colors, entity hrefs, time labels
 │   ├── api.ts              # API client helpers
 │   ├── holidays/
 │   │   ├── index.ts        # Country registry + getHolidaysInRange (client-safe)
@@ -338,8 +341,18 @@ src/
 
 ### `src/app/dashboard/activity/page.tsx`
 
-**Purpose**: Activity log page
-**Exports**: `ActivityPage()` - Server component
+**Purpose**: Activity page auth gate
+**Exports**: `ActivityPage()` - Server component (session + Suspense → `ActivityClient`)
+
+### `src/app/dashboard/activity/ActivityClient.tsx`
+
+**Purpose**: Activity insights + filterable paginated feed
+**Exports**: `ActivityClient()` - Client component
+**Features**:
+- Summary cards (today, 7d volume, active people, top entity type)
+- 7-day events bar chart (Recharts) + entity-type mix bars
+- Filters: search, entity type, person, date preset
+- Day-grouped feed with severity badges, entity deep-links, load more
 
 ### `src/app/dashboard/calendar/page.tsx`
 
@@ -979,10 +992,12 @@ src/
 #### `src/app/api/activity/route.ts`
 
 **Methods**: `GET`
-**Purpose**: Activity logs
+**Purpose**: Activity logs with pagination, filters, and optional summary
 **Functions**:
 
-- `GET(req)` - List activity (pagination, filters)
+- `GET(req)` - Query `page`, `pageSize`, `entityType`, `userId`, `from`, `to`, `q`, `includeSummary`
+  - Returns `{ activities, page, pageSize, total, totalPages, summary }`
+  - `summary` (when requested / page 1): today, last7d, activeUsers7d, byEntityType, byDay, topActors
 
 #### `src/app/api/calendar/route.ts`
 
@@ -1165,6 +1180,14 @@ src/
 ---
 
 ### Hooks (`src/hooks/`)
+
+#### `src/hooks/useActivity.ts`
+
+**Purpose**: Activity feed infinite query + summary aggregates
+**Exports**:
+- `useActivitySummary(filters)` - 7d pulse (today, volume, actors, byDay, byEntityType)
+- `useActivityFeed(filters, pageSize?)` - Infinite scroll feed with filters
+- Types: `ActivityItem`, `ActivitySummary`, `ActivityFilters`, `ActivityResponse`
 
 #### `src/hooks/useComments.ts`
 
@@ -1372,6 +1395,15 @@ src/
 
 - `ActivityLogInput` - Shape for activity rows (optional `tag`, `severity`, `snapshots`)
 - `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response); writes optional `activity_log_snapshots`
+
+#### `src/lib/activity-ui.ts`
+
+**Purpose**: Client-safe activity presentation helpers
+**Exports**:
+- `getActivityIcon` / `getActivityColor` - Action → icon/color
+- `entityHref(entityType, entityId)` - Deep-link when known
+- `formatActivityTimeAgo` / `formatActivityDayLabel` / `activityDayKey`
+- `ENTITY_TYPES`, `severityStyles`, `getInitials`
 
 #### `src/lib/audit.ts`
 
