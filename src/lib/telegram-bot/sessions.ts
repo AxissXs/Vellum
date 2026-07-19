@@ -2,7 +2,7 @@ import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/db";
 import { telegramBotSessions } from "@/db/schema";
 
-export type BotFlow = "task" | "event" | "standup" | "retro";
+export type BotFlow = "task" | "event" | "standup" | "retro" | "nl";
 
 export type BotSession = {
   id: string;

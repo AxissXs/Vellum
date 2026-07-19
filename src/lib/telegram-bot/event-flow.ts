@@ -33,22 +33,21 @@ export async function handleEventCommand(
     return handleEventOneShot(user, chatId, trimmed);
   }
 
+  // Free text after /event → NL with create_event bias
+  if (trimmed) {
+    const { handleNaturalLanguage } = await import("@/lib/telegram-bot/nl-flow");
+    await handleNaturalLanguage(user, chatId, trimmed, "create_event");
+    return;
+  }
+
   await upsertSession({
     userId: user.id,
     chatId,
     flow: "event",
-    step: trimmed ? "start" : "title",
-    payload: trimmed ? { title: trimmed } : {},
+    step: "title",
+    payload: {},
   });
-
-  if (trimmed) {
-    await sendTelegramMessage(
-      chatId,
-      `Event: <b>${escapeHtml(trimmed)}</b>\nSend <b>start</b> (e.g. tomorrow 10:00):`
-    );
-  } else {
-    await sendTelegramMessage(chatId, "New event — send the <b>title</b>:");
-  }
+  await sendTelegramMessage(chatId, "New event — send the <b>title</b>:");
 }
 
 async function handleEventOneShot(user: AuthUser, chatId: string, text: string) {

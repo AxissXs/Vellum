@@ -143,6 +143,12 @@ Telegram webhook URL (optional if admin saves settings from the browser — uses
 - `NEXT_PUBLIC_APP_URL` - Public app origin (preferred for auto `setWebhook`)
 - `APP_URL` - Fallback origin if `NEXT_PUBLIC_APP_URL` unset
 
+Telegram natural-language interpret (optional; plain DM text → local Ollama):
+
+- `LLM_INTERPRET_URL` - Ollama base URL (e.g. ngrok to Mac Mini). When unset, NL free-text is disabled; slash commands still work.
+- `LLM_INTERPRET_MODEL` - Model name (default `gemma4:e2b`)
+- `LLM_INTERPRET_SECRET` - Optional Bearer token sent to the interpret URL
+
 > **Local Postgres < 13**: `gen_random_uuid()` is not built-in. Enable the extension once per database:
 > `CREATE EXTENSION IF NOT EXISTS pgcrypto;` (the schema uses `gen_random_uuid()` for IDs).
 

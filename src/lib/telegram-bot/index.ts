@@ -11,24 +11,73 @@ import {
   type TelegramMessage,
 } from "@/lib/telegram-bot/auth";
 import { clearSession, getSession } from "@/lib/telegram-bot/sessions";
-import { handleTaskCommand, continueTaskWizard, handleTaskCallback, handleCommentSessionText } from "@/lib/telegram-bot/task-flow";
-import { handleEventCommand, continueEventWizard, handleEventCallback } from "@/lib/telegram-bot/event-flow";
+import {
+  handleTaskCommand,
+  continueTaskWizard,
+  handleTaskCallback,
+  handleCommentSessionText,
+} from "@/lib/telegram-bot/task-flow";
+import {
+  handleEventCommand,
+  continueEventWizard,
+  handleEventCallback,
+} from "@/lib/telegram-bot/event-flow";
 import { handleListTasks } from "@/lib/telegram-bot/list-tasks";
 import { handleListCalendar } from "@/lib/telegram-bot/list-calendar";
 import { handleTodayDigest } from "@/lib/telegram-bot/list-today";
-import { handleDoneCommand, handleStatusCommand, handleStatusCallback } from "@/lib/telegram-bot/status-flow";
-import { handleCommentCommand, handleCommentPickCallback, handleReplyComment } from "@/lib/telegram-bot/comment-flow";
-import { handleInboxCommand, handleInboxCallback } from "@/lib/telegram-bot/inbox-flow";
-import { handleStandupCommand, continueStandupWizard, handleStandupCallback } from "@/lib/telegram-bot/standup-flow";
+import {
+  handleDoneCommand,
+  handleStatusCommand,
+  handleStatusCallback,
+} from "@/lib/telegram-bot/status-flow";
+import {
+  handleCommentCommand,
+  handleCommentPickCallback,
+  handleReplyComment,
+} from "@/lib/telegram-bot/comment-flow";
+import {
+  handleInboxCommand,
+  handleInboxCallback,
+} from "@/lib/telegram-bot/inbox-flow";
+import {
+  handleStandupCommand,
+  continueStandupWizard,
+  handleStandupCallback,
+} from "@/lib/telegram-bot/standup-flow";
 import { handleLeaveCommand } from "@/lib/telegram-bot/leave-flow";
-import { handleRetroCommand, continueRetroWizard, handleRetroCallback } from "@/lib/telegram-bot/retro-flow";
+import {
+  handleRetroCommand,
+  continueRetroWizard,
+  handleRetroCallback,
+} from "@/lib/telegram-bot/retro-flow";
+import {
+  continueNlClarify,
+  handleNaturalLanguage,
+  handleNlCallback,
+} from "@/lib/telegram-bot/nl-flow";
+import { isInterpretConfigured } from "@/lib/telegram-interpret/ollama";
 
 async function sendHelp(chatId: string) {
   const tz = await getAppTimezone();
+  const nlHint = isInterpretConfigured()
+    ? [
+        "",
+        "<b>Natural language</b>",
+        "Just type — no slash needed. Examples:",
+        "lunch with Ali tomorrow 1pm",
+        "add task Fix login to Alpha",
+        "cuti esok",
+        "what's on my calendar today",
+        "Bot asks if something's missing, then confirms.",
+        "Tip: use phone keyboard dictation (not Telegram voice notes).",
+      ]
+    : [];
+
   const text = [
     "<b>Perfect bot commands</b>",
+    ...nlHint,
     "",
-    "<b>Create</b>",
+    "<b>Create (shortcuts)</b>",
     "/task — new task wizard",
     "/task Project | Title — one-shot task",
     "/event — new calendar event",
@@ -49,7 +98,7 @@ async function sendHelp(chatId: string) {
     "/retro went_well | note",
     "/inbox — unread notifications",
     "",
-    "/cancel — abort wizard",
+    "/cancel — abort wizard / NL flow",
     "/help — this message",
     "",
     `<i>Times use app timezone: ${tz}</i>`,
@@ -58,7 +107,6 @@ async function sendHelp(chatId: string) {
   const result = await sendTelegramMessage(chatId, text);
   if (!result.ok) {
     console.error("[telegram-bot] /help send failed:", result.description);
-    // Fallback without HTML if Telegram rejected parse_mode.
     await sendTelegramMessage(chatId, text.replace(/<[^>]+>/g, ""), {
       parseMode: null,
     });
@@ -86,26 +134,42 @@ export async function handleTelegramBotMessage(
     return;
   }
 
-  // Slash commands never need wizard session — skip DB so a missing
-  // telegram_bot_sessions table (migration lag) cannot silence /help etc.
   if (!text.startsWith("/")) {
     const session = await getSession(chatId);
+    if (session?.flow === "nl" && session.step === "clarify") {
+      await continueNlClarify(user, chatId, text);
+      return;
+    }
+    if (session?.flow === "nl" && session.step === "confirm") {
+      await sendTelegramMessage(
+        chatId,
+        "Tap Confirm or Cancel below, or send /cancel."
+      );
+      return;
+    }
     if (session) {
       if (await handleCommentSessionText(user, chatId, text)) return;
       if (await continueTaskWizard(user, chatId, text)) return;
       if (await continueEventWizard(user, chatId, text)) return;
       if (await continueStandupWizard(user, chatId, text)) return;
       if (await continueRetroWizard(user, chatId, text)) return;
-      await sendTelegramMessage(chatId, "Send /cancel to abort, or /help for commands.");
+      await sendTelegramMessage(
+        chatId,
+        "Send /cancel to abort, or /help for commands."
+      );
       return;
     }
+
+    // Free-text NL (no slash, no session)
+    if (text) {
+      await handleNaturalLanguage(user, chatId, text);
+      return;
+    }
+    return;
   }
 
   const parsed = parseCommand(text);
   if (!parsed) {
-    if (text) {
-      await sendTelegramMessage(chatId, "Unknown message. Send /help for commands.");
-    }
     return;
   }
 
@@ -121,13 +185,21 @@ export async function handleTelegramBotMessage(
       await handleTaskCommand(user, chatId, parsed.args);
       break;
     case "/tasks":
-      await handleListTasks(user, chatId, parsed.args.split(/\s+/).filter(Boolean));
+      await handleListTasks(
+        user,
+        chatId,
+        parsed.args.split(/\s+/).filter(Boolean)
+      );
       break;
     case "/event":
       await handleEventCommand(user, chatId, parsed.args);
       break;
     case "/calendar":
-      await handleListCalendar(user, chatId, parsed.args.split(/\s+/).filter(Boolean));
+      await handleListCalendar(
+        user,
+        chatId,
+        parsed.args.split(/\s+/).filter(Boolean)
+      );
       break;
     case "/today":
       await handleTodayDigest(user, chatId);
@@ -142,7 +214,11 @@ export async function handleTelegramBotMessage(
       await handleCommentCommand(user, chatId, parsed.args);
       break;
     case "/inbox":
-      await handleInboxCommand(user, chatId, parsed.args.split(/\s+/).filter(Boolean));
+      await handleInboxCommand(
+        user,
+        chatId,
+        parsed.args.split(/\s+/).filter(Boolean)
+      );
       break;
     case "/standup":
       await handleStandupCommand(user, chatId, parsed.args);
@@ -166,6 +242,10 @@ export async function handleTelegramBotCallback(
   const data = query.data || "";
   await answerCallbackQuery(query.id);
 
+  if (data.startsWith("nl:") || data.startsWith("np:")) {
+    await handleNlCallback(user, chatId, data);
+    return;
+  }
   if (data.startsWith("lt:")) {
     const page = parseInt(data.slice(3), 10) || 0;
     await handleListTasks(user, chatId, [], page);
@@ -230,7 +310,10 @@ export async function handleTelegramUpdate(update: {
     if (!chatId) return;
     const user = await getUserByChatId(chatId);
     if (!user) {
-      await sendTelegramMessage(chatId, "Link your account in Perfect Settings first.");
+      await sendTelegramMessage(
+        chatId,
+        "Link your account in Perfect Settings first."
+      );
       return;
     }
     await handleTelegramBotCallback(user, chatId, cq);

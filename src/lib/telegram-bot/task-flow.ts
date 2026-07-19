@@ -53,14 +53,9 @@ export async function handleTaskCommand(
       });
       return;
     }
-    await upsertSession({
-      userId: user.id,
-      chatId,
-      flow: "task",
-      step: "project",
-      payload: { title: trimmed },
-    });
-    await promptProject(chatId);
+    // No matching task → NL create with create_task bias
+    const { handleNaturalLanguage } = await import("@/lib/telegram-bot/nl-flow");
+    await handleNaturalLanguage(user, chatId, trimmed, "create_task");
     return;
   }
 

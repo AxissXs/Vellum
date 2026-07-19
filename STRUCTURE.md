@@ -1341,7 +1341,12 @@ src/
 
 **Purpose**: Inbound Telegram bot — create/view tasks & calendar, standup, retro, comments, status, inbox (private DM only)
 **Entry**: `handleTelegramUpdate(update)` from `index.ts`
-**Key modules**: `auth`, `sessions`, `task-flow`, `event-flow`, `list-*`, `status-flow`, `comment-flow`, `inbox-flow`, `standup-flow`, `leave-flow`, `retro-flow`
+**Key modules**: `auth`, `sessions`, `nl-flow` (free-text Ollama interpret), `task-flow`, `event-flow`, `list-*`, `status-flow`, `comment-flow`, `inbox-flow`, `standup-flow`, `leave-flow`, `retro-flow`
+
+#### `src/lib/telegram-interpret/`
+
+**Purpose**: Shared NL intent schema + Ollama client for Telegram free-text
+**Exports**: `TelegramInterpretResult`, `interpretTelegramText`, `isInterpretConfigured`, `getMissingFields`
 
 #### Shared entity services (Telegram + REST)
 

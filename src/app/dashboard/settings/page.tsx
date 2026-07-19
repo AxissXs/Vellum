@@ -62,7 +62,9 @@ function TelegramUserGuide({
           <li>Unlink anytime if you no longer want bot DMs.</li>
           <li>
             Send <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">/help</code>{" "}
-            in {botLabel} to create/view tasks, calendar events, standups, and more.
+            in {botLabel}, or type naturally (e.g. lunch tomorrow 1pm). The bot asks if
+            details are missing. Use phone keyboard dictation — Telegram voice notes are
+            not supported.
           </li>
         </ol>
       ) : (
