@@ -441,7 +441,7 @@ src/
 
 ### `src/app/dashboard/sprints/SprintsClient.tsx`
 
-**Purpose**: Sprint list with create modal
+**Purpose**: Sprint list with create/edit modal (name, goal, required date range)
 **Exports**: `SprintsClient({ projects, currentUserId })` - Client component
 
 ### `src/app/dashboard/sprints/[id]/page.tsx`
@@ -655,7 +655,7 @@ src/
 #### `src/app/api/sprints/route.ts`
 
 **Methods**: `GET`, `POST`
-**Purpose**: List/Create sprints (filter by `?projectId`)
+**Purpose**: List/Create sprints (filter by `?projectId`; creation requires a valid date range)
 **Functions**:
 
 - `GET(req)` - List sprints for a project
@@ -664,7 +664,7 @@ src/
 #### `src/app/api/sprints/[id]/route.ts`
 
 **Methods**: `GET`, `PATCH`, `DELETE`
-**Purpose**: Sprint CRUD; activating a sprint deactivates others in the project; completing a sprint rolls unfinished tasks to backlog
+**Purpose**: Sprint CRUD with date-range validation; activating a sprint deactivates others in the project; completing a sprint rolls unfinished tasks to backlog
 **Functions**:
 
 - `GET(req, { params })` - Get sprint

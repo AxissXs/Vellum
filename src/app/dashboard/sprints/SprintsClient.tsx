@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Loader2, X, Calendar, Flag, Trash2, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  X,
+  Calendar,
+  Flag,
+  Trash2,
+  CheckCircle2,
+  Pencil,
+} from "lucide-react";
 import { clsx } from "clsx";
 import { useCreateSprint, useUpdateSprint, useDeleteSprint } from "@/hooks/useSprints";
 import type { Sprint } from "@/hooks/useSprints";
@@ -30,8 +39,12 @@ export default function SprintsClient({
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [dateError, setDateError] = useState("");
 
   const createSprint = useCreateSprint();
   const updateSprint = useUpdateSprint();
@@ -54,18 +67,55 @@ export default function SprintsClient({
     loadSprints(projectId);
   }, [projectId]);
 
-  async function handleCreate(e: React.FormEvent) {
+  function openCreateModal() {
+    setEditingSprint(null);
+    setName("");
+    setGoal("");
+    setStartDate("");
+    setEndDate("");
+    setDateError("");
+    setShowModal(true);
+  }
+
+  function openEditModal(sprint: Sprint) {
+    setEditingSprint(sprint);
+    setName(sprint.name);
+    setGoal(sprint.goal || "");
+    setStartDate(sprint.startDate?.slice(0, 10) || "");
+    setEndDate(sprint.endDate?.slice(0, 10) || "");
+    setDateError("");
+    setShowModal(true);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+    setEditingSprint(null);
+    setDateError("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !projectId) return;
-    await createSprint.mutateAsync({
+    if (!name.trim() || !projectId || !startDate || !endDate) return;
+    if (endDate < startDate) {
+      setDateError("End date must be on or after start date.");
+      return;
+    }
+
+    const details = {
       projectId,
       name: name.trim(),
       goal: goal.trim() || null,
-      status: "planned",
-    });
-    setName("");
-    setGoal("");
-    setShowModal(false);
+      startDate,
+      endDate,
+    };
+
+    if (editingSprint) {
+      await updateSprint.mutateAsync({ ...details, id: editingSprint.id });
+    } else {
+      await createSprint.mutateAsync({ ...details, status: "planned" });
+    }
+
+    closeModal();
     loadSprints(projectId);
   }
 
@@ -103,7 +153,7 @@ export default function SprintsClient({
 
         {canCreate && (
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreateModal}
             className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition"
           >
             <Plus size={16} />
@@ -121,7 +171,7 @@ export default function SprintsClient({
           <p className="text-slate-500">No sprints yet for this project.</p>
           {canCreate && (
             <button
-              onClick={() => setShowModal(true)}
+              onClick={openCreateModal}
               className="mt-3 text-sm text-brand-600 hover:underline"
             >
               Create the first sprint
@@ -184,6 +234,16 @@ export default function SprintsClient({
                       Set active
                     </button>
                   )}
+                  {canEdit && (
+                    <button
+                      onClick={() => openEditModal(sprint)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
+                      title="Edit sprint"
+                      aria-label={`Edit ${sprint.name}`}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  )}
                   {canDelete && (
                     <button
                       onClick={() => handleDelete(sprint)}
@@ -200,24 +260,26 @@ export default function SprintsClient({
         </div>
       )}
 
-      {showModal && canCreate && (
+      {showModal && (editingSprint ? canEdit : canCreate) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowModal(false)}
+            onClick={closeModal}
           />
           <div className="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-lg">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">New Sprint</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {editingSprint ? "Edit Sprint" : "New Sprint"}
+              </h2>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="p-1 text-slate-500 hover:text-slate-900"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Name</label>
                 <input
@@ -244,17 +306,56 @@ export default function SprintsClient({
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                    Start date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setDateError("");
+                    }}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                    End date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={startDate}
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setDateError("");
+                    }}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+              {dateError && <p className="text-sm text-red-600">{dateError}</p>}
+
               <button
                 type="submit"
-                disabled={createSprint.isPending}
+                disabled={createSprint.isPending || updateSprint.isPending}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
               >
-                {createSprint.isPending ? (
+                {createSprint.isPending || updateSprint.isPending ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
-                  <Flag size={16} />
+                  editingSprint ? <Pencil size={16} /> : <Flag size={16} />
                 )}
-                {createSprint.isPending ? "Creating..." : "Create Sprint"}
+                {createSprint.isPending || updateSprint.isPending
+                  ? "Saving..."
+                  : editingSprint
+                    ? "Save Changes"
+                    : "Create Sprint"}
               </button>
             </form>
           </div>
