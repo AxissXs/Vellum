@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, users } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, isNull, and } from "drizzle-orm";
 import KanbanBoardClient from "./KanbanBoardClient";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,7 @@ export default async function KanbanPage() {
     db
       .select()
       .from(projects)
-      .where(eq(projects.archived, false))
+      .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
       .orderBy(asc(projects.createdAt)),
     db
       .select({
@@ -46,6 +46,7 @@ export default async function KanbanPage() {
       .from(tasks)
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .leftJoin(projects, eq(tasks.projectId, projects.id))
+      .where(isNull(tasks.deletedAt))
       .orderBy(tasks.position, tasks.createdAt),
     db
       .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })

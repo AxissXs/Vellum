@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("userId");
   const action = searchParams.get("action");
   const ip = searchParams.get("ip");
+  const tag = searchParams.get("tag");
+  const severity = searchParams.get("severity");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
@@ -26,6 +28,8 @@ export async function GET(req: NextRequest) {
   if (userId) conditions.push(eq(activityLogs.userId, userId));
   if (action) conditions.push(sql`${activityLogs.action} ILIKE ${`%${action}%`}`);
   if (ip) conditions.push(sql`${activityLogs.ipAddress} ILIKE ${`%${ip}%`}`);
+  if (tag) conditions.push(eq(activityLogs.tag, tag));
+  if (severity) conditions.push(eq(activityLogs.severity, severity));
   if (from) conditions.push(gte(activityLogs.createdAt, new Date(from)));
   if (to) conditions.push(lte(activityLogs.createdAt, new Date(to)));
 
@@ -42,6 +46,8 @@ export async function GET(req: NextRequest) {
       entityId: activityLogs.entityId,
       details: activityLogs.details,
       ipAddress: activityLogs.ipAddress,
+      tag: activityLogs.tag,
+      severity: activityLogs.severity,
       createdAt: activityLogs.createdAt,
     })
     .from(activityLogs)
@@ -50,17 +56,23 @@ export async function GET(req: NextRequest) {
     .orderBy(desc(activityLogs.createdAt));
 
   if (format === "csv") {
-    const headers = ["ID", "User", "Email", "Action", "Entity", "Details", "IP", "Created At"];
-    const lines = rows.map((r) => [
-      r.id,
-      r.userName ?? "System",
-      r.userEmail ?? "",
-      r.action,
-      `${r.entityType}${r.entityId ? `:${r.entityId}` : ""}`,
-      `"${(r.details ?? "").replace(/"/g, "\"\"")}"`,
-      r.ipAddress ?? "",
-      new Date(r.createdAt).toISOString(),
-    ].join(","));
+    const headers = [
+      "ID", "User", "Email", "Action", "Entity", "Details", "IP", "Tag", "Severity", "Created At",
+    ];
+    const lines = rows.map((r) =>
+      [
+        r.id,
+        r.userName ?? "System",
+        r.userEmail ?? "",
+        r.action,
+        `${r.entityType}${r.entityId ? `:${r.entityId}` : ""}`,
+        `"${(r.details ?? "").replace(/"/g, '""')}"`,
+        r.ipAddress ?? "",
+        r.tag ?? "",
+        r.severity,
+        new Date(r.createdAt).toISOString(),
+      ].join(",")
+    );
 
     const csv = [headers.join(","), ...lines].join("\n");
 

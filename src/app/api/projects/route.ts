@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
 import { hasPermission } from "@/lib/permissions";
-import { eq, asc } from "drizzle-orm";
+import { eq, and, asc, isNull } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const rows = await db
     .select()
     .from(projects)
-    .where(eq(projects.archived, archived))
+    .where(and(eq(projects.archived, archived), isNull(projects.deletedAt)))
     .orderBy(asc(projects.createdAt));
 
   return NextResponse.json({ projects: rows });

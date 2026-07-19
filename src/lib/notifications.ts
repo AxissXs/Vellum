@@ -35,6 +35,7 @@ export async function sendInAppNotification({
   entityType,
   entityId,
   actorUserId,
+  url,
 }: {
   userId: string;
   type: string;
@@ -43,6 +44,7 @@ export async function sendInAppNotification({
   entityType?: string;
   entityId?: string;
   actorUserId?: string;
+  url?: string;
 }) {
   if (!userId) return;
 
@@ -59,6 +61,7 @@ export async function sendInAppNotification({
       read: false,
       entityType: entityType ?? null,
       entityId: entityId ?? null,
+      url: url ?? null,
       actorUserId: actorUserId ?? null,
     })
     .returning();
@@ -102,7 +105,7 @@ export async function sendNotification({
   if (!userId) return;
 
   // In-app notification (checks its own preferences internally)
-  await sendInAppNotification({ userId, type, title, content, entityType, entityId, actorUserId });
+  await sendInAppNotification({ userId, type, title, content, entityType, entityId, actorUserId, url });
 
   // Push notification
   if (pushPayload) {

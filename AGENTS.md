@@ -59,7 +59,7 @@ Vellum deploys to **Deno Deploy** with a managed **Prisma Postgres** database.
 1. Create a Deno Deploy project and link the GitHub repo (Next.js is auto-detected).
 2. Provision Prisma Postgres: `deno deploy database provision vellum-pg --kind prisma --region <region>`, then assign to the app. **Colocate with Deno Deploy app region** (prod edge today: ORD / Chicago). Warm `/api/health` ≫ ~50ms usually means DB is far from the edge — run `deno task db:colocate-check`.
 3. Deno Deploy auto-injects `DATABASE_URL` (plus `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`) per environment — do NOT set `DATABASE_URL` in prod.
-4. App config lives in [`deno.json`](deno.json) `deploy` key (overrides dashboard).
+4. App config lives in [`deno.json`](deno.json) `deploy` key (`org` / `app`; overrides dashboard app identity). Keep `deno.json` **tracked** — do **not** gitignore it. `deno deploy` skips gitignored files; without `deno.json` the remote builder runs `deno task build` against `package.json` (no scripts) → `No tasks found in configuration file` / `Task not found: build`.
 5. **Migrations on Deno Deploy**: Pre-deploy partition (cwd `/app/src`) has **no** `node_modules`, `deno.json`, or accessible `.next/` tree — `node …/drizzle-kit`, `deno task`, and `deno run -A .next/standalone/migrate.ts` all fail there. **Do not use `deploy.predeploy`**. Migrations run on **server boot** via [`src/instrumentation.ts`](src/instrumentation.ts) → [`src/db/run-migrations.ts`](src/db/run-migrations.ts). Build traces `drizzle/**/*` into standalone via `outputFileTracingIncludes`; `copy-deploy-migrations.mjs` also copies them. If migration fails, boot throws → Deno Deploy won't route traffic (safe). Local: `deno task db:migrate` / `db:push` use drizzle-kit as usual.
 6. Add non-injected env vars: `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`, `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`.
 7. Deno Deploy serves the app via `jsr:@deno/nextjs-start/v16` (`next start` on the Node runtime). Do NOT set `runtime = "edge"` on routes — `pg` needs the Node runtime.
@@ -342,7 +342,8 @@ See `STRUCTURE.md` for detailed file/folder structure with exports and purposes.
 
 See `src/db/schema.ts` for:
 
-- Tables: `users`, `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments`, `sessions`, `activity_logs`, `notifications`, `push_subscriptions`, `notification_preferences`, `telegram_pairing_codes`, `platform_settings`, `schedule_events`
+- Tables: `users` (incl. `lastSeenAt`/`lastSeenIp`), `teams`, `team_members`, `projects`, `project_milestones`, `project_notes`, `tasks`, `comments` (incl. `parentId`), `sessions`, `activity_logs` (incl. `tag`/`severity`), `activity_log_snapshots`, `notifications` (incl. `url`), `push_subscriptions`, `notification_preferences`, `telegram_pairing_codes`, `platform_settings`, `schedule_events`
+- Soft-delete: `deletedAt`/`deletedBy` on tasks, projects, comments, teams, teamMembers, projectMilestones, projectNotes
 - Enums: `user_role`, `task_status`, `task_priority`, `notification_event_type`, `schedule_type`, `schedule_visibility`
 - Relations defined via Drizzle references
 
@@ -362,15 +363,17 @@ See `src/db/schema.ts` for:
 | `/api/projects/[id]`                    | GET, PATCH, DELETE | Project CRUD                   |
 | `/api/projects/[id]/milestones`         | GET, POST          | Project milestones             |
 | `/api/tasks`                            | GET, POST          | List/create tasks              |
-| `/api/tasks/[id]`                       | GET, PATCH, DELETE | Task CRUD                      |
+| `/api/tasks/[id]`                       | GET, PATCH, DELETE | Task CRUD (DELETE = soft)      |
 | `/api/sprints`                          | GET, POST          | List/create sprints            |
 | `/api/sprints/[id]`                     | GET, PATCH, DELETE | Sprint CRUD                    |
 | `/api/sprints/[id]/burndown`            | GET                | Burndown chart data            |
 | `/api/standups`                         | GET, POST          | List/upsert standups           |
 | `/api/retros`                           | GET, POST          | List/create retro items        |
 | `/api/retros/[id]`                      | PATCH, DELETE      | Retro item CRUD                |
-| `/api/comments`                         | GET, POST          | Task comments                  |
-| `/api/comments/[id]`                    | PATCH, DELETE      | Comment CRUD                   |
+| `/api/comments`                         | GET, POST          | Task comments (+ optional parentId reply) |
+| `/api/comments/[id]`                    | PATCH, DELETE      | Comment CRUD (DELETE = soft)   |
+| `/api/sessions/me`                      | GET, DELETE        | Own sessions list / revoke others |
+| `/api/sessions/me/[id]`                 | DELETE             | Revoke own session             |
 | `/api/notifications`                    | GET                | List in-app notifications      |
 | `/api/notifications/[id]`               | PATCH              | Mark notification read         |
 | `/api/notifications/mark-all-read`      | POST               | Mark all notifications read    |
@@ -382,11 +385,14 @@ See `src/db/schema.ts` for:
 | `/api/telegram/webhook`                 | POST               | Telegram bot webhook (pairing + bot commands; secret)  |
 | `/api/telegram/config`                  | GET                | Public bot configured + username |
 | `/api/super-admin/users`                | GET                | Super-admin user list          |
-| `/api/super-admin/users/[id]`           | PATCH              | Update user status/role        |
+| `/api/super-admin/users/[id]`           | GET, PATCH         | User detail / update status/role |
 | `/api/super-admin/activity`             | GET                | Live user activity feed        |
 | `/api/super-admin/sessions`             | GET                | List active sessions           |
 | `/api/super-admin/sessions/[id]`        | DELETE             | Revoke session                 |
 | `/api/super-admin/audit`                | GET                | Filterable audit logs          |
+| `/api/super-admin/audit/[id]`           | GET                | Audit log detail + snapshots   |
+| `/api/super-admin/trash`                | GET                | Soft-deleted entities          |
+| `/api/super-admin/restore`              | PATCH              | Bulk restore soft-deleted      |
 | `/api/super-admin/audit/export`         | GET                | Export audit logs (csv/pdf)    |
 | `/api/super-admin/health`               | GET                | System health metrics          |
 | `/api/super-admin/permissions`          | GET                | Role/permission matrix         |

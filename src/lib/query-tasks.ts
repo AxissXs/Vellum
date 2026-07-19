@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte, ne, sql, ilike } from "drizzle-orm";
+import { and, asc, eq, gte, lte, ne, sql, ilike, isNull, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { projects, tasks, users } from "@/db/schema";
 
@@ -36,7 +36,7 @@ const taskSelect = {
 };
 
 export async function queryTasks(filters: TaskListFilters = {}) {
-  const conditions = [];
+  const conditions: SQL[] = [isNull(tasks.deletedAt)];
 
   if (filters.projectId) conditions.push(eq(tasks.projectId, filters.projectId));
   if (filters.status) conditions.push(eq(tasks.status, filters.status as never));
@@ -45,12 +45,12 @@ export async function queryTasks(filters: TaskListFilters = {}) {
   if (filters.excludeDone) conditions.push(ne(tasks.status, "done"));
   if (filters.dueFrom) {
     conditions.push(
-      and(sql`${tasks.dueDate} IS NOT NULL`, gte(tasks.dueDate, filters.dueFrom))
+      and(sql`${tasks.dueDate} IS NOT NULL`, gte(tasks.dueDate, filters.dueFrom))!
     );
   }
   if (filters.dueTo) {
     conditions.push(
-      and(sql`${tasks.dueDate} IS NOT NULL`, lte(tasks.dueDate, filters.dueTo))
+      and(sql`${tasks.dueDate} IS NOT NULL`, lte(tasks.dueDate, filters.dueTo))!
     );
   }
   if (filters.projectName) {
@@ -62,7 +62,7 @@ export async function queryTasks(filters: TaskListFilters = {}) {
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
     .leftJoin(projects, eq(tasks.projectId, projects.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(asc(tasks.dueDate), asc(tasks.position), asc(tasks.createdAt));
 
   if (filters.limit != null && filters.offset != null) {
@@ -80,7 +80,7 @@ export async function getTaskById(taskId: string) {
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
     .leftJoin(projects, eq(tasks.projectId, projects.id))
-    .where(eq(tasks.id, taskId))
+    .where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt)))
     .limit(1);
   return row ?? null;
 }

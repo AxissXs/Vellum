@@ -4,7 +4,7 @@ import { projectMilestones } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { hasPermission } from "@/lib/permissions";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export async function PATCH(
   req: NextRequest,
@@ -62,14 +62,17 @@ export async function DELETE(
   const [milestone] = await db
     .select()
     .from(projectMilestones)
-    .where(eq(projectMilestones.id, id))
+    .where(and(eq(projectMilestones.id, id), isNull(projectMilestones.deletedAt)))
     .limit(1);
 
   if (!milestone) {
     return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
   }
 
-  await db.delete(projectMilestones).where(eq(projectMilestones.id, id));
+  await db
+    .update(projectMilestones)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(projectMilestones.id, id));
 
   logActivity({
     userId: user.id,

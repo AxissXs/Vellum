@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
 import { hasPermission } from "@/lib/permissions";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
@@ -17,7 +17,7 @@ export async function GET(
   const [project] = await db
     .select()
     .from(projects)
-    .where(eq(projects.id, id))
+    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
     .limit(1);
 
   if (!project) {
@@ -106,14 +106,17 @@ export async function DELETE(
   const [project] = await db
     .select()
     .from(projects)
-    .where(eq(projects.id, id))
+    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
     .limit(1);
 
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  await db.delete(projects).where(eq(projects.id, id));
+  await db
+    .update(projects)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(projects.id, id));
 
   logActivity({
     userId: user.id,

@@ -88,6 +88,15 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - UI: hide create/edit/delete buttons by role (members: tasks + standup/retro; admin+: projects/sprints)
   - Project delete UI; retro inline edit via `useUpdateRetroItem`
 
+- [x] **Soft-delete + trash** (ported from AxissXs/Vellum) - Soft deletes on tasks/projects/comments/teams/members/milestones/notes; Super Admin Trash restore
+- [x] **Threaded comment replies** (ported) - 1-level `parentId` replies + notify parent author
+- [x] **Task detail modal redesign** (ported, no keyboard shortcuts) - Two-column layout, visual selectors, searchable assignee
+- [x] **Kanban DnD lock/lag fix** (ported) - Functional setColumns + useDroppable
+- [x] **Notification deep links + no-op guards** (ported) - `notifications.url`; skip notifs when status/assignee unchanged
+- [x] **Audit tags/severity/snapshots** (ported) - Detail modal + optional snapshots via `logActivity`
+- [x] **User last-seen + detail modal** (ported) - Throttled `lastSeenAt`/`lastSeenIp`; SuperAdmin UserDetailModal
+- [x] **Own session management** (ported) - Settings: view/revoke own sessions (`/api/sessions/me`)
+
 - [ ] **File attachments** - Allow file uploads on tasks/projects
   - Integrate with S3/R2/Cloudinary
   - Add `attachments` table to schema

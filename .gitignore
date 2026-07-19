@@ -14,4 +14,3 @@ tsconfig.tsbuildinfo
 bun.lock
 deno.lock
 backups/
-deno.json

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql, isNull } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { scheduleEvents, tasks, users } from "@/db/schema";
@@ -37,7 +37,8 @@ async function findDueDateConflicts(
         eq(tasks.assigneeId, userId),
         sql`${tasks.dueDate} IS NOT NULL`,
         gte(tasks.dueDate, startsAt),
-        lte(tasks.dueDate, endsAt)
+        lte(tasks.dueDate, endsAt),
+        isNull(tasks.deletedAt)
       )
     );
 

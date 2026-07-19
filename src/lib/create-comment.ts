@@ -1,4 +1,4 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { comments, users, tasks } from "@/db/schema";
 import type { AuthUser } from "@/lib/auth";
@@ -10,11 +10,34 @@ import { resolveMentionedUserIds } from "@/lib/mentions";
 export async function createCommentForUser(
   user: AuthUser,
   taskId: string,
-  content: string
+  content: string,
+  parentId?: string | null
 ) {
+  if (parentId) {
+    const [parent] = await db
+      .select()
+      .from(comments)
+      .where(and(eq(comments.id, parentId), isNull(comments.deletedAt)))
+      .limit(1);
+    if (!parent) {
+      throw new Error("Parent comment not found");
+    }
+    if (parent.parentId) {
+      throw new Error("Cannot nest replies more than 1 level deep");
+    }
+    if (parent.taskId !== taskId) {
+      throw new Error("Parent comment belongs to a different task");
+    }
+  }
+
   const [comment] = await db
     .insert(comments)
-    .values({ content, taskId, authorId: user.id })
+    .values({
+      content,
+      taskId,
+      authorId: user.id,
+      parentId: parentId || null,
+    })
     .returning();
 
   const [task] = await db
@@ -24,7 +47,7 @@ export async function createCommentForUser(
       assigneeId: tasks.assigneeId,
     })
     .from(tasks)
-    .where(eq(tasks.id, taskId))
+    .where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt)))
     .limit(1);
 
   logActivity({
@@ -32,7 +55,9 @@ export async function createCommentForUser(
     action: "created_comment",
     entityType: "comment",
     entityId: comment.id,
-    details: `Commented on task: ${task?.title || taskId}`,
+    details: parentId
+      ? `Replied to a comment on task: ${task?.title || taskId}`
+      : `Commented on task: ${task?.title || taskId}`,
   });
 
   const result = {
@@ -61,7 +86,12 @@ export async function createCommentForUser(
     });
   }
 
-  if (task?.assigneeId && task.assigneeId !== user.id) {
+  const projectUrl = task?.projectId
+    ? `/dashboard/projects/${task.projectId}`
+    : `/dashboard/tasks`;
+
+  // Top-level comments notify assignee; replies notify parent author
+  if (!parentId && task?.assigneeId && task.assigneeId !== user.id) {
     await sendNotification({
       userId: task.assigneeId,
       type: "new_comment",
@@ -75,8 +105,33 @@ export async function createCommentForUser(
         body: `${user.name || "Someone"} commented on "${task.title}"`,
         tag: `task-${taskId}`,
       },
-      url: `/dashboard/tasks`,
+      url: projectUrl,
     });
+  }
+
+  if (parentId) {
+    const [parentAuthor] = await db
+      .select({ authorId: comments.authorId })
+      .from(comments)
+      .where(eq(comments.id, parentId))
+      .limit(1);
+    if (parentAuthor && parentAuthor.authorId !== user.id) {
+      await sendNotification({
+        userId: parentAuthor.authorId,
+        type: "new_comment",
+        title: "New Reply",
+        content: `${user.name || "Someone"} replied to your comment on "${task?.title || taskId}"`,
+        entityType: "task",
+        entityId: taskId,
+        actorUserId: user.id,
+        pushPayload: {
+          title: "New Reply",
+          body: `${user.name || "Someone"} replied to your comment on "${task?.title || taskId}"`,
+          tag: `comment-${comment.id}`,
+        },
+        url: projectUrl,
+      });
+    }
   }
 
   const allUsers = await db.select({ id: users.id, name: users.name }).from(users);
@@ -98,7 +153,7 @@ export async function createCommentForUser(
         body: `${user.name || "Someone"} mentioned you on "${task?.title || "a task"}"`,
         tag: `mention-${taskId}`,
       },
-      url: `/dashboard/tasks`,
+      url: projectUrl,
     });
   }
 
@@ -112,6 +167,7 @@ export async function queryCommentsForTask(taskId: string, limit = 50) {
       content: comments.content,
       taskId: comments.taskId,
       authorId: comments.authorId,
+      parentId: comments.parentId,
       createdAt: comments.createdAt,
       updatedAt: comments.updatedAt,
       authorName: users.name,
@@ -119,7 +175,7 @@ export async function queryCommentsForTask(taskId: string, limit = 50) {
     })
     .from(comments)
     .leftJoin(users, eq(comments.authorId, users.id))
-    .where(eq(comments.taskId, taskId))
+    .where(and(eq(comments.taskId, taskId), isNull(comments.deletedAt)))
     .orderBy(asc(comments.createdAt))
     .limit(limit);
 }

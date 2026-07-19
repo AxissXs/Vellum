@@ -4,6 +4,7 @@ import {
   useState,
   useCallback,
   useRef,
+  useEffect,
   useSyncExternalStore,
 } from "react";
 import {
@@ -235,12 +236,10 @@ function TaskCard({
   task,
   users,
   onClick,
-  onDragStart,
 }: {
   task: Task;
   users: User[];
   onClick: () => void;
-  onDragStart: () => void;
 }) {
   const {
     attributes,
@@ -262,7 +261,6 @@ function TaskCard({
       ref={setNodeRef}
       style={style}
       onClick={onClick}
-      onDragStart={onDragStart}
       className={clsx(
         "group bg-slate-50 border border-slate-200 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-slate-100",
         priorityColors[task.priority],
@@ -292,13 +290,11 @@ function Column({
   column,
   users,
   onTaskClick,
-  onDragStart,
   addForm,
 }: {
   column: Column;
   users: User[];
   onTaskClick: (task: Task) => void;
-  onDragStart: (task: Task) => void;
   addForm?: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -344,7 +340,6 @@ function Column({
               task={task}
               users={users}
               onClick={() => onTaskClick(task)}
-              onDragStart={() => onDragStart(task)}
             />
           ))}
         </div>
@@ -373,7 +368,9 @@ export default function KanbanBoard({
   const dragOriginStatusRef = useRef<string | null>(null);
   const columnsBeforeDragRef = useRef<Column[] | null>(null);
   const columnsRef = useRef(columns);
-  columnsRef.current = columns;
+  useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
 
   function emitTasksChange(cols: Column[]) {
     onTasksChange?.(columnsToTasks(cols));
@@ -415,16 +412,17 @@ export default function KanbanBoard({
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;
-    const task = columns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
+    const currentColumns = columnsRef.current;
+    const task = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
     if (task) {
       dragOriginStatusRef.current = task.status;
-      columnsBeforeDragRef.current = columns.map((c) => ({
+      columnsBeforeDragRef.current = currentColumns.map((c) => ({
         ...c,
         tasks: [...c.tasks],
       }));
       setActiveDragTask(task);
     }
-  }, [columns]);
+  }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
@@ -435,60 +433,56 @@ export default function KanbanBoard({
 
     if (activeId === overId) return;
 
-    const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    if (!activeTask) return;
+    patchColumns((prev) => {
+      const activeTask = prev.flatMap((c) => c.tasks).find((t) => t.id === activeId);
+      if (!activeTask) return prev;
 
-    const activeColumn = findColumnForTask(columns, activeId);
-    const overColumn = resolveOverColumn(columns, overId);
-    if (!activeColumn || !overColumn) return;
+      const activeColumn = findColumnForTask(prev, activeId);
+      const overColumn = resolveOverColumn(prev, overId);
+      if (!activeColumn || !overColumn) return prev;
 
-    if (activeColumn.key !== overColumn.key) {
-      patchColumns(
-        (prev) =>
-          prev.map((col) => {
-            if (col.key === activeColumn.key) {
-              return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
-            }
-            if (col.key === overColumn.key) {
-              const overIndex = isColumnDroppableId(overId)
-                ? col.tasks.length
-                : col.tasks.findIndex((t) => t.id === overId);
-              const insertIndex = overIndex >= 0 ? overIndex : col.tasks.length;
-              const newTasks = [...col.tasks];
-              newTasks.splice(insertIndex, 0, {
-                ...activeTask,
-                status: overColumn.key,
-                position: String(insertIndex),
-              });
-              return { ...col, tasks: newTasks };
-            }
-            return col;
-          }),
-        false
-      );
-      return;
-    }
+      if (activeColumn.key !== overColumn.key) {
+        if (!activeColumn.tasks.some((t) => t.id === activeId)) return prev;
+        return prev.map((col) => {
+          if (col.key === activeColumn.key) {
+            return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
+          }
+          if (col.key === overColumn.key) {
+            const overIndex = isColumnDroppableId(overId)
+              ? col.tasks.length
+              : col.tasks.findIndex((t) => t.id === overId);
+            const insertIndex = overIndex >= 0 ? overIndex : col.tasks.length;
+            const newTasks = [...col.tasks];
+            newTasks.splice(insertIndex, 0, {
+              ...activeTask,
+              status: overColumn.key,
+              position: String(insertIndex),
+            });
+            return { ...col, tasks: newTasks };
+          }
+          return col;
+        });
+      }
 
-    if (!isColumnDroppableId(overId)) {
-      const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
+      if (!isColumnDroppableId(overId)) {
+        const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
+        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+        if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return prev;
 
-      patchColumns(
-        (prev) =>
-          prev.map((col) => {
-            if (col.key === activeColumn.key) {
-              const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
-                t.id === activeId ? { ...t, position: String(i) } : t
-              );
-              return { ...col, tasks: newTasks };
-            }
-            return col;
-          }),
-        false
-      );
-    }
-  }, [columns]);
+        return prev.map((col) => {
+          if (col.key === activeColumn.key) {
+            const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
+              t.id === activeId ? { ...t, position: String(i) } : t
+            );
+            return { ...col, tasks: newTasks };
+          }
+          return col;
+        });
+      }
+
+      return prev;
+    }, false);
+  }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -777,7 +771,6 @@ export default function KanbanBoard({
               <Column
                 column={column}
                 onTaskClick={setSelectedTask}
-                onDragStart={() => {}}
                 users={users}
                 addForm={taskForm}
               />

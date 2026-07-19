@@ -400,13 +400,12 @@ src/
 ### `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
 **Purpose**: Modal for task details (description, comments, activity)
-**Exports**: `TaskDetailModal({ task, users, currentUserId, onClose, onChange })` - Client component
+**Exports**: `TaskDetailModal({ task, users, currentUserId, userRole?, onClose, onChange, onDelete? })` - Client component
 
-- Rich text editor for description
-- Inline task editing (title, status, priority, assignee, due date)
-- Comments section with CRUD
+- Two-column layout; visual status/priority selectors; searchable assignee (`TaskAssigneePopover`)
+- Soft-delete confirmation (restorable via Super Admin Trash)
+- Comments with 1-level threaded replies (`parentId`)
 - Real-time comment updates via `useRealtime()`
-- Task delete confirmation
 
 ### `src/app/dashboard/projects/[id]/ProjectManagementPanel.tsx`
 
@@ -731,8 +730,8 @@ src/
 **Purpose**: Task comments
 **Functions**:
 
-- `GET(req)` - List comments (query: `taskId`)
-- `POST(req)` - Create comment
+- `GET(req)` - List comments (query: `taskId`); includes `parentId`
+- `POST(req)` - Create comment (optional `parentId` for 1-level replies)
 
 #### `src/app/api/notifications/route.ts`
 
@@ -740,7 +739,48 @@ src/
 **Purpose**: List in-app notifications for current user
 **Functions**:
 
-- `GET(req)` - Returns notifications (optional unread filter)
+- `GET(req)` - Returns notifications including optional `url` deep link
+
+#### `src/app/api/sessions/me/route.ts`
+
+**Methods**: `GET`, `DELETE`
+**Purpose**: Current user's active sessions
+**Functions**:
+
+- `GET(req)` - List own sessions
+- `DELETE(req)` - Revoke all other sessions
+
+#### `src/app/api/sessions/me/[id]/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Revoke a single own session
+**Functions**:
+
+- `DELETE(req, { params })` - Revoke session by id (self only)
+
+#### `src/app/api/super-admin/trash/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List soft-deleted entities (superadmin)
+**Functions**:
+
+- `GET(req)` - Paginated trash with type/search filters
+
+#### `src/app/api/super-admin/restore/route.ts`
+
+**Methods**: `PATCH`
+**Purpose**: Bulk restore soft-deleted entities (superadmin)
+**Functions**:
+
+- `PATCH(req)` - Body `{ entities: [{ type, id }] }`
+
+#### `src/app/api/super-admin/audit/[id]/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Audit log detail with snapshots
+**Functions**:
+
+- `GET(req, { params })` - Log + actor + snapshots + timeline
 
 #### `src/app/api/notifications/[id]/route.ts`
 
@@ -1321,15 +1361,24 @@ src/
 **Purpose**: Deferred activity-log inserts for mutating API routes
 **Exports**:
 
-- `ActivityLogInput` - Shape for activity rows
-- `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response)
+- `ActivityLogInput` - Shape for activity rows (optional `tag`, `severity`, `snapshots`)
+- `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response); writes optional `activity_log_snapshots`
 
 #### `src/lib/audit.ts`
 
-**Purpose**: Client IP extraction for audit / activity logging
+**Purpose**: Client IP + activity tag/severity classification helpers
 **Exports**:
 
-- `getClientIP(req)` - Resolve IP from request headers
+- `getClientIP(req)` / `getClientIPFromHeaders(headers)` - Resolve IP
+- `classifyTag(action)` / `classifySeverity(action)` - Audit metadata
+- `Snapshot` - Optional snapshot shape for `logActivity`
+
+#### `src/lib/last-seen.ts`
+
+**Purpose**: Throttled user last-seen updates (fire-and-forget from `getSession`)
+**Exports**:
+
+- `shouldUpdateLastSeen(userId)` / `updateLastSeen(userId, ip)`
 
 #### `src/lib/notifications.ts`
 

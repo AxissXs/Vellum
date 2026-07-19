@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { comments, users, tasks } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { broadcastCommentEvent, broadcastTaskEvent } from "@/lib/pusher-broadcast";
 
 export async function PATCH(
@@ -20,7 +20,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
 
-  const [existing] = await db.select().from(comments).where(eq(comments.id, id)).limit(1);
+  const [existing] = await db.select().from(comments).where(and(eq(comments.id, id), isNull(comments.deletedAt))).limit(1);
   if (!existing) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
@@ -86,7 +86,7 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const [existing] = await db.select().from(comments).where(eq(comments.id, id)).limit(1);
+  const [existing] = await db.select().from(comments).where(and(eq(comments.id, id), isNull(comments.deletedAt))).limit(1);
   if (!existing) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
@@ -97,7 +97,10 @@ export async function DELETE(
 
   const [task] = await db.select({ title: tasks.title, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, existing.taskId)).limit(1);
 
-  await db.delete(comments).where(eq(comments.id, id));
+  await db
+    .update(comments)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(comments.id, id));
 
   logActivity({
     userId: user.id,

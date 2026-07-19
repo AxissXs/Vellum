@@ -7,6 +7,7 @@ import {
   integer,
   pgEnum,
   index,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", [
@@ -46,6 +47,8 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   telegramChatId: text("telegram_chat_id"),
   telegramUsername: text("telegram_username"),
+  lastSeenAt: timestamp("last_seen_at"),
+  lastSeenIp: text("last_seen_ip"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -91,6 +94,10 @@ export const projects = pgTable("projects", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   archived: boolean("archived").default(false).notNull(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -101,6 +108,10 @@ export const teams = pgTable("teams", {
   description: text("description"),
   leadId: uuid("lead_id").references(() => users.id, { onDelete: "set null" }),
   focus: text("focus"),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -121,6 +132,10 @@ export const teamMembers = pgTable(
     teamRole: text("team_role").default("contributor").notNull(),
     allocation: text("allocation").default("100").notNull(),
     responsibilities: text("responsibilities"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -139,6 +154,10 @@ export const projectMilestones = pgTable("project_milestones", {
   status: text("status").default("planned").notNull(),
   dueDate: timestamp("due_date"),
   ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -153,6 +172,10 @@ export const projectNotes = pgTable("project_notes", {
   authorId: uuid("author_id")
     .references(() => users.id, { onDelete: "set null" })
     .notNull(),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: uuid("deleted_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -180,6 +203,10 @@ export const tasks = pgTable(
       onDelete: "set null",
     }),
     estimate: integer("estimate"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -266,10 +293,22 @@ export const comments = pgTable(
     authorId: uuid("author_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
+    parentId: uuid("parent_id"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [index("comments_task_id_idx").on(table.taskId)]
+  (table) => [
+    index("comments_task_id_idx").on(table.taskId),
+    foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+      name: "comments_parent_id_fk",
+    }).onDelete("cascade"),
+  ]
 );
 
 export const sessions = pgTable(
@@ -308,9 +347,27 @@ export const activityLogs = pgTable(
     entityId: text("entity_id"),
     details: text("details"),
     ipAddress: text("ip_address"),
+    tag: text("tag"),
+    severity: text("severity").notNull().default("info"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("activity_logs_created_at_idx").on(table.createdAt)]
+);
+
+export const activityLogSnapshots = pgTable(
+  "activity_log_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    logId: uuid("log_id")
+      .references(() => activityLogs.id, { onDelete: "cascade" })
+      .notNull(),
+    tableName: text("table_name").notNull(),
+    recordId: text("record_id").notNull(),
+    snapshot: text("snapshot").notNull(),
+    snapshotType: text("snapshot_type").notNull().default("after"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("activity_log_snapshots_log_id_idx").on(table.logId)]
 );
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
@@ -335,6 +392,7 @@ export const notifications = pgTable("notifications", {
   read: boolean("read").default(false).notNull(),
   entityType: text("entity_type"),
   entityId: text("entity_id"),
+  url: text("url"),
   actorUserId: uuid("actor_user_id").references(() => users.id, {
     onDelete: "set null",
   }),

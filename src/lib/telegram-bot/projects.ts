@@ -1,4 +1,4 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 
@@ -6,7 +6,7 @@ export async function listActiveProjects() {
   return db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
-    .where(eq(projects.archived, false))
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
     .orderBy(asc(projects.name));
 }
 

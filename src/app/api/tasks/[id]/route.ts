@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { tasks } from "@/db/schema";
 import { logActivity } from "@/lib/activity";
 import { hasPermission } from "@/lib/permissions";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { updateTaskForUser } from "@/lib/update-task";
 
@@ -65,10 +65,15 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const [task] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+  const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt))).limit(1);
   if (!task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
+
+  await db
+    .update(tasks)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(tasks.id, id));
 
   logActivity({
     userId: user.id,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { sprints, tasks, taskStatusHistory } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq, and, gte, lte, asc, desc } from "drizzle-orm";
+import { eq, and, gte, lte, asc, desc, isNull } from "drizzle-orm";
 
 function startOfDay(d: Date) {
   const copy = new Date(d);
@@ -36,7 +36,7 @@ export async function GET(
   const sprintTasks = await db
     .select({ id: tasks.id, estimate: tasks.estimate })
     .from(tasks)
-    .where(eq(tasks.sprintId, id));
+    .where(and(eq(tasks.sprintId, id), isNull(tasks.deletedAt)));
 
   const totalPoints = sprintTasks.reduce((sum, t) => sum + (t.estimate ?? 0), 0);
   const taskIds = sprintTasks.map((t) => t.id);

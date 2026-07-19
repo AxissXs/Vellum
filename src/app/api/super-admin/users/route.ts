@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession, requireRole } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +21,8 @@ export async function GET() {
       role: users.role,
       status: users.status,
       avatarUrl: users.avatarUrl,
+      lastSeenAt: users.lastSeenAt,
+      lastSeenIp: users.lastSeenIp,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })

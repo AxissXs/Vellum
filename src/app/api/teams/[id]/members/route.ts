@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { teamMembers } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 export async function POST(
   req: NextRequest,
@@ -19,7 +19,7 @@ export async function POST(
   const [existing] = await db
     .select()
     .from(teamMembers)
-    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.userId, userId)))
+    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.userId, userId), isNull(teamMembers.deletedAt)))
     .limit(1);
 
   if (existing) {
@@ -66,8 +66,9 @@ export async function DELETE(
   if (!memberId) return NextResponse.json({ error: "memberId is required" }, { status: 400 });
 
   await db
-    .delete(teamMembers)
-    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.id, memberId)));
+    .update(teamMembers)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(and(eq(teamMembers.teamId, id), eq(teamMembers.id, memberId), isNull(teamMembers.deletedAt)));
 
   return NextResponse.json({ success: true });
 }
