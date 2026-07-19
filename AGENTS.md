@@ -405,7 +405,7 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/telegram/test`        | POST               | Send Telegram test message     |
 | `/api/super-admin/telegram/llm-health`  | GET, POST, PATCH   | LLM health status / probe / think toggle |
 | `/api/cron/llm-health`                  | GET, POST          | Cron probe (Bearer `CRON_SECRET`) |
-| `/api/activity`                         | GET                | Activity logs                  |
+| `/api/activity`                         | GET                | Activity feed + summary        |
 | `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, holidays) |
 | `/api/schedules`                        | POST               | Create schedule event          |
 | `/api/schedules/[id]`                   | PATCH, DELETE      | Update/delete schedule         |

@@ -171,9 +171,11 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - RichTextEditor integration
   - Version history
 
-- [ ] **Activity feed improvements** - Filtering, pagination, real-time
-  - Filter by entity type, user, date range
-  - Infinite scroll
+- [x] **Activity feed improvements** - Filtering, pagination, insight summary
+  - Filter by entity type, user, date range, search
+  - Infinite scroll (load more) via React Query
+  - Summary cards + 7d bar chart + entity mix
+  - Real-time Pusher channel deferred
 
 - [ ] **User profiles** - Avatar upload, profile editing
   - Avatar upload to cloud storage
