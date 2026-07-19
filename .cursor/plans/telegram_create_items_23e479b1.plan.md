@@ -4,37 +4,37 @@ overview: "Inbound Telegram bot for paired users: Phase 1 create + view tasks/ca
 todos:
   - id: schema-sessions
     content: Add telegram_bot_sessions table + migration (flows task|event|standup)
-    status: pending
+    status: completed
   - id: create-services
     content: Extract create-task.ts / create-schedule.ts; refactor API POST handlers
-    status: pending
+    status: completed
   - id: query-services
     content: Extract query-tasks.ts / query-calendar.ts; refactor API GET handlers
-    status: pending
+    status: completed
   - id: update-services
     content: Extract update-task.ts, create-comment.ts, standup/retro/notification helpers
-    status: pending
+    status: completed
   - id: telegram-dates
     content: Implement telegram-dates.ts parser (ISO + today/tomorrow/week + duration)
-    status: pending
+    status: completed
   - id: telegram-bot-p1
     content: "Phase 1 bot: create flows, list commands, keyboards, role-aware assign/scope"
-    status: pending
+    status: completed
   - id: telegram-bot-p2
     content: "Phase 2 bot: status, comment, inbox, standup, detail, leave, retro"
-    status: pending
+    status: completed
   - id: telegram-api-extend
     content: "Extend telegram.ts: inline keyboards, callback_query, allowed_updates"
-    status: pending
+    status: completed
   - id: webhook-wire
     content: Wire webhook route to bot handler (message + callback_query)
-    status: pending
+    status: completed
   - id: docs-ui
     content: Update settings Telegram guide + AGENTS/STRUCTURE
-    status: pending
+    status: completed
   - id: verify
     content: Manual Phase 1 + Phase 2 flows + lint/typecheck/build
-    status: pending
+    status: completed
 isProject: false
 ---
 

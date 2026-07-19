@@ -18,6 +18,10 @@ Vellum/
 ├── deno.json               # Deno task definitions (replaces npm/bun scripts)
 ├── deno.lock               # Deno lockfile (generated)
 ├── package.json            # Package dependencies (no scripts - see deno.json)
+├── ops/
+│   └── llm-health-cron/    # Companion native Deno Deploy cron app
+│       ├── deno.json       # Companion tasks + Deploy app config
+│       └── main.ts         # Every 5m POST /api/cron/llm-health
 ├── public/                 # Static assets
 │   ├── logo.svg            # Brand wordmark (light / colored)
 │   ├── logo-white.svg      # Brand wordmark (dark backgrounds)
@@ -164,7 +168,10 @@ src/
 │       │       ├── settings/route.ts  # GET, PATCH - Bot settings + auto webhook
 │       │       ├── topics/route.ts    # POST - Create forum topic
 │       │       ├── stats/route.ts     # GET - Usage stats
-│       │       └── test/route.ts      # POST - Test message (optional token)
+│       │       ├── test/route.ts      # POST - Test message (optional token)
+│       │       └── llm-health/route.ts # GET, POST, PATCH - Ollama health + think
+│       ├── cron/
+│       │   └── llm-health/route.ts # GET, POST - Cron probe (CRON_SECRET)
 │       ├── activity/
 │       │   └── route.ts            # GET - Activity logs
 │       ├── calendar/
@@ -234,7 +241,14 @@ src/
 │   ├── pusher-channels.ts  # Server-side channel ref counting
 │   ├── pusher-client.ts    # Pusher client singleton + ref counting
 │   ├── mentions.ts         # Parse @FirstName mentions from comment markdown
-│   └── telegram.ts         # Telegram bot API + pairing helpers
+│   ├── telegram.ts         # Telegram bot API + pairing helpers
+│   ├── telegram-bot/       # Inbound bot command flows (DM)
+│   ├── telegram-interpret/ # NL schema, Ollama client, health/think
+│   │   ├── schema.ts
+│   │   ├── required.ts
+│   │   ├── ollama.ts
+│   │   └── health.ts       # /api/tags probe, breaker, think setting
+│   └── telegram-dates.ts   # Date/range parsing for bot commands
 └── providers/              # React Context Providers
     └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
 ```
@@ -789,10 +803,10 @@ src/
 #### `src/app/api/telegram/webhook/route.ts`
 
 **Methods**: `POST`
-**Purpose**: Telegram bot webhook (pairing commands); verifies `X-Telegram-Bot-Api-Secret-Token`
+**Purpose**: Telegram bot webhook (pairing + inbound commands); verifies `X-Telegram-Bot-Api-Secret-Token`
 **Functions**:
 
-- `POST(req)` - Handle Telegram updates
+- `POST(req)` - Pairing via `/start <code>`; delegates other messages/callbacks to `handleTelegramUpdate` in `src/lib/telegram-bot/`
 
 #### `src/app/api/telegram/config/route.ts`
 
@@ -901,6 +915,25 @@ src/
 **Functions**:
 
 - `POST(req)` - Test bot connectivity; optional token override (test-before-save)
+
+#### `src/app/api/super-admin/telegram/llm-health/route.ts`
+
+**Methods**: `GET`, `POST`, `PATCH`
+**Purpose**: Super-admin Ollama interpret health + thinking toggle
+**Functions**:
+
+- `GET()` - `{ configured, model, thinkEnabled, health }`
+- `POST()` - Force `probeLlmHealth` (source `probe`)
+- `PATCH(req)` - Body `{ thinkEnabled: boolean }` → `platform_settings.llm_interpret_think`
+
+#### `src/app/api/cron/llm-health/route.ts`
+
+**Methods**: `GET`, `POST`
+**Purpose**: Scheduled LLM health probe target (companion Deno cron app / curl)
+**Auth**: `Authorization: Bearer CRON_SECRET` or `x-cron-secret`
+**Functions**:
+
+- `GET|POST` - Run probe, persist `llm_interpret_health`, return snapshot
 
 #### `src/app/api/activity/route.ts`
 
@@ -1332,9 +1365,41 @@ src/
 - `getBotToken` / `isTelegramConfigured` / `getWebhookUrl` / `getWebhookSecretToken`
 - `getTelegramTopicMapping` / `getChannelEvents` / `setChannelEvents`
 - `getTelegramTemplate` / `setTelegramTemplate` / `getDefaultTemplate`
-- `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage`
+- `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage` / `answerCallbackQuery` / `editMessageText`
+- `InlineKeyboardMarkup` / `InlineKeyboardButton` types
 - `isTelegramEnabled` / `sendTelegramNotification`
 - `broadcastToSupergroup(eventType, text)` / `maybeBroadcastToChannel` / `broadcastToChannel`
+
+#### `src/lib/telegram-bot/`
+
+**Purpose**: Inbound Telegram bot — create/view tasks & calendar, standup, retro, comments, status, inbox (private DM only)
+**Entry**: `handleTelegramUpdate(update)` from `index.ts`
+**Key modules**: `auth`, `sessions`, `nl-flow` (free-text Ollama interpret), `task-flow`, `event-flow`, `list-*`, `status-flow`, `comment-flow`, `inbox-flow`, `standup-flow`, `leave-flow`, `retro-flow`
+
+#### `src/lib/telegram-interpret/`
+
+**Purpose**: Shared NL intent schema + Ollama client + health watchdog for Telegram free-text
+**Exports**:
+- `schema` — `TelegramInterpretResult`, JSON schema for Ollama `format`
+- `required` — `getMissingFields`, intent helpers
+- `ollama` — `interpretTelegramText`, `isInterpretConfigured` (gates on health; uses `think` from settings)
+- `health` — `probeLlmHealth`, `getLlmHealth`, `isLlmHealthyForNl`, `recordInterpretSuccess` / `Failure`, `getInterpretThinkEnabled` / `setInterpretThinkEnabled`
+**Platform keys**: `llm_interpret_health` (JSON snapshot), `llm_interpret_think` (`"true"`/`"false"`, default on)
+
+#### Shared entity services (Telegram + REST)
+
+- `src/lib/create-task.ts` — `createTaskForUser`
+- `src/lib/create-schedule.ts` — `createScheduleForUser`
+- `src/lib/update-task.ts` — `updateTaskForUser`
+- `src/lib/create-comment.ts` — `createCommentForUser`, `queryCommentsForTask`
+- `src/lib/query-tasks.ts` — `queryTasks`, `resolveTaskRef`
+- `src/lib/query-calendar.ts` — `queryCalendar`
+- `src/lib/query-notifications.ts` — inbox helpers
+- `src/lib/upsert-standup.ts` — `upsertStandupForUser`
+- `src/lib/create-retro-item.ts` — retro + active sprint queries
+- `src/lib/telegram-dates.ts` — date/range parsing for bot commands
+
+**Schema**: `telegram_bot_sessions` — wizard state (task/event/standup/retro flows)
 
 #### `src/lib/api.ts`
 
@@ -1375,6 +1440,15 @@ src/
 ---
 
 ## Configuration Files
+
+### `ops/llm-health-cron/`
+
+Companion Deno Deploy app because the main Next.js app starts through
+`jsr:@deno/nextjs-start/v16` and cannot register top-level `Deno.cron()`.
+
+- `main.ts` - Native `Deno.cron("perfect-llm-health", "*/5 * * * *", ...)`; POSTs to the main app health route with retries.
+- `deno.json` - App `perfect-llm-health-cron`; `check`, `dev`, and `deploy` tasks.
+- Runtime env: `APP_URL` (main Perfect origin), `CRON_SECRET` (same secret as main app).
 
 ### `package.json`
 

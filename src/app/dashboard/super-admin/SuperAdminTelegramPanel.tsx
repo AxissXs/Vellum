@@ -17,6 +17,8 @@ import {
   MessageSquare,
   Plus,
   Link as LinkIcon,
+  Activity,
+  RefreshCw,
 } from "lucide-react";
 
 const eventLabels: Record<string, string> = {
@@ -481,6 +483,175 @@ function TelegramConfigForm({
   );
 }
 
+type LlmHealthSnapshot = {
+  ok: boolean;
+  checkedAt: string;
+  latencyMs: number | null;
+  model: string;
+  error: string | null;
+  consecutiveFailures: number;
+  source: string;
+};
+
+type LlmHealthPayload = {
+  configured: boolean;
+  model: string;
+  thinkEnabled: boolean;
+  health: LlmHealthSnapshot | null;
+};
+
+function LlmInterpretHealthCard() {
+  const queryClient = useQueryClient();
+  const queryKey = ["super-admin", "telegram", "llm-health"] as const;
+
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn: async () =>
+      api.get<LlmHealthPayload>("/api/super-admin/telegram/llm-health"),
+  });
+
+  const probe = useMutation({
+    mutationFn: async () =>
+      api.post<LlmHealthPayload>("/api/super-admin/telegram/llm-health", {}),
+    onSuccess: (payload) => {
+      queryClient.setQueryData(queryKey, payload);
+      if (payload.health?.ok) toast.success("LLM probe OK");
+      else toast.warning(payload.health?.error || "LLM probe failed");
+    },
+    onError: () => toast.error("LLM probe failed"),
+  });
+
+  const setThink = useMutation({
+    mutationFn: async (thinkEnabled: boolean) =>
+      api.patch<LlmHealthPayload>("/api/super-admin/telegram/llm-health", {
+        thinkEnabled,
+      }),
+    onSuccess: (payload) => {
+      queryClient.setQueryData(queryKey, payload);
+      toast.success(
+        payload.thinkEnabled ? "Model thinking enabled" : "Model thinking disabled"
+      );
+    },
+    onError: () => toast.error("Failed to update thinking setting"),
+  });
+
+  const statusLabel = !data?.configured
+    ? "Not configured"
+    : !data.health
+      ? "Unknown"
+      : data.health.ok
+        ? "Healthy"
+        : "Down";
+
+  const statusClass = !data?.configured
+    ? "bg-slate-100 text-slate-600"
+    : !data.health
+      ? "bg-amber-50 text-amber-800"
+      : data.health.ok
+        ? "bg-emerald-50 text-emerald-800"
+        : "bg-red-50 text-red-800";
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="bg-brand-500/10 border border-brand-500/20 p-3 rounded-lg">
+            <Activity size={20} className="text-brand-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Natural language (Ollama)
+            </h3>
+            <p className="text-xs text-slate-500">
+              Health probe + thinking toggle. Does not restart the Mac host.
+            </p>
+          </div>
+        </div>
+        <span
+          className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${statusClass}`}
+        >
+          {isLoading ? "…" : statusLabel}
+        </span>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="animate-spin text-slate-400" size={20} />
+        </div>
+      ) : (
+        <>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-slate-500">Model</dt>
+              <dd className="text-slate-900 font-medium">
+                {data?.health?.model || data?.model || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Last check</dt>
+              <dd className="text-slate-900">
+                {data?.health?.checkedAt
+                  ? new Date(data.health.checkedAt).toLocaleString()
+                  : "Never"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Latency</dt>
+              <dd className="text-slate-900">
+                {data?.health?.latencyMs != null
+                  ? `${data.health.latencyMs} ms`
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Failures</dt>
+              <dd className="text-slate-900">
+                {data?.health?.consecutiveFailures ?? 0}
+                {data?.health?.source ? ` (${data.health.source})` : ""}
+              </dd>
+            </div>
+          </dl>
+          {data?.health?.error ? (
+            <p className="text-xs text-red-600 wrap-break-word">{data.health.error}</p>
+          ) : null}
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 rounded border-slate-300"
+              checked={data?.thinkEnabled ?? true}
+              disabled={setThink.isPending}
+              onChange={(e) => setThink.mutate(e.target.checked)}
+            />
+            <span>
+              <span className="text-sm font-medium text-slate-900">
+                Enable model thinking
+              </span>
+              <span className="block text-xs text-slate-500">
+                Faster when off; date/year accuracy may drop.
+              </span>
+            </span>
+          </label>
+
+          <button
+            type="button"
+            onClick={() => probe.mutate()}
+            disabled={probe.isPending || !data?.configured}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {probe.isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <RefreshCw size={16} />
+            )}
+            Probe now
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function SuperAdminTelegramPanel() {
   const queryClient = useQueryClient();
 
@@ -588,6 +759,8 @@ export default function SuperAdminTelegramPanel() {
           </div>
         </div>
       </div>
+
+      <LlmInterpretHealthCard />
 
       {settingsLoading ? (
         <div className="flex items-center justify-center py-8">

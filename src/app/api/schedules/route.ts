@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { scheduleEvents, tasks, users } from "@/db/schema";
+import { users } from "@/db/schema";
 import { hasPermission } from "@/lib/permissions";
-import { logActivity } from "@/lib/activity";
-import { sendNotification } from "@/lib/notifications";
+import { eq } from "drizzle-orm";
+import {
+  createScheduleForUser,
+  type ScheduleType,
+  type ScheduleVisibility,
+} from "@/lib/create-schedule";
 
 const SCHEDULE_TYPES = ["work", "meeting", "leave", "training", "other"] as const;
 const VISIBILITIES = ["team", "private"] as const;
-
-type ScheduleType = (typeof SCHEDULE_TYPES)[number];
-type Visibility = (typeof VISIBILITIES)[number];
 
 function isValidType(v: unknown): v is ScheduleType {
   return typeof v === "string" && (SCHEDULE_TYPES as readonly string[]).includes(v);
@@ -21,35 +21,7 @@ function isValidVisibility(v: unknown): v is Visibility {
   return typeof v === "string" && (VISIBILITIES as readonly string[]).includes(v);
 }
 
-async function findDueDateConflicts(
-  userId: string,
-  startsAt: Date,
-  endsAt: Date
-) {
-  const rows = await db
-    .select({
-      id: tasks.id,
-      title: tasks.title,
-      dueDate: tasks.dueDate,
-    })
-    .from(tasks)
-    .where(
-      and(
-        eq(tasks.assigneeId, userId),
-        sql`${tasks.dueDate} IS NOT NULL`,
-        gte(tasks.dueDate, startsAt),
-        lte(tasks.dueDate, endsAt)
-      )
-    );
-
-  return rows
-    .filter((r) => r.dueDate)
-    .map((r) => ({
-      taskId: r.id,
-      taskTitle: r.title,
-      dueDate: r.dueDate!.toISOString(),
-    }));
-}
+type Visibility = ScheduleVisibility;
 
 export async function POST(req: NextRequest) {
   const user = await getSession();
@@ -110,58 +82,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const [schedule] = await db
-    .insert(scheduleEvents)
-    .values({
-      userId: targetUserId,
-      createdById: user.id,
-      title,
-      description: description || null,
-      type,
-      startsAt: start,
-      endsAt: end,
-      allDay: Boolean(allDay),
-      visibility,
-      projectId: projectId || null,
-    })
-    .returning();
-
-  logActivity({
-    userId: user.id,
-    action: "created_schedule",
-    entityType: "schedule",
-    entityId: schedule.id,
-    details: `Created schedule: ${schedule.title}`,
+  const { schedule, conflicts } = await createScheduleForUser(user, {
+    title,
+    description,
+    type,
+    startsAt: start,
+    endsAt: end,
+    allDay: Boolean(allDay),
+    visibility,
+    projectId,
+    userId: targetUserId,
   });
-
-  if (assigningOther) {
-    await sendNotification({
-      userId: targetUserId,
-      type: "schedule_assigned",
-      title: "Schedule Assigned",
-      content: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
-      entityType: "schedule",
-      entityId: schedule.id,
-      actorUserId: user.id,
-      pushPayload: {
-        title: "Schedule Assigned",
-        body: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
-        tag: `schedule-${schedule.id}`,
-      },
-      url: "/dashboard/calendar",
-    });
-  }
-
-  let conflicts: Awaited<ReturnType<typeof findDueDateConflicts>> = [];
-  if (type === "leave") {
-    conflicts = await findDueDateConflicts(targetUserId, start, end);
-  }
-
-  const [assignee] = await db
-    .select({ name: users.name, avatarUrl: users.avatarUrl })
-    .from(users)
-    .where(eq(users.id, targetUserId))
-    .limit(1);
 
   return NextResponse.json({
     schedule: {
@@ -170,8 +101,6 @@ export async function POST(req: NextRequest) {
       endsAt: schedule.endsAt.toISOString(),
       createdAt: schedule.createdAt.toISOString(),
       updatedAt: schedule.updatedAt.toISOString(),
-      userName: assignee?.name ?? null,
-      userAvatar: assignee?.avatarUrl ?? null,
     },
     conflicts,
   });

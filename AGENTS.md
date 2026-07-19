@@ -143,6 +143,15 @@ Telegram webhook URL (optional if admin saves settings from the browser — uses
 - `NEXT_PUBLIC_APP_URL` - Public app origin (preferred for auto `setWebhook`)
 - `APP_URL` - Fallback origin if `NEXT_PUBLIC_APP_URL` unset
 
+Telegram natural-language interpret (optional; plain DM text → local Ollama):
+
+- `LLM_INTERPRET_URL` - Ollama base URL (e.g. ngrok to Mac Mini). When unset, NL free-text is disabled; slash commands still work.
+- `LLM_INTERPRET_MODEL` - Model name (default `gemma4:e2b`)
+- `LLM_INTERPRET_SECRET` - Optional Bearer token sent to the interpret URL
+- `CRON_SECRET` - Shared Bearer for `GET|POST /api/cron/llm-health` and the companion Deno cron app. Unset → cron route returns 503.
+
+LLM health watchdog: companion Deno Deploy app [`ops/llm-health-cron`](ops/llm-health-cron) registers native `Deno.cron()` every 5 minutes (UTC) and hits `/api/cron/llm-health`. Configure its `APP_URL` and `CRON_SECRET`; use the same `CRON_SECRET` on the main app. Deploy from that directory with `deno task deploy`. Status is stored in `platform_settings` key `llm_interpret_health`. Super Admin → Telegram shows status and can force-probe. Ollama **thinking** is toggled via Super Admin (`platform_settings` key `llm_interpret_think`, default on). Mac Mini Ollama/ngrok uptime is separate ops (e.g. launchd).
+
 > **Local Postgres < 13**: `gen_random_uuid()` is not built-in. Enable the extension once per database:
 > `CREATE EXTENSION IF NOT EXISTS pgcrypto;` (the schema uses `gen_random_uuid()` for IDs).
 
@@ -370,7 +379,7 @@ See `src/db/schema.ts` for:
 | `/api/telegram/status`                  | GET                | Telegram link status           |
 | `/api/telegram/pairing-code`            | GET                | Generate Telegram pairing code |
 | `/api/telegram/unlink`                  | DELETE             | Unlink Telegram account        |
-| `/api/telegram/webhook`                 | POST               | Telegram bot webhook (secret)  |
+| `/api/telegram/webhook`                 | POST               | Telegram bot webhook (pairing + bot commands; secret)  |
 | `/api/telegram/config`                  | GET                | Public bot configured + username |
 | `/api/super-admin/users`                | GET                | Super-admin user list          |
 | `/api/super-admin/users/[id]`           | PATCH              | Update user status/role        |
@@ -385,6 +394,8 @@ See `src/db/schema.ts` for:
 | `/api/super-admin/telegram/topics`      | POST               | Create forum topic in supergroup |
 | `/api/super-admin/telegram/stats`       | GET                | Telegram usage stats           |
 | `/api/super-admin/telegram/test`        | POST               | Send Telegram test message     |
+| `/api/super-admin/telegram/llm-health`  | GET, POST, PATCH   | LLM health status / probe / think toggle |
+| `/api/cron/llm-health`                  | GET, POST          | Cron probe (Bearer `CRON_SECRET`) |
 | `/api/activity`                         | GET                | Activity logs                  |
 | `/api/calendar`                         | GET                | Aggregated calendar (schedules, activity, tasks, holidays) |
 | `/api/schedules`                        | POST               | Create schedule event          |
