@@ -79,7 +79,7 @@ export default function SuperAdminHealthPanel() {
 
   if (isError || !data) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+      <div className="flex items-center justify-center py-12 text-red-600 text-sm">
         Failed to load health metrics.
       </div>
     );
@@ -87,8 +87,8 @@ export default function SuperAdminHealthPanel() {
 
   const statusColors: Record<string, string> = {
     active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    inactive: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    banned: "bg-red-500/10 text-red-400 border-red-500/20",
+    inactive: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    banned: "bg-red-500/10 text-red-600 border-red-500/20",
   };
 
   return (
@@ -99,7 +99,7 @@ export default function SuperAdminHealthPanel() {
           label="Active Sessions"
           value={data.activeSessions}
           icon={HeartPulse}
-          color="bg-brand-500/10 text-brand-400 border-brand-500/20"
+          color="bg-brand-500/10 text-brand-600 border-brand-500/20"
         />
         <StatCard
           label="Total Users"
@@ -111,7 +111,7 @@ export default function SuperAdminHealthPanel() {
           label="Total Tasks"
           value={data.totalTasks}
           icon={ClipboardList}
-          color="bg-amber-500/10 text-amber-400 border-amber-500/20"
+          color="bg-amber-500/10 text-amber-600 border-amber-500/20"
         />
         <StatCard
           label="Total Projects"
@@ -177,7 +177,7 @@ export default function SuperAdminHealthPanel() {
                 <span
                   className={clsx(
                     "text-sm font-medium",
-                    data.failedLogins24h > 0 ? "text-red-400" : "text-slate-900"
+                    data.failedLogins24h > 0 ? "text-red-600" : "text-slate-900"
                   )}
                 >
                   {data.failedLogins24h}

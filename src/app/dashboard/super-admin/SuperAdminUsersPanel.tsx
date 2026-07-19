@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Loader2, Shield, Ban, UserCheck, Clock } from "lucide-react";
 import { clsx } from "clsx";
+import UserDetailModal from "./UserDetailModal";
 
 export type SuperAdminUser = {
   id: string;
@@ -12,6 +13,8 @@ export type SuperAdminUser = {
   role: string;
   status: string;
   avatarUrl: string | null;
+  lastSeenAt: string | null;
+  lastSeenIp: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -45,12 +48,24 @@ const statusBadges: Record<string, string> = {
   banned: "bg-red-500/10 text-red-600 border-red-500/20",
 };
 
+function formatTimeAgo(dateStr: string) {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const mins = Math.floor(seconds / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 export default function SuperAdminUsersPanel() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"name" | "createdAt">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -197,6 +212,7 @@ export default function SuperAdminUsersPanel() {
                   <th className="px-5 py-3 font-medium text-slate-500">User</th>
                   <th className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap">Role</th>
                   <th className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap">Status</th>
+                  <th className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap">Last Seen</th>
                   <th
                     className="px-5 py-3 font-medium text-slate-500 whitespace-nowrap cursor-pointer select-none"
                     onClick={() => toggleSort("createdAt")}
@@ -208,7 +224,7 @@ export default function SuperAdminUsersPanel() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-white/[0.02] transition">
+                  <tr key={u.id} className="hover:bg-brand-50 transition cursor-pointer" onClick={() => setSelectedUserId(u.id)}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
@@ -229,6 +245,14 @@ export default function SuperAdminUsersPanel() {
                       <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", statusBadges[u.status] || statusBadges.active)}>
                         {u.status}
                       </span>
+                    </td>
+                    <td className="px-5 py-3 whitespace-nowrap text-slate-500 text-xs">
+                      {u.lastSeenAt ? (
+                        <span className="flex items-center gap-1">
+                          <Clock size={11} />
+                          {formatTimeAgo(u.lastSeenAt)}
+                        </span>
+                      ) : "—"}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap text-slate-500">
                       {formatDate(u.createdAt)}
@@ -270,7 +294,7 @@ export default function SuperAdminUsersPanel() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={6} className="px-5 py-8 text-center text-slate-500 text-sm">
                       No users match your filters.
                     </td>
                   </tr>
@@ -280,6 +304,14 @@ export default function SuperAdminUsersPanel() {
           </div>
         )}
       </div>
+
+      {/* User Detail Modal */}
+      {selectedUserId && (
+        <UserDetailModal
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+        />
+      )}
     </div>
   );
 }

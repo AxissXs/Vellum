@@ -34,18 +34,31 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { projectId, name, goal, startDate, endDate, status } = body;
 
-  if (!projectId || !name) {
-    return NextResponse.json({ error: "projectId and name are required" }, { status: 400 });
+  if (!projectId || !name?.trim() || !startDate || !endDate) {
+    return NextResponse.json(
+      { error: "projectId, name, startDate, and endDate are required" },
+      { status: 400 }
+    );
+  }
+
+  const parsedStartDate = new Date(startDate);
+  const parsedEndDate = new Date(endDate);
+  if (
+    Number.isNaN(parsedStartDate.getTime()) ||
+    Number.isNaN(parsedEndDate.getTime()) ||
+    parsedEndDate < parsedStartDate
+  ) {
+    return NextResponse.json({ error: "Invalid sprint date range" }, { status: 400 });
   }
 
   const [sprint] = await db
     .insert(sprints)
     .values({
       projectId,
-      name,
+      name: name.trim(),
       goal: goal || null,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
       status: status || "planned",
     })
     .returning();

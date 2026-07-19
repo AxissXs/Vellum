@@ -60,7 +60,7 @@ export default function SuperAdminRolesPanel() {
 
   if (isError || !data) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+      <div className="flex items-center justify-center py-12 text-red-600 text-sm">
         Failed to load role matrix.
       </div>
     );
@@ -97,7 +97,7 @@ export default function SuperAdminRolesPanel() {
                 <ShieldCheck
                   size={16}
                   className={clsx(
-                    isSelected ? "text-brand-400" : "text-slate-500"
+                    isSelected ? "text-brand-600" : "text-slate-500"
                   )}
                 />
                 <h3 className="text-sm font-semibold text-slate-900">
@@ -160,7 +160,7 @@ export default function SuperAdminRolesPanel() {
                               className={clsx(
                                 "px-5 py-2 font-medium text-center whitespace-nowrap",
                                 selectedRole === role.id
-                                  ? "text-brand-400"
+                                  ? "text-brand-600"
                                   : "text-slate-500"
                               )}
                             >

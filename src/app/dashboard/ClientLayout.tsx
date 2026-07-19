@@ -8,6 +8,8 @@ import { TimezoneProvider } from "@/providers/TimezoneProvider";
 import Sidebar from "@/components/Sidebar";
 import { BrandLogo } from "@/components/BrandLogo";
 import NotificationBell from "@/components/NotificationBell";
+import NotificationRealtime from "@/components/NotificationRealtime";
+import ScheduleRealtime from "@/components/ScheduleRealtime";
 import { brand } from "@/lib/brand";
 
 interface DashboardLayoutProps {
@@ -40,6 +42,8 @@ export default function DashboardLayout({
   return (
     <QueryProvider>
       <TimezoneProvider initialTimezone={timezone}>
+      <NotificationRealtime />
+      <ScheduleRealtime />
       <div className="min-h-dvh bg-slate-50">
         <Sidebar
           user={user}

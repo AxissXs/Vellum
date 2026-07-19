@@ -70,7 +70,7 @@ export default function SuperAdminSessionsPanel() {
     <div className="space-y-4">
       {/* Stats card */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 inline-flex items-center gap-3">
-        <KeyRound size={20} className="text-brand-400" />
+        <KeyRound size={20} className="text-brand-600" />
         <div>
           <p className="text-2xl font-bold text-slate-900">{sessions.length}</p>
           <p className="text-xs text-slate-500">Active sessions</p>
@@ -85,7 +85,7 @@ export default function SuperAdminSessionsPanel() {
       )}
 
       {isError && (
-        <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+        <div className="flex items-center justify-center py-12 text-red-600 text-sm">
           Failed to load sessions.
         </div>
       )}
@@ -109,11 +109,11 @@ export default function SuperAdminSessionsPanel() {
                   <tr key={s.id} className="hover:bg-brand-50 transition">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
                           {s.userName?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) ?? "??"}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm text-slate-200 font-medium truncate">{s.userName ?? "Unknown"}</p>
+                          <p className="text-sm text-slate-900 font-medium truncate">{s.userName ?? "Unknown"}</p>
                           <p className="text-xs text-slate-500 truncate">{s.userEmail}</p>
                         </div>
                       </div>
@@ -121,8 +121,8 @@ export default function SuperAdminSessionsPanel() {
                     <td className="px-5 py-3 whitespace-nowrap">
                       <span className={clsx(
                         "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border",
-                        s.userRole === "superadmin" && "bg-purple-500/10 text-purple-400 border-purple-500/20",
-                        s.userRole === "admin" && "bg-blue-500/10 text-blue-400 border-blue-500/20",
+                        s.userRole === "superadmin" && "bg-purple-500/10 text-purple-600 border-purple-500/20",
+                        s.userRole === "admin" && "bg-blue-500/10 text-blue-600 border-blue-500/20",
                         s.userRole === "member" && "bg-slate-500/10 text-slate-500 border-slate-500/20",
                       )}>
                         {s.userRole ?? "member"}
@@ -147,7 +147,7 @@ export default function SuperAdminSessionsPanel() {
                       <button
                         onClick={() => revokeSession.mutate(s.id)}
                         disabled={revokeSession.isPending}
-                        className="inline-flex items-center gap-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1.5 text-xs font-medium hover:bg-red-500/20 transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-md bg-red-500/10 text-red-600 border border-red-500/20 px-2.5 py-1.5 text-xs font-medium hover:bg-red-500/15 transition disabled:opacity-50"
                       >
                         <Trash2 size={12} />
                         Revoke

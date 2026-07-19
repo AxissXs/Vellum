@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Loader2, Trash2, Calendar, User, Send, Edit2, Check, X as XIcon } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  X, Loader2, Trash2, Calendar, Send, Edit2,
+  Check, MessageCircle, Pencil, ChevronDown,
+} from "lucide-react";
 import { clsx } from "clsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/useComments";
 import { useRealtime } from "@/hooks/useRealtime";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
+import TaskAssigneePopover from "@/components/TaskAssigneePopover";
 import { hasPermission } from "@/lib/permissions";
 
-type User = { id: string; name: string; avatarUrl: string | null };
+type UserInfo = { id: string; name: string; avatarUrl: string | null };
 type Task = {
   id: string;
   title: string;
@@ -26,6 +30,8 @@ type Task = {
   updatedAt: string;
   assigneeName: string | null;
   assigneeAvatar: string | null;
+  projectName?: string | null;
+  projectColor?: string | null;
 };
 
 type Comment = {
@@ -33,13 +39,29 @@ type Comment = {
   content: string;
   taskId: string;
   authorId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   authorName: string | null;
   authorAvatar: string | null;
 };
 
-const priorityBadges: Record<string, string> = {
+const STATUS_CONFIG: { key: string; label: string; color: string; dot: string }[] = [
+  { key: "backlog", label: "Backlog", color: "bg-slate-500/10 text-slate-600 border-slate-500/20", dot: "bg-slate-500" },
+  { key: "todo", label: "To Do", color: "bg-blue-500/10 text-blue-600 border-blue-500/20", dot: "bg-blue-500" },
+  { key: "in_progress", label: "In Progress", color: "bg-amber-500/10 text-amber-600 border-amber-500/20", dot: "bg-amber-500" },
+  { key: "review", label: "Review", color: "bg-purple-500/10 text-purple-600 border-purple-500/20", dot: "bg-purple-500" },
+  { key: "done", label: "Done", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", dot: "bg-emerald-500" },
+];
+
+const PRIORITY_CONFIG: { key: string; label: string; color: string }[] = [
+  { key: "low", label: "Low", color: "bg-emerald-500" },
+  { key: "medium", label: "Medium", color: "bg-amber-500" },
+  { key: "high", label: "High", color: "bg-orange-500" },
+  { key: "urgent", label: "Urgent", color: "bg-red-500" },
+];
+
+const PriorityBadge: Record<string, string> = {
   urgent: "bg-red-500/10 text-red-600 border-red-500/20",
   high: "bg-orange-500/10 text-orange-600 border-orange-500/20",
   medium: "bg-amber-500/10 text-amber-600 border-amber-500/20",
@@ -58,22 +80,26 @@ export default function TaskDetailModal({
   userRole = "member",
   onClose,
   onChange,
+  onDelete,
 }: {
   task: Task;
-  users: User[];
+  users: UserInfo[];
   currentUserId: string;
   userRole?: string;
   onClose: () => void;
-  /** Updated task after save, or `null` after delete. */
   onChange: (task: Task | null) => void;
+  onDelete?: (taskId: string) => void;
 }) {
   const canEdit = hasPermission(userRole, "edit_tasks");
   const canDelete = hasPermission(userRole, "delete_tasks");
   const canAssign = hasPermission(userRole, "assign_tasks");
+
   const [task, setTask] = useState(initialTask);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const [assigneeSearch, setAssigneeSearch] = useState("");
 
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || "");
@@ -85,6 +111,7 @@ export default function TaskDetailModal({
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const { data: comments = [], refetch } = useQuery({
@@ -96,12 +123,22 @@ export default function TaskDetailModal({
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
 
-  // Subscribe to real-time comment and task updates
   useRealtime(undefined, task.id);
 
+  useEffect(() => { refetch(); }, [task.id, refetch]);
+
   useEffect(() => {
-    refetch();
-  }, [task.id, refetch]);
+    if (!showAssigneeDropdown) return;
+    function onClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-assignee-dropdown]")) {
+        setShowAssigneeDropdown(false);
+        setAssigneeSearch("");
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [showAssigneeDropdown]);
 
   async function handleSave() {
     setSaving(true);
@@ -117,7 +154,6 @@ export default function TaskDetailModal({
         dueDate: editDueDate || null,
       }),
     });
-
     if (res.ok) {
       const data = await res.json();
       const assignee = users.find((u) => u.id === (data.task.assigneeId || editAssignee || null));
@@ -139,10 +175,11 @@ export default function TaskDetailModal({
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this task? This action cannot be undone.")) return;
+    if (!confirm("Delete this task? It can be restored from Trash by a superadmin.")) return;
     setDeleting(true);
     const res = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
     if (res.ok) {
+      onDelete?.(task.id);
       onChange(null);
       onClose();
     }
@@ -152,14 +189,27 @@ export default function TaskDetailModal({
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment.trim()) return;
-    createCommentMutation.mutate({ content: newComment.trim(), taskId: task.id }, {
-      onSuccess: () => setNewComment(""),
-    });
+    createCommentMutation.mutate(
+      { content: newComment.trim(), taskId: task.id, parentId: replyingToId },
+      {
+        onSuccess: () => {
+          setNewComment("");
+          setReplyingToId(null);
+        },
+      }
+    );
+  }
+
+  function cancelReply() {
+    setReplyingToId(null);
+    setNewComment("");
   }
 
   function startEditComment(comment: Comment) {
     setEditingCommentId(comment.id);
     setEditCommentContent(comment.content);
+    setReplyingToId(null);
+    setNewComment("");
   }
 
   function cancelEditComment() {
@@ -179,29 +229,47 @@ export default function TaskDetailModal({
     deleteCommentMutation.mutate(commentId);
   }
 
-  function getInitials(name: string | null) {
+  const getInitials = useCallback((name: string | null) => {
     if (!name) return "?";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  }
+  }, []);
 
-  function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short", day: "numeric", year: "numeric",
-    });
-  }
+  const formatDate = useCallback((dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }, []);
 
-  function formatTime(dateStr: string) {
-    return new Date(dateStr).toLocaleTimeString("en-US", {
-      hour: "2-digit", minute: "2-digit",
-    });
+  const formatRelative = useCallback((dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }, []);
+
+  const topLevelComments = comments.filter((c) => !c.parentId);
+  const repliesByParent = new Map<string, Comment[]>();
+  for (const c of comments) {
+    if (c.parentId) {
+      const list = repliesByParent.get(c.parentId) || [];
+      list.push(c);
+      repliesByParent.set(c.parentId, list);
+    }
   }
+  const totalReplyCount = comments.filter((c) => c.parentId).length;
+
+  const statusCfg = STATUS_CONFIG.find((s) => s.key === task.status) || STATUS_CONFIG[0];
+  const priorityCfg = PRIORITY_CONFIG.find((p) => p.key === task.priority) || PRIORITY_CONFIG[1];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[85dvh] flex flex-col shadow-lg animate-slide-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative bg-white border border-slate-200 md:rounded-2xl w-full max-w-5xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-slate-200">
+        <div className="flex items-start justify-between p-5 md:p-6 border-b border-slate-200 gap-4">
           <div className="flex-1 min-w-0">
             {editing ? (
               <input
@@ -212,251 +280,297 @@ export default function TaskDetailModal({
                 autoFocus
               />
             ) : (
-              <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-lg font-semibold text-slate-900 wrap-break-word">{task.title}</h3>
+                <span className={clsx("text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border shrink-0", statusCfg.color)}>
+                  <span className={clsx("inline-block h-1.5 w-1.5 rounded-full mr-1", statusCfg.dot)} />
+                  {statusCfg.label}
+                </span>
+              </div>
             )}
-            <div className="flex items-center gap-2 mt-2">
-              <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
-                {task.priority}
-              </span>
-              <span className="text-xs text-slate-500">Created {formatDate(task.createdAt)}</span>
+            <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-slate-500">
+              <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", PriorityBadge[task.priority])}>{task.priority}</span>
+              <span>Created {formatDate(task.createdAt)}</span>
+              {task.projectName && (
+                <a href={`/dashboard/projects/${task.projectId}`} className="inline-flex items-center gap-1 text-slate-500 hover:text-brand-600 transition" onClick={(e) => e.stopPropagation()}>
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: task.projectColor || "#6366f1" }} />
+                  {task.projectName}
+                </a>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-1 shrink-0">
             {canEdit && (
               !editing ? (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
-                >
-                  Edit
-                </button>
+                <button onClick={() => setEditing(true)} className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition" title="Edit"><Pencil size={14} /></button>
               ) : (
                 <>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                  >
-                    {saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}
-                  </button>
-                  <button
-                    onClick={() => setEditing(false)}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
-                  >
-                    Cancel
-                  </button>
+                  <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}</button>
+                  <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
                 </>
               )
             )}
             {canDelete && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
-              >
-                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-              </button>
+              <button onClick={handleDelete} disabled={deleting} className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-500/10 transition" title="Delete"><Trash2 size={14} /></button>
             )}
-            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition">
-              <X size={18} />
-            </button>
+            <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-slate-900 transition"><X size={18} /></button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Status</label>
-              {editing ? (
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="backlog">Backlog</option>
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="review">Review</option>
-                  <option value="done">Done</option>
-                </select>
-              ) : (
-                <p className="text-sm text-slate-600 capitalize">{task.status.replace("_", " ")}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Priority</label>
-              {editing ? (
-                <select
-                  value={editPriority}
-                  onChange={(e) => setEditPriority(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              ) : (
-                <p className="text-sm text-slate-600 capitalize">{task.priority}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Assignee</label>
-              {editing && canAssign ? (
-                <select
-                  value={editAssignee}
-                  onChange={(e) => setEditAssignee(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">Unassigned</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-sm text-slate-600">
-                  {task.assigneeName || <span className="text-slate-600">Unassigned</span>}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-slate-500 block mb-1">Due Date</label>
-              {editing ? (
-                <input
-                  type="date"
-                  value={editDueDate}
-                  onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              ) : (
-                <p className="text-sm text-slate-600">
-                  {task.dueDate ? formatDate(task.dueDate) : <span className="text-slate-600">None</span>}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            {editing ? (
-              <RichTextEditor
-                label="Description"
-                value={editDescription}
-                onChange={setEditDescription}
-                rows={6}
-                placeholder="Add context, acceptance criteria, links, or implementation notes..."
-              />
-            ) : (
-              <>
-                <label className="text-xs text-slate-500 block mb-1">Description</label>
-                <RichTextPreview value={task.description || ""} empty="No description" />
-              </>
-            )}
-          </div>
-
-          {/* Comments */}
-          <div>
-            <h4 className="text-sm font-semibold text-slate-900 mb-3">
-              Comments ({comments.length})
-            </h4>
-
-            <div className="space-y-3 mb-4">
-              {comments.length === 0 && (
-                <p className="text-sm text-slate-600 text-center py-4">No comments yet</p>
-              )}
-              {comments.map((c) => (
-                <div key={c.id} className="flex gap-3">
-                  <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-600 shrink-0">
-                    {getInitials(c.authorName)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {editingCommentId === c.id ? (
-                      <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="space-y-2">
-                        <RichTextEditor
-                          value={editCommentContent}
-                          onChange={setEditCommentContent}
-                          rows={3}
-                          placeholder="Edit your comment..."
-                          users={users}
-                        />
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            type="button"
-                            onClick={cancelEditComment}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-500 hover:text-slate-900 transition"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            disabled={updateCommentMutation.isPending || !editCommentContent.trim()}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                          >
-                            {updateCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 min-h-5">
-                          <span className="text-xs font-medium text-slate-600">{c.authorName || "Unknown"}</span>
-                          <span className="text-[10px] text-slate-600">{formatTime(c.createdAt)}</span>
-                          {c.authorId === currentUserId && (
-                            <div className="flex items-center gap-0.5 ml-auto -my-0.5">
-                              <button
-                                type="button"
-                                onClick={() => startEditComment(c)}
-                                className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:text-brand-600 hover:bg-brand-500/10 transition"
-                                title="Edit"
-                              >
-                                <Edit2 size={12} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteComment(c.id)}
-                                disabled={deleteCommentMutation.isPending}
-                                className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:text-red-600 hover:bg-red-500/10 transition"
-                                title="Delete"
-                              >
-                                {deleteCommentMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                              </button>
-                            </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col md:grid md:grid-cols-2 md:gap-0">
+            {/* Left: Details */}
+            <div className="p-5 md:p-6 space-y-6 border-b md:border-b-0 md:border-r border-slate-200 min-w-0">
+              {/* Assignee + Due Date */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Assignee</label>
+                  {editing && canAssign ? (
+                    <div className="relative" data-assignee-dropdown>
+                      <button
+                        onClick={() => setShowAssigneeDropdown((v) => !v)}
+                        className="w-full flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 hover:bg-slate-100 transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          {editAssignee ? (
+                            <>
+                              <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-600">{getInitials(users.find((u) => u.id === editAssignee)?.name || "?")}</div>
+                              <span>{users.find((u) => u.id === editAssignee)?.name || "Unknown"}</span>
+                            </>
+                          ) : (
+                            <span className="text-slate-500">Unassigned</span>
                           )}
                         </div>
-                        <div className="mt-0.5">
-                          <RichTextPreview value={c.content} empty="" />
+                        <ChevronDown size={14} className="text-slate-500" />
+                      </button>
+                      {showAssigneeDropdown && (
+                        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-2 max-h-64 overflow-hidden animate-slide-in">
+                          <div className="px-2 pb-2">
+                            <input
+                              type="text"
+                              value={assigneeSearch}
+                              onChange={(e) => setAssigneeSearch(e.target.value)}
+                              placeholder="Search users..."
+                              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="overflow-y-auto max-h-48 px-1">
+                            <button
+                              onClick={() => { setEditAssignee(""); setShowAssigneeDropdown(false); setAssigneeSearch(""); }}
+                              className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === "" ? "bg-brand-500/10 text-brand-600" : "text-slate-600 hover:bg-slate-50")}
+                            >
+                              <div className="h-5 w-5 rounded-full bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-500 text-[9px]">—</div>
+                              Unassigned
+                            </button>
+                            {users
+                              .filter((u) => u.name.toLowerCase().includes(assigneeSearch.toLowerCase()))
+                              .map((u) => (
+                                <button
+                                  key={u.id}
+                                  onClick={() => { setEditAssignee(u.id); setShowAssigneeDropdown(false); setAssigneeSearch(""); }}
+                                  className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === u.id ? "bg-brand-500/10 text-brand-600" : "text-slate-600 hover:bg-slate-50")}
+                                >
+                                  <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-600">{getInitials(u.name)}</div>
+                                  {u.name}
+                                  {editAssignee === u.id && <Check size={12} className="ml-auto" />}
+                                </button>
+                              ))}
+                          </div>
                         </div>
-                      </>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {canAssign ? (
+                        <TaskAssigneePopover
+                          taskId={task.id}
+                          currentAssigneeId={task.assigneeId}
+                          users={users}
+                          onAssigneeChange={(id) => {
+                            const assignee = users.find((u) => u.id === id);
+                            const updated = { ...task, assigneeId: id, assigneeName: assignee?.name || null };
+                            setTask(updated);
+                            onChange(updated);
+                          }}
+                          size="md"
+                        />
+                      ) : null}
+                      {task.assigneeName ? (
+                        <span className="text-sm text-slate-900">{task.assigneeName}</span>
+                      ) : <span className="text-sm text-slate-500">Unassigned</span>}
+                    </div>
+                  )}
                 </div>
-              ))}
+                <div className="sm:w-40">
+                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Due Date</label>
+                  {editing ? (
+                    <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-sm text-slate-700"><Calendar size={14} className="text-slate-400" />{task.dueDate ? formatDate(task.dueDate) : <span className="text-slate-500">None</span>}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Status</label>
+                {editing ? (
+                  <div className="flex flex-wrap gap-2">
+                    {STATUS_CONFIG.map((s) => (
+                      <button key={s.key} onClick={() => setEditStatus(s.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editStatus === s.key ? s.color : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100")}>
+                        <span className={clsx("h-2 w-2 rounded-full", s.dot)} />{s.label}{editStatus === s.key && <Check size={12} className="ml-1" />}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", statusCfg.dot)} /><span className="text-sm text-slate-900">{statusCfg.label}</span></div>
+                )}
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Priority</label>
+                {editing ? (
+                  <div className="flex flex-wrap gap-2">
+                    {PRIORITY_CONFIG.map((p) => (
+                      <button key={p.key} onClick={() => setEditPriority(p.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editPriority === p.key ? PriorityBadge[p.key] : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100")}>
+                        <span className={clsx("h-2.5 w-2.5 rounded-full", p.color)} />{p.label}{editPriority === p.key && <Check size={12} className="ml-1" />}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", priorityCfg.color)} /><span className="text-sm text-slate-900">{priorityCfg.label}</span></div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Description</label>
+                {editing ? (
+                  <RichTextEditor value={editDescription} onChange={setEditDescription} rows={6} placeholder="Add context, acceptance criteria, links, or implementation notes..." />
+                ) : (
+                  <RichTextPreview value={task.description || ""} empty="No description" />
+                )}
+              </div>
+
+              {/* Footer meta */}
+              <div className="pt-2 border-t border-slate-200">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Calendar size={12} />
+                  <span>Created {formatDate(task.createdAt)} · Updated {formatRelative(task.updatedAt)}</span>
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={handleAddComment} className="space-y-2">
-              <RichTextEditor
-                value={newComment}
-                onChange={setNewComment}
-                rows={3}
-                placeholder="Write an update, decision, blocker, or link..."
-                users={users}
-              />
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={createCommentMutation.isPending || !newComment.trim()}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition"
-                >
-                  {createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  Add comment
-                </button>
+            {/* Right: Activity */}
+            <div className="p-5 md:p-6 space-y-5 bg-slate-50 min-w-0">
+              <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                <MessageCircle size={16} className="text-brand-500" />
+                Activity
+                <span className="text-xs text-slate-600 font-normal">{comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""}</span>
+              </h4>
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                {topLevelComments.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No activity yet</p>}
+                {topLevelComments.map((c) => {
+                  const replies = repliesByParent.get(c.id) || [];
+                  return (
+                    <div key={c.id} className="space-y-2">
+                      <div className="flex gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[10px] font-bold text-brand-600 shrink-0">{getInitials(c.authorName)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs font-medium text-slate-900 truncate">{c.authorName || "Unknown"}</span>
+                              <span className="text-[10px] text-slate-500 shrink-0">{formatRelative(c.createdAt)}</span>
+                            </div>
+                            {c.authorId === currentUserId && editingCommentId !== c.id && (
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <button onClick={() => startEditComment(c)} className="p-1 rounded text-slate-400 hover:text-brand-600 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
+                                <button onClick={() => handleDeleteComment(c.id)} disabled={deleteCommentMutation.isPending} className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
+                              </div>
+                            )}
+                          </div>
+
+                          {editingCommentId === c.id ? (
+                              <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="mt-1.5 space-y-2">
+                              <RichTextEditor value={editCommentContent} onChange={setEditCommentContent} rows={3} placeholder="Edit your comment..." users={users} />
+                              <div className="flex gap-2 justify-end">
+                                <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                                <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
+                              </div>
+                            </form>
+                          ) : (
+                            <div className="mt-1"><RichTextPreview value={c.content} empty="" /></div>
+                          )}
+
+                          {editingCommentId !== c.id && (
+                            <button onClick={() => { setReplyingToId(replyingToId === c.id ? null : c.id); setNewComment(""); }} className="text-[11px] text-slate-500 hover:text-brand-600 transition mt-1">
+                              {replyingToId === c.id ? "Cancel reply" : replies.length > 0 ? `Reply (${replies.length})` : "Reply"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Nested replies */}
+                      {replies.length > 0 && (
+                        <div className="ml-4 pl-4 border-l-2 border-slate-200 space-y-3">
+                          {replies.map((reply) => (
+                            <div key={reply.id} className="flex gap-2">
+                              <div className="h-5 w-5 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-[8px] font-bold text-brand-600 shrink-0 mt-0.5">{getInitials(reply.authorName)}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-xs font-medium text-slate-900 truncate">{reply.authorName || "Unknown"}</span>
+                                    <span className="text-[10px] text-slate-500 shrink-0">{formatRelative(reply.createdAt)}</span>
+                                  </div>
+                                  {reply.authorId === currentUserId && editingCommentId !== reply.id && (
+                                    <div className="flex items-center gap-0.5 shrink-0">
+                                      <button onClick={() => startEditComment(reply)} className="p-0.5 rounded text-slate-400 hover:text-brand-600 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
+                                      <button onClick={() => handleDeleteComment(reply.id)} disabled={deleteCommentMutation.isPending} className="p-0.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
+                                    </div>
+                                  )}
+                                </div>
+                                {editingCommentId === reply.id ? (
+                                  <form onSubmit={(e) => { e.preventDefault(); saveEditComment(reply); }} className="mt-1 space-y-2">
+                                    <RichTextEditor value={editCommentContent} onChange={setEditCommentContent} rows={3} placeholder="Edit your reply..." users={users} />
+                                    <div className="flex gap-2 justify-end">
+                                      <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                                      <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <div className="mt-0.5"><RichTextPreview value={reply.content} empty="" /></div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </form>
+
+              {/* Comment form */}
+              <form onSubmit={handleAddComment} className="space-y-2 pt-2 border-t border-slate-200">
+                {replyingToId ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-brand-600">
+                      Replying to {topLevelComments.find((c) => c.id === replyingToId)?.authorName || "Unknown"}
+                    </span>
+                    <button type="button" onClick={cancelReply} className="text-[11px] text-slate-500 hover:text-slate-700 transition">Cancel</button>
+                  </div>
+                ) : null}
+                <RichTextEditor value={newComment} onChange={setNewComment} rows={3} placeholder={replyingToId ? "Write a reply..." : "Write an update, decision, blocker, or link..."} users={users} />
+                <div className="flex justify-end">
+                  <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}{replyingToId ? "Reply" : "Add comment"}</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ export default async function ProjectBacklogPage({
   const user = await getSession();
   const { id } = await params;
 
-  const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
+  const [project] = await db.select().from(projects).where(and(eq(projects.id, id), isNull(projects.deletedAt))).limit(1);
   if (!project) notFound();
 
   const backlogTasks = await db
@@ -34,7 +34,7 @@ export default async function ProjectBacklogPage({
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
-    .where(and(eq(tasks.projectId, id), isNull(tasks.sprintId)))
+    .where(and(eq(tasks.projectId, id), isNull(tasks.sprintId), isNull(tasks.deletedAt)))
     .orderBy(asc(tasks.position), asc(tasks.createdAt));
 
   const sprintRows = await db

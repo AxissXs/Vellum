@@ -5,6 +5,7 @@ import {
   useCallback,
   useMemo,
   useRef,
+  useEffect,
   useSyncExternalStore,
 } from "react";
 import {
@@ -43,7 +44,8 @@ import {
 import { clsx } from "clsx";
 import TaskDetailModal from "@/app/dashboard/projects/[id]/TaskDetailModal";
 import { useCreateTask, useReorderTasks } from "@/hooks/useTasks";
-import { useRealtime } from "@/hooks/useRealtime";
+import { useRealtime, type TaskUpdatePayload } from "@/hooks/useRealtime";
+import { applyTaskEventToColumns } from "@/lib/kanban-realtime";
 import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
@@ -243,12 +245,10 @@ function TaskCard({
   task,
   users,
   onClick,
-  onDragStart,
 }: {
   task: Task;
   users: User[];
   onClick: () => void;
-  onDragStart: () => void;
 }) {
   const {
     attributes,
@@ -270,7 +270,6 @@ function TaskCard({
       ref={setNodeRef}
       style={style}
       onClick={onClick}
-      onDragStart={onDragStart}
       className={clsx(
         "group bg-slate-50 border border-slate-200 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-slate-100",
         priorityColors[task.priority],
@@ -300,13 +299,11 @@ function Column({
   column,
   users,
   onTaskClick,
-  onDragStart,
   addForm,
 }: {
   column: Column;
   users: User[];
   onTaskClick: (task: Task) => void;
-  onDragStart: (task: Task) => void;
   addForm?: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -352,7 +349,6 @@ function Column({
               task={task}
               users={users}
               onClick={() => onTaskClick(task)}
-              onDragStart={() => onDragStart(task)}
             />
           ))}
         </div>
@@ -378,7 +374,9 @@ export default function KanbanBoardClient({
   const dragOriginStatusRef = useRef<string | null>(null);
   const columnsBeforeDragRef = useRef<Column[] | null>(null);
   const columnsRef = useRef(columns);
-  columnsRef.current = columns;
+  useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
 
   // Mounted flag: render the static board on the server/first paint, then
   // mount DndContext on the client to avoid hydration mismatch.
@@ -407,8 +405,27 @@ export default function KanbanBoardClient({
   const createTask = useCreateTask();
   const reorderTasks = useReorderTasks();
 
+  const handleRemoteTaskEvent = useCallback((payload: TaskUpdatePayload) => {
+    setColumns((prev) => {
+      const next = applyTaskEventToColumns(prev, payload) as Column[];
+      if (next !== prev) columnsRef.current = next;
+      return next;
+    });
+
+    if (payload.type === "deleted" && payload.taskId) {
+      setSelectedTask((t) => (t?.id === payload.taskId ? null : t));
+    } else if (
+      (payload.type === "created" || payload.type === "updated") &&
+      payload.task
+    ) {
+      setSelectedTask((t) =>
+        t?.id === payload.task!.id ? ({ ...t, ...payload.task } as Task) : t
+      );
+    }
+  }, []);
+
   // Subscribe to global real-time task updates (cross-project board view)
-  useRealtime();
+  useRealtime(undefined, undefined, handleRemoteTaskEvent);
 
   const filteredColumns = useMemo(() => {
     if (selectedProjectId === "all" && !searchQuery) {
@@ -426,16 +443,17 @@ export default function KanbanBoardClient({
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;
-    const task = columns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
+    const currentColumns = columnsRef.current;
+    const task = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
     if (task) {
       dragOriginStatusRef.current = task.status;
-      columnsBeforeDragRef.current = columns.map((c) => ({
+      columnsBeforeDragRef.current = currentColumns.map((c) => ({
         ...c,
         tasks: [...c.tasks],
       }));
       setActiveDragTask(task);
     }
-  }, [columns]);
+  }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
@@ -446,16 +464,17 @@ export default function KanbanBoardClient({
 
     if (activeId === overId) return;
 
-    const activeTask = columns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    if (!activeTask) return;
+    setColumns((prev) => {
+      const activeTask = prev.flatMap((c) => c.tasks).find((t) => t.id === activeId);
+      if (!activeTask) return prev;
 
-    const activeColumn = findColumnForTask(columns, activeId);
-    const overColumn = resolveOverColumn(columns, overId);
-    if (!activeColumn || !overColumn) return;
+      const activeColumn = findColumnForTask(prev, activeId);
+      const overColumn = resolveOverColumn(prev, overId);
+      if (!activeColumn || !overColumn) return prev;
 
-    if (activeColumn.key !== overColumn.key) {
-      setColumns((prev) =>
-        prev.map((col) => {
+      if (activeColumn.key !== overColumn.key) {
+        if (!activeColumn.tasks.some((t) => t.id === activeId)) return prev;
+        return prev.map((col) => {
           if (col.key === activeColumn.key) {
             return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
           }
@@ -473,18 +492,15 @@ export default function KanbanBoardClient({
             return { ...col, tasks: newTasks };
           }
           return col;
-        })
-      );
-      return;
-    }
+        });
+      }
 
-    if (!isColumnDroppableId(overId)) {
-      const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return;
+      if (!isColumnDroppableId(overId)) {
+        const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
+        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+        if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return prev;
 
-      setColumns((prev) =>
-        prev.map((col) => {
+        return prev.map((col) => {
           if (col.key === activeColumn.key) {
             const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
               t.id === activeId ? { ...t, position: String(i) } : t
@@ -492,10 +508,12 @@ export default function KanbanBoardClient({
             return { ...col, tasks: newTasks };
           }
           return col;
-        })
-      );
-    }
-  }, [columns]);
+        });
+      }
+
+      return prev;
+    });
+  }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -845,7 +863,6 @@ export default function KanbanBoardClient({
                 <Column
                   column={column}
                   onTaskClick={setSelectedTask}
-                  onDragStart={() => {}}
                   users={users}
                   addForm={taskForm}
                 />

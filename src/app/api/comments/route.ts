@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { content, taskId } = await req.json();
+  const { content, taskId, parentId } = await req.json();
   if (!content || !taskId) {
     return NextResponse.json(
       { error: "Content and taskId are required" },
@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await createCommentForUser(user, taskId, content);
-
-  return NextResponse.json({ comment: result }, { status: 201 });
+  try {
+    const result = await createCommentForUser(user, taskId, content, parentId);
+    return NextResponse.json({ comment: result }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create comment";
+    const status =
+      message.includes("Parent") || message.includes("nest") || message.includes("different")
+        ? 400
+        : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
 }

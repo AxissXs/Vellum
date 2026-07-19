@@ -233,18 +233,12 @@ export default function TeamManagementClient({
           <>
             <section className="bg-white border border-slate-200 rounded-xl p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-900">{selectedTeam.name}</h1>
-                  <p className="mt-1 text-sm text-slate-500">{selectedTeam.description || "No description"}</p>
-                  {selectedTeam.focus && (
-                    <p className="mt-2 rounded-lg bg-slate-50/60 px-3 py-2 text-sm text-slate-600">
-                      <span className="text-slate-500">Focus:</span> {selectedTeam.focus}
-                    </p>
-                  )}
-                </div>
+                <h1 className="text-2xl font-bold text-slate-900 min-w-0 flex-1">
+                  {selectedTeam.name}
+                </h1>
                 {canManage && (
-                  <div className="flex gap-2">
-                    <button onClick={() => openEditTeam(selectedTeam)} className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-white/15 transition">
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => openEditTeam(selectedTeam)} className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200 transition">
                       <Save size={14} /> Edit
                     </button>
                     {canDelete && (
@@ -255,6 +249,14 @@ export default function TeamManagementClient({
                   </div>
                 )}
               </div>
+              <p className="mt-2 text-sm text-slate-500 whitespace-pre-wrap wrap-break-word">
+                {selectedTeam.description || "No description"}
+              </p>
+              {selectedTeam.focus && (
+                <p className="mt-2 rounded-lg bg-slate-50/60 px-3 py-2 text-sm text-slate-600 whitespace-pre-wrap wrap-break-word">
+                  <span className="text-slate-500">Focus:</span> {selectedTeam.focus}
+                </p>
+              )}
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="rounded-xl bg-slate-50/50 p-4">

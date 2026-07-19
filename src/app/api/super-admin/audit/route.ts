@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("userId");
   const action = searchParams.get("action");
   const ip = searchParams.get("ip");
+  const tag = searchParams.get("tag");
+  const severity = searchParams.get("severity");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -25,25 +27,16 @@ export async function GET(req: NextRequest) {
 
   const conditions = [];
 
-  if (userId) {
-    conditions.push(eq(activityLogs.userId, userId));
-  }
-  if (action) {
-    conditions.push(sql`${activityLogs.action} ILIKE ${`%${action}%`}`);
-  }
-  if (ip) {
-    conditions.push(sql`${activityLogs.ipAddress} ILIKE ${`%${ip}%`}`);
-  }
-  if (from) {
-    conditions.push(gte(activityLogs.createdAt, new Date(from)));
-  }
-  if (to) {
-    conditions.push(lte(activityLogs.createdAt, new Date(to)));
-  }
+  if (userId) conditions.push(eq(activityLogs.userId, userId));
+  if (action) conditions.push(sql`${activityLogs.action} ILIKE ${`%${action}%`}`);
+  if (ip) conditions.push(sql`${activityLogs.ipAddress} ILIKE ${`%${ip}%`}`);
+  if (tag) conditions.push(eq(activityLogs.tag, tag));
+  if (severity) conditions.push(eq(activityLogs.severity, severity));
+  if (from) conditions.push(gte(activityLogs.createdAt, new Date(from)));
+  if (to) conditions.push(lte(activityLogs.createdAt, new Date(to)));
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  // Count total
   const [countResult] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(activityLogs)
@@ -51,7 +44,6 @@ export async function GET(req: NextRequest) {
 
   const total = countResult.count;
 
-  // Fetch rows
   const rows = await db
     .select({
       id: activityLogs.id,
@@ -63,6 +55,8 @@ export async function GET(req: NextRequest) {
       entityId: activityLogs.entityId,
       details: activityLogs.details,
       ipAddress: activityLogs.ipAddress,
+      tag: activityLogs.tag,
+      severity: activityLogs.severity,
       createdAt: activityLogs.createdAt,
     })
     .from(activityLogs)

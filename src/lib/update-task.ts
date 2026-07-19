@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { tasks, users, taskStatusHistory } from "@/db/schema";
 import type { AuthUser } from "@/lib/auth";
@@ -31,7 +31,7 @@ export async function updateTaskForUser(
   taskId: string,
   input: UpdateTaskInput
 ) {
-  const [current] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  const [current] = await db.select().from(tasks).where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt))).limit(1);
   if (!current) return null;
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
@@ -90,7 +90,7 @@ export async function updateTaskForUser(
     details: actionDetail,
   });
 
-  broadcastTaskEvent(task.projectId, {
+  await broadcastTaskEvent(task.projectId, {
     type: "updated",
     task: {
       ...task,
@@ -104,31 +104,32 @@ export async function updateTaskForUser(
     actorName: user.name || "Someone",
   });
 
-  if (statusChanged && task.assigneeId && task.assigneeId !== user.id) {
+  if (statusChanged) {
     const label = statusLabels[input.status!] || "updated";
-    await sendNotification({
-      userId: task.assigneeId,
-      type: "status_changed",
-      title: "Task Status Changed",
-      content: `${user.name || "Someone"} ${label} "${task.title}"`,
-      entityType: "task",
-      entityId: task.id,
-      actorUserId: user.id,
-      pushPayload: {
+    const notifyUserId = task.assigneeId ?? task.creatorId;
+    if (notifyUserId && notifyUserId !== user.id) {
+      await sendNotification({
+        userId: notifyUserId,
+        type: "status_changed",
         title: "Task Status Changed",
-        body: `${user.name || "Someone"} ${label} "${task.title}"`,
-        tag: `task-${task.id}`,
-      },
-      url: `/dashboard/tasks`,
-    });
+        content: `${user.name || "Someone"} ${label} "${task.title}"`,
+        entityType: "task",
+        entityId: task.id,
+        actorUserId: user.id,
+        pushPayload: {
+          title: "Task Status Changed",
+          body: `${user.name || "Someone"} ${label} "${task.title}"`,
+          tag: `task-${task.id}`,
+        },
+        url: `/dashboard/projects/${task.projectId}`,
+      });
+    }
   }
 
-  if (
-    input.assigneeId !== undefined &&
-    input.assigneeId &&
-    input.assigneeId !== user.id &&
-    input.assigneeId !== current.assigneeId
-  ) {
+  const assigneeChanged =
+    input.assigneeId !== undefined && input.assigneeId !== current.assigneeId;
+
+  if (assigneeChanged && input.assigneeId && input.assigneeId !== user.id) {
     await sendNotification({
       userId: input.assigneeId,
       type: "task_assigned",
@@ -142,7 +143,7 @@ export async function updateTaskForUser(
         body: `${user.name || "Someone"} assigned you "${task.title}"`,
         tag: `task-${task.id}`,
       },
-      url: `/dashboard/tasks`,
+      url: `/dashboard/projects/${task.projectId}`,
     });
   }
 

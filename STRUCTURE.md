@@ -240,6 +240,7 @@ src/
 │   ├── pusher-broadcast.ts # Broadcast task/comment events
 │   ├── pusher-channels.ts  # Server-side channel ref counting
 │   ├── pusher-client.ts    # Pusher client singleton + ref counting
+│   ├── kanban-realtime.ts  # Apply Pusher task events to Kanban columns
 │   ├── mentions.ts         # Parse @FirstName mentions from comment markdown
 │   ├── telegram.ts         # Telegram bot API + pairing helpers
 │   ├── telegram-bot/       # Inbound bot command flows (DM)
@@ -400,13 +401,12 @@ src/
 ### `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
 **Purpose**: Modal for task details (description, comments, activity)
-**Exports**: `TaskDetailModal({ task, users, currentUserId, onClose, onChange })` - Client component
+**Exports**: `TaskDetailModal({ task, users, currentUserId, userRole?, onClose, onChange, onDelete? })` - Client component
 
-- Rich text editor for description
-- Inline task editing (title, status, priority, assignee, due date)
-- Comments section with CRUD
+- Two-column layout; visual status/priority selectors; searchable assignee (`TaskAssigneePopover`)
+- Soft-delete confirmation (restorable via Super Admin Trash)
+- Comments with 1-level threaded replies (`parentId`)
 - Real-time comment updates via `useRealtime()`
-- Task delete confirmation
 
 ### `src/app/dashboard/projects/[id]/ProjectManagementPanel.tsx`
 
@@ -441,7 +441,7 @@ src/
 
 ### `src/app/dashboard/sprints/SprintsClient.tsx`
 
-**Purpose**: Sprint list with create modal
+**Purpose**: Sprint list with create/edit modal (name, goal, required date range)
 **Exports**: `SprintsClient({ projects, currentUserId })` - Client component
 
 ### `src/app/dashboard/sprints/[id]/page.tsx`
@@ -655,7 +655,7 @@ src/
 #### `src/app/api/sprints/route.ts`
 
 **Methods**: `GET`, `POST`
-**Purpose**: List/Create sprints (filter by `?projectId`)
+**Purpose**: List/Create sprints (filter by `?projectId`; creation requires a valid date range)
 **Functions**:
 
 - `GET(req)` - List sprints for a project
@@ -664,7 +664,7 @@ src/
 #### `src/app/api/sprints/[id]/route.ts`
 
 **Methods**: `GET`, `PATCH`, `DELETE`
-**Purpose**: Sprint CRUD; activating a sprint deactivates others in the project; completing a sprint rolls unfinished tasks to backlog
+**Purpose**: Sprint CRUD with date-range validation; activating a sprint deactivates others in the project; completing a sprint rolls unfinished tasks to backlog
 **Functions**:
 
 - `GET(req, { params })` - Get sprint
@@ -731,8 +731,8 @@ src/
 **Purpose**: Task comments
 **Functions**:
 
-- `GET(req)` - List comments (query: `taskId`)
-- `POST(req)` - Create comment
+- `GET(req)` - List comments (query: `taskId`); includes `parentId`
+- `POST(req)` - Create comment (optional `parentId` for 1-level replies)
 
 #### `src/app/api/notifications/route.ts`
 
@@ -740,7 +740,48 @@ src/
 **Purpose**: List in-app notifications for current user
 **Functions**:
 
-- `GET(req)` - Returns notifications (optional unread filter)
+- `GET(req)` - Returns notifications including optional `url` deep link
+
+#### `src/app/api/sessions/me/route.ts`
+
+**Methods**: `GET`, `DELETE`
+**Purpose**: Current user's active sessions
+**Functions**:
+
+- `GET(req)` - List own sessions
+- `DELETE(req)` - Revoke all other sessions
+
+#### `src/app/api/sessions/me/[id]/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Revoke a single own session
+**Functions**:
+
+- `DELETE(req, { params })` - Revoke session by id (self only)
+
+#### `src/app/api/super-admin/trash/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List soft-deleted entities (superadmin)
+**Functions**:
+
+- `GET(req)` - Paginated trash with type/search filters
+
+#### `src/app/api/super-admin/restore/route.ts`
+
+**Methods**: `PATCH`
+**Purpose**: Bulk restore soft-deleted entities (superadmin)
+**Functions**:
+
+- `PATCH(req)` - Body `{ entities: [{ type, id }] }`
+
+#### `src/app/api/super-admin/audit/[id]/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Audit log detail with snapshots
+**Functions**:
+
+- `GET(req, { params })` - Log + actor + snapshots + timeline
 
 #### `src/app/api/notifications/[id]/route.ts`
 
@@ -1175,13 +1216,21 @@ src/
 
 **Purpose**: Real-time task and comment updates via Pusher
 **Exports**:
-- `useRealtime(projectId?, taskId?)` - Subscribe to live updates
+- `useRealtime(projectId?, taskId?, onTaskEvent?)` - Subscribe to live updates
+- `TaskUpdatePayload`, `CommentUpdatePayload` - Event payload types
 
 **Behavior**:
-- Subscribes to `project-${projectId}` and `task-updates` channels for task events
-- Subscribes to `task-${taskId}` channel for comment events
-- Invalidates relevant React Query caches on incoming events
-- Shows toast notifications for updates from other users (skips self)
+- Project board: `project-${projectId}`; global board: `task-updates`
+- Invalidates React Query task/comment caches
+- Calls `onTaskEvent` for remote actors (Kanban applies to local `columns`)
+- Toast for other users' changes (skips self)
+
+#### `src/lib/kanban-realtime.ts`
+
+**Purpose**: Apply Pusher task events to local Kanban column state
+**Exports**:
+- `applyTaskEventToColumns(columns, payload, options?)` - Merge create/update/delete/reorder into columns
+- `KanbanColumn`, `KanbanTask` types
 
 #### `src/hooks/useMilestones.ts`
 
@@ -1321,15 +1370,24 @@ src/
 **Purpose**: Deferred activity-log inserts for mutating API routes
 **Exports**:
 
-- `ActivityLogInput` - Shape for activity rows
-- `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response)
+- `ActivityLogInput` - Shape for activity rows (optional `tag`, `severity`, `snapshots`)
+- `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response); writes optional `activity_log_snapshots`
 
 #### `src/lib/audit.ts`
 
-**Purpose**: Client IP extraction for audit / activity logging
+**Purpose**: Client IP + activity tag/severity classification helpers
 **Exports**:
 
-- `getClientIP(req)` - Resolve IP from request headers
+- `getClientIP(req)` / `getClientIPFromHeaders(headers)` - Resolve IP
+- `classifyTag(action)` / `classifySeverity(action)` - Audit metadata
+- `Snapshot` - Optional snapshot shape for `logActivity`
+
+#### `src/lib/last-seen.ts`
+
+**Purpose**: Throttled user last-seen updates (fire-and-forget from `getSession`)
+**Exports**:
+
+- `shouldUpdateLastSeen(userId)` / `updateLastSeen(userId, ip)`
 
 #### `src/lib/notifications.ts`
 
@@ -1417,14 +1475,15 @@ src/
 
 #### `src/lib/pusher-broadcast.ts`
 
-**Purpose**: Broadcast task and comment events to Pusher channels
+**Purpose**: Broadcast task/comment/schedule events to Pusher channels (awaited in-request)
 **Exports**:
-- `broadcastTaskEvent(projectId, payload)` - Schedule task broadcast via Next.js `after()` (non-blocking)
-- `broadcastCommentEvent(taskId, payload)` - Schedule comment broadcast via Next.js `after()` (non-blocking)
+- `broadcastTaskEvent(projectId, payload)` - Trigger on `project-${id}` + `task-updates` (must await; Deno Deploy drops `after()`)
+- `broadcastCommentEvent(taskId, payload)` - Trigger on `task-${id}` (must await)
+- `broadcastScheduleEvent(payload)` - Trigger on `calendar-updates` (must await)
 
 #### `src/lib/pusher-channels.ts`
 
-**Purpose**: Server-side channel subscription reference counting (side-effects module)
+**Purpose**: Legacy channel ref counting module (prefer `pusher-client.ts` helpers)
 **Exports**:
 - `subscribeChannel(name)` - Increment ref count and subscribe
 - `unsubscribeChannel(name)` - Decrement ref count and unsubscribe when 0
@@ -1433,9 +1492,15 @@ src/
 
 **Purpose**: Pusher client singleton and channel ref counting for browser
 **Exports**:
-- `getPusherClient()` - Shared Pusher-js instance, or `null` when `NEXT_PUBLIC_PUSHER_KEY` / `NEXT_PUBLIC_PUSHER_CLUSTER` unset (realtime no-ops; page must not crash)
-- `subscribeChannel(name)` - Client-side subscribe with ref counting (no-op if client null)
-- `unsubscribeChannel(name)` - Client-side unsubscribe with ref counting
+- `getPusherClientAsync()` - Shared Pusher-js instance; build-time `NEXT_PUBLIC_*` or runtime `GET /api/pusher/config`
+- `getPusherClient()` - Sync accessor after async init (may be null before init)
+- `subscribeChannel(name, client)` / `unsubscribeChannel(name, client)` - Ref-counted subscribe
+
+#### `src/app/api/pusher/config/route.ts`
+
+**Purpose**: Runtime public Pusher key/cluster for the browser
+**Exports**:
+- `GET()` - `{ configured, key?, cluster? }` from `PUSHER_KEY` / `PUSHER_CLUSTER`
 
 ---
 

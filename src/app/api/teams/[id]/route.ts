@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teams } from "@/db/schema";
+import { teams, teamMembers } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export async function PATCH(
   req: NextRequest,
@@ -41,6 +41,21 @@ export async function DELETE(
   if (user.role !== "superadmin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  await db.delete(teams).where(eq(teams.id, id));
+
+  const [team] = await db.select().from(teams).where(and(eq(teams.id, id), isNull(teams.deletedAt))).limit(1);
+  if (!team) {
+    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+  }
+
+  await db
+    .update(teams)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(teams.id, id));
+
+  await db
+    .update(teamMembers)
+    .set({ deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(teamMembers.teamId, id));
+
   return NextResponse.json({ success: true });
 }

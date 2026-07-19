@@ -75,13 +75,13 @@ export default function SuperAdminActivityPanel() {
           icon={<LogIn size={18} />}
           label="Logins (24h)"
           value={stats.logins24h.toLocaleString()}
-          color="text-brand-400"
+          color="text-brand-600"
         />
         <StatCard
           icon={<AlertTriangle size={18} />}
           label="Failed Attempts (24h)"
           value={stats.failed24h.toLocaleString()}
-          color="text-red-400"
+          color="text-red-600"
         />
         <StatCard
           icon={<UserCheck size={18} />}
@@ -95,7 +95,7 @@ export default function SuperAdminActivityPanel() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-            <Zap size={16} className="text-amber-400" />
+            <Zap size={16} className="text-amber-600" />
             Live Activity Feed
           </h3>
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">
@@ -111,7 +111,7 @@ export default function SuperAdminActivityPanel() {
         )}
 
         {isError && (
-          <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+          <div className="flex items-center justify-center py-12 text-red-600 text-sm">
             Failed to load activity feed.
           </div>
         )}
@@ -166,13 +166,13 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
   if (isLogin) {
     icon = <LogIn size={14} />;
-    iconBg = "bg-brand-500/10 text-brand-400 border-brand-500/20";
+    iconBg = "bg-brand-500/10 text-brand-600 border-brand-500/20";
   } else if (isFailed) {
     icon = <AlertTriangle size={14} />;
-    iconBg = "bg-red-500/10 text-red-400 border-red-500/20";
+    iconBg = "bg-red-500/10 text-red-600 border-red-500/20";
   } else {
     icon = <Zap size={14} />;
-    iconBg = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+    iconBg = "bg-amber-500/10 text-amber-600 border-amber-500/20";
   }
 
   return (

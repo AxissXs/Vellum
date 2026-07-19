@@ -38,6 +38,27 @@ export async function PATCH(
     return NextResponse.json({ error: "Sprint not found" }, { status: 404 });
   }
 
+  if (name !== undefined && !name?.trim()) {
+    return NextResponse.json({ error: "Sprint name is required" }, { status: 400 });
+  }
+
+  let parsedStartDate: Date | null = existing.startDate;
+  let parsedEndDate: Date | null = existing.endDate;
+  if (startDate !== undefined || endDate !== undefined) {
+    parsedStartDate = startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate;
+    parsedEndDate = endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate;
+
+    if (
+      !parsedStartDate ||
+      !parsedEndDate ||
+      Number.isNaN(parsedStartDate.getTime()) ||
+      Number.isNaN(parsedEndDate.getTime()) ||
+      parsedEndDate < parsedStartDate
+    ) {
+      return NextResponse.json({ error: "Invalid sprint date range" }, { status: 400 });
+    }
+  }
+
   const nextStatus = status !== undefined ? status : existing.status;
   const completing =
     nextStatus === "completed" && existing.status !== "completed";
@@ -51,10 +72,10 @@ export async function PATCH(
   }
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
-  if (name !== undefined) updateData.name = name;
+  if (name !== undefined) updateData.name = name.trim();
   if (goal !== undefined) updateData.goal = goal;
-  if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
-  if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+  if (startDate !== undefined) updateData.startDate = parsedStartDate;
+  if (endDate !== undefined) updateData.endDate = parsedEndDate;
 
   updateData.status = nextStatus;
 

@@ -11,6 +11,7 @@ type Comment = {
   content: string;
   taskId: string;
   authorId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   authorName: string | null;
@@ -20,6 +21,7 @@ type Comment = {
 type CommentCreateInput = {
   content: string;
   taskId: string;
+  parentId?: string | null;
 };
 
 type CommentUpdateInput = { id: string; taskId: string; content?: string };
@@ -47,6 +49,7 @@ export function useCreateComment() {
         content: newComment.content,
         taskId: newComment.taskId,
         authorId: "",
+        parentId: newComment.parentId || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         authorName: null,
@@ -59,7 +62,7 @@ export function useCreateComment() {
 
       return { previousComments, taskId: newComment.taskId };
     },
-    onError: (err, newComment, context) => {
+    onError: (_err, _newComment, context) => {
       if (context?.previousComments) {
         queryClient.setQueryData(getCommentQueryKey(context.taskId), context.previousComments);
       }
@@ -70,7 +73,7 @@ export function useCreateComment() {
         old?.map((c) => (c.id.startsWith("temp-") ? data : c)) || []
       );
     },
-    onSettled: (data, error, newComment) => {
+    onSettled: (_data, _error, newComment) => {
       queryClient.invalidateQueries({ queryKey: getCommentQueryKey(newComment.taskId) });
     },
   });
@@ -97,13 +100,13 @@ export function useUpdateComment() {
 
       return { previousComments, taskId: updatedComment.taskId };
     },
-    onError: (err, updatedComment, context) => {
+    onError: (_err, _updatedComment, context) => {
       if (context?.previousComments) {
         queryClient.setQueryData(getCommentQueryKey(context.taskId), context.previousComments);
       }
       toast.error("Failed to update comment");
     },
-    onSettled: (data, error, updatedComment) => {
+    onSettled: (_data, _error, updatedComment) => {
       queryClient.invalidateQueries({ queryKey: getCommentQueryKey(updatedComment.taskId) });
     },
   });
@@ -126,13 +129,16 @@ export function useDeleteComment() {
         const data = queryClient.getQueryData<Comment[]>(query.queryKey);
         if (data) {
           previousData.set(query.queryKey, data);
-          queryClient.setQueryData(query.queryKey, data.filter((c) => c.id !== commentId));
+          queryClient.setQueryData(
+            query.queryKey,
+            data.filter((c) => c.id !== commentId && c.parentId !== commentId)
+          );
         }
       }
 
       return { previousData };
     },
-    onError: (err, commentId, context) => {
+    onError: (_err, _commentId, context) => {
       if (context?.previousData) {
         for (const [key, data] of context.previousData) {
           queryClient.setQueryData(key, data);

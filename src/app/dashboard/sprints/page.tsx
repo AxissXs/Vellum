@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import SprintsClient from "./SprintsClient";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function SprintsPage() {
   const projectRows = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })
     .from(projects)
-    .where(eq(projects.archived, false))
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
     .orderBy(asc(projects.createdAt));
 
   return (

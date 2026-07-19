@@ -19,7 +19,21 @@ self.addEventListener("push", function (event) {
     actions: payload.actions || [],
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Skip OS push when an app tab is visible — in-app toast already shows.
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(function (windowClients) {
+        const appVisible = windowClients.some(function (client) {
+          return (
+            client.visibilityState === "visible" ||
+            ("focused" in client && client.focused)
+          );
+        });
+        if (appVisible) return;
+        return self.registration.showNotification(title, options);
+      })
+  );
 });
 
 self.addEventListener("notificationclick", function (event) {

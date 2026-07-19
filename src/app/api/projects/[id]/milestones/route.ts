@@ -4,7 +4,7 @@ import { projectMilestones } from "@/db/schema";
 import { getSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { hasPermission } from "@/lib/permissions";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
@@ -17,7 +17,7 @@ export async function GET(
   const milestones = await db
     .select()
     .from(projectMilestones)
-    .where(eq(projectMilestones.projectId, id))
+    .where(and(eq(projectMilestones.projectId, id), isNull(projectMilestones.deletedAt)))
     .orderBy(asc(projectMilestones.dueDate), asc(projectMilestones.createdAt));
 
   return NextResponse.json({ milestones });

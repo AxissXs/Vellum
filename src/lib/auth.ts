@@ -1,8 +1,10 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { shouldUpdateLastSeen, updateLastSeen } from "@/lib/last-seen";
+import { getClientIPFromHeaders } from "@/lib/audit";
 
 const SESSION_COOKIE = "tf_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -49,7 +51,7 @@ export const getSession = cache(async (): Promise<AuthUser | null> => {
     return null;
   }
 
-  return {
+  const user: AuthUser = {
     id: row.id,
     name: row.name!,
     email: row.email!,
@@ -57,6 +59,14 @@ export const getSession = cache(async (): Promise<AuthUser | null> => {
     status: row.status!,
     avatarUrl: row.avatarUrl,
   };
+
+  if (shouldUpdateLastSeen(user.id)) {
+    const hdrs = await headers();
+    const ip = getClientIPFromHeaders(hdrs);
+    updateLastSeen(user.id, ip);
+  }
+
+  return user;
 });
 
 export async function createSession(userId: string): Promise<string> {

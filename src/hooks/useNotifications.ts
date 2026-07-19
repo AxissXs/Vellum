@@ -6,10 +6,8 @@ import {
   useQueryClient,
   QueryKey,
 } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { getPusherClient } from "@/lib/pusher-client";
 
 type NotificationItem = {
   id: string;
@@ -20,6 +18,7 @@ type NotificationItem = {
   read: boolean;
   entityType: string | null;
   entityId: string | null;
+  url: string | null;
   actorUserId: string | null;
   actorName: string | null;
   createdAt: string;
@@ -51,51 +50,6 @@ export function useNotifications() {
   const notifications = data ?? [];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // Real-time badge update via Pusher
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let channelName: string | null = null;
-    let channel: ReturnType<NonNullable<ReturnType<typeof getPusherClient>>["subscribe"]> | null =
-      null;
-    let cancelled = false;
-
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        const userId: string | null = data?.user?.id ?? null;
-        if (!userId) return;
-
-        const client = getPusherClient();
-        if (!client) return;
-
-        channelName = `user-${userId}`;
-        channel = client.subscribe(channelName);
-
-        channel.bind("notification", (payload: { notification: NotificationItem }) => {
-          queryClient.invalidateQueries({ queryKey: getNotificationsQueryKey() });
-          if (payload.notification?.title) {
-            toast.info(payload.notification.title, {
-              description: payload.notification.content,
-            });
-          }
-        });
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-      if (channelName) {
-        try {
-          getPusherClient()?.unsubscribe(channelName);
-        } catch (_e) {
-          // channel may not exist
-        }
-      }
-    };
-  }, [queryClient]);
-
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/api/notifications/${id}`, {});
@@ -112,7 +66,7 @@ export function useNotifications() {
 
       return { previous };
     },
-    onError: (err, id, context) => {
+    onError: (err, _id, context) => {
       if (context?.previous) {
         queryClient.setQueryData(getNotificationsQueryKey(), context.previous);
       }
@@ -138,7 +92,7 @@ export function useNotifications() {
 
       return { previous };
     },
-    onError: (err, _vars, context) => {
+    onError: (_err, _vars, context) => {
       if (context?.previous) {
         queryClient.setQueryData(getNotificationsQueryKey(), context.previous);
       }

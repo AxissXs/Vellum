@@ -1,5 +1,5 @@
 import { alias } from "drizzle-orm/pg-core";
-import { and, desc, eq, gte, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, or, sql, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   activityLogs,
@@ -173,6 +173,7 @@ export async function queryCalendar(user: AuthUser, options: CalendarQueryOption
       sql`${tasks.dueDate} IS NOT NULL`,
       gte(tasks.dueDate, from),
       lte(tasks.dueDate, to),
+      isNull(tasks.deletedAt),
     ];
     if (targetUserId) {
       conditions.push(eq(tasks.assigneeId, targetUserId));

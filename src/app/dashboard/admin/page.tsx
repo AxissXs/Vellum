@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { users, projects, tasks, teams } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import AdminClient from "./AdminClient";
 
@@ -25,9 +25,9 @@ export default async function AdminPage() {
       })
       .from(users)
       .orderBy(users.name),
-    db.select({ count: sql<number>`count(*)::int` }).from(projects),
-    db.select({ count: sql<number>`count(*)::int` }).from(tasks),
-    db.select({ count: sql<number>`count(*)::int` }).from(teams),
+    db.select({ count: sql<number>`count(*)::int` }).from(projects).where(isNull(projects.deletedAt)),
+    db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(isNull(tasks.deletedAt)),
+    db.select({ count: sql<number>`count(*)::int` }).from(teams).where(isNull(teams.deletedAt)),
   ]);
 
   return (

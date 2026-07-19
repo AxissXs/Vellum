@@ -55,7 +55,7 @@ export async function createTaskForUser(user: AuthUser, input: CreateTaskInput) 
     assigneeAvatar = assignee?.avatarUrl ?? null;
   }
 
-  broadcastTaskEvent(input.projectId, {
+  await broadcastTaskEvent(input.projectId, {
     type: "created",
     task: {
       ...task,
@@ -83,7 +83,7 @@ export async function createTaskForUser(user: AuthUser, input: CreateTaskInput) 
         body: `${user.name || "Someone"} assigned you "${task.title}"`,
         tag: `task-${task.id}`,
       },
-      url: `/dashboard/tasks`,
+      url: `/dashboard/projects/${task.projectId}`,
     });
   }
 

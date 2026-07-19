@@ -9,10 +9,12 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTelegramStatus, useGeneratePairingCode, useUnlinkTelegram } from "@/hooks/useTelegram";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 import { Switch } from "@/components/ui/Switch";
-import { Loader2, Link as LinkIcon, Unlink, Copy, Check, BookOpen } from "lucide-react";
+import { Loader2, Link as LinkIcon, Unlink, Copy, Check, BookOpen, Monitor, Smartphone, Globe, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useMySessions, useRevokeSession, useRevokeAllOtherSessions, parseUserAgent } from "@/hooks/useSessions";
+import { clsx } from "clsx";
 
 const eventLabels: Record<string, string> = {
   task_assigned: "Task Assigned",
@@ -34,13 +36,10 @@ function TelegramUserGuide({
   configured: boolean;
 }) {
   const botLabel = botUsername ? `@${botUsername}` : "the Perfect bot";
+  const title = linked ? "Telegram tips" : "How to link Telegram";
 
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
-      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-        <BookOpen size={13} className="text-brand-600" />
-        How to link Telegram
-      </p>
+  const body = (
+    <div className="space-y-2">
       {!configured && (
         <p className="text-xs text-amber-700">
           Bot is not configured yet. Ask a super admin (Super Admin → Telegram).
@@ -61,10 +60,13 @@ function TelegramUserGuide({
           </li>
           <li>Unlink anytime if you no longer want bot DMs.</li>
           <li>
-            Send <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">/help</code>{" "}
-            in {botLabel}, or type naturally (e.g. lunch tomorrow 1pm). The bot asks if
-            details are missing. Use phone keyboard dictation — Telegram voice notes are
-            not supported.
+            Send{" "}
+            <code className="font-mono text-[11px] bg-white border border-slate-200 px-1 rounded">
+              /help
+            </code>{" "}
+            in {botLabel}, or type naturally (e.g. lunch tomorrow 1pm). The bot
+            asks if details are missing. Use phone keyboard dictation — Telegram
+            voice notes are not supported.
           </li>
         </ol>
       ) : (
@@ -96,6 +98,140 @@ function TelegramUserGuide({
         Your toggles control private bot DMs only. Team group/channel posts are
         configured by super admins separately.
       </p>
+    </div>
+  );
+
+  if (linked) {
+    return (
+      <details className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 group">
+        <summary className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+          <BookOpen size={13} className="text-brand-600 shrink-0" />
+          {title}
+          <span className="ml-auto text-[11px] font-normal text-slate-400 group-open:hidden">
+            Show
+          </span>
+          <span className="ml-auto text-[11px] font-normal text-slate-400 hidden group-open:inline">
+            Hide
+          </span>
+        </summary>
+        <div className="mt-2 pt-2 border-t border-slate-200">{body}</div>
+      </details>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2">
+      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+        <BookOpen size={13} className="text-brand-600" />
+        {title}
+      </p>
+      {body}
+    </div>
+  );
+}
+
+function formatTimeAgo(dateStr: string) {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const mins = Math.floor(seconds / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function SessionsSection() {
+  const { data: sessions, isLoading } = useMySessions();
+  const { mutate: revokeSession, isPending: revoking } = useRevokeSession();
+  const { mutate: revokeAll, isPending: revokingAll } = useRevokeAllOtherSessions();
+
+  const otherSessions = sessions?.filter((s) => !s.isCurrent) ?? [];
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Active Sessions</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Manage your active login sessions across devices.
+          </p>
+        </div>
+        {otherSessions.length > 0 && (
+          <button
+            onClick={() => revokeAll()}
+            disabled={revokingAll}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50 transition"
+          >
+            {revokingAll ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
+            Revoke all other sessions
+          </button>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="animate-spin text-slate-400" size={24} />
+        </div>
+      ) : !sessions || sessions.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-6">No active sessions.</p>
+      ) : (
+        <div className="space-y-2">
+          {sessions.map((s) => {
+            const ua = parseUserAgent(s.userAgent);
+            return (
+              <div
+                key={s.id}
+                className={clsx(
+                  "flex items-center justify-between rounded-lg border px-4 py-3",
+                  s.isCurrent
+                    ? "border-brand-500/30 bg-brand-50"
+                    : "border-slate-200 bg-slate-50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  {ua.os.includes("Android") || ua.os === "iOS" ? (
+                    <Smartphone size={18} className="text-slate-500" />
+                  ) : (
+                    <Monitor size={18} className="text-slate-500" />
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-900">
+                        {ua.browser} on {ua.os}
+                      </span>
+                      {s.isCurrent && (
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-600 border border-brand-500/20 font-medium">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                      {s.ipAddress && (
+                        <span className="flex items-center gap-1">
+                          <Globe size={10} />
+                          {s.ipAddress}
+                        </span>
+                      )}
+                      <span>Created {formatTimeAgo(s.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+                {!s.isCurrent && (
+                  <button
+                    onClick={() => revokeSession(s.id)}
+                    disabled={revoking}
+                    className="text-slate-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50"
+                    title="Revoke session"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -163,8 +299,8 @@ export default function SettingsPage() {
         </div>
 
         {isSupported && !isSubscribed && (
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mt-4">
-            <p className="text-sm text-amber-400">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+            <p className="text-sm text-amber-800">
               Push notifications are currently disabled. Enable them above to
               receive real-time updates.
             </p>
@@ -261,6 +397,9 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Active Sessions */}
+      <SessionsSection />
 
       {/* Notification Preferences */}
       <div className="bg-white border border-slate-200 rounded-xl p-6">

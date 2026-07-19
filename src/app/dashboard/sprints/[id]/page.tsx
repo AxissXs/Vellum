@@ -48,13 +48,13 @@ export default async function SprintDetailPage({
         .select(taskSelect)
         .from(tasks)
         .leftJoin(users, eq(tasks.assigneeId, users.id))
-        .where(eq(tasks.sprintId, id)),
+        .where(and(eq(tasks.sprintId, id), isNull(tasks.deletedAt))),
       db
         .select(taskSelect)
         .from(tasks)
         .leftJoin(users, eq(tasks.assigneeId, users.id))
         .where(
-          and(eq(tasks.projectId, sprint.projectId), isNull(tasks.sprintId))
+          and(eq(tasks.projectId, sprint.projectId), isNull(tasks.sprintId), isNull(tasks.deletedAt))
         ),
       db
         .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
@@ -63,7 +63,7 @@ export default async function SprintDetailPage({
       db
         .select({ id: projects.id, name: projects.name, color: projects.color })
         .from(projects)
-        .where(eq(projects.archived, false))
+        .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
         .orderBy(asc(projects.createdAt)),
     ]);
 

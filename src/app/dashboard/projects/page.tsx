@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks } from "@/db/schema";
-import { eq, sql, asc } from "drizzle-orm";
+import { eq, sql, asc, isNull, and } from "drizzle-orm";
 import Link from "next/link";
 import { Plus, Archive, FolderKanban } from "lucide-react";
 import { clsx } from "clsx";
@@ -15,7 +15,7 @@ export default async function ProjectsPage() {
   const activeProjects = await db
     .select()
     .from(projects)
-    .where(eq(projects.archived, false))
+    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
     .orderBy(asc(projects.createdAt));
 
   // Get task counts per project
@@ -25,6 +25,7 @@ export default async function ProjectsPage() {
       count: sql<number>`count(*)::int`,
     })
     .from(tasks)
+    .where(isNull(tasks.deletedAt))
     .groupBy(tasks.projectId);
 
   const countMap = new Map(taskCounts.map((t) => [t.projectId, t.count]));
