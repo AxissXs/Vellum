@@ -81,18 +81,27 @@ export async function createScheduleForUser(
     details: `Created schedule: ${schedule.title}`,
   });
 
+  const [assignee] = await db
+    .select({ name: users.name, avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(eq(users.id, targetUserId))
+    .limit(1);
+
   if (targetUserId !== user.id) {
+    const actor = user.name || "Someone";
+    const forName = assignee?.name || "someone";
     await sendNotification({
       userId: targetUserId,
       type: "schedule_assigned",
       title: "Schedule Assigned",
-      content: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
+      content: `${actor} scheduled "${schedule.title}" for you`,
+      broadcastContent: `${actor} scheduled "${schedule.title}" for ${forName}`,
       entityType: "schedule",
       entityId: schedule.id,
       actorUserId: user.id,
       pushPayload: {
         title: "Schedule Assigned",
-        body: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
+        body: `${actor} scheduled "${schedule.title}" for you`,
         tag: `schedule-${schedule.id}`,
       },
       url: "/dashboard/calendar",
@@ -125,12 +134,6 @@ export async function createScheduleForUser(
       schedule.endsAt
     );
   }
-
-  const [assignee] = await db
-    .select({ name: users.name, avatarUrl: users.avatarUrl })
-    .from(users)
-    .where(eq(users.id, targetUserId))
-    .limit(1);
 
   return {
     schedule: {

@@ -86,6 +86,7 @@ export async function sendNotification({
   type,
   title,
   content,
+  broadcastContent,
   entityType,
   entityId,
   actorUserId,
@@ -96,6 +97,8 @@ export async function sendNotification({
   type: string;
   title: string;
   content: string;
+  /** Group/channel copy — use names instead of "you" when set */
+  broadcastContent?: string;
   entityType?: string;
   entityId?: string;
   actorUserId?: string;
@@ -103,6 +106,8 @@ export async function sendNotification({
   url?: string;
 }) {
   if (!userId) return;
+
+  const groupContent = broadcastContent ?? content;
 
   // In-app notification (checks its own preferences internally)
   await sendInAppNotification({ userId, type, title, content, entityType, entityId, actorUserId, url });
@@ -131,14 +136,14 @@ export async function sendNotification({
 
   // Supergroup broadcast (no-op if not configured)
   try {
-    await broadcastToSupergroup(type, `${title}\n\n${content}`);
+    await broadcastToSupergroup(type, `${title}\n\n${groupContent}`);
   } catch (err) {
     console.error("[telegram] supergroup broadcast error:", err);
   }
 
   // Channel broadcast (if event allowlisted)
   try {
-    await maybeBroadcastToChannel(type, title, content, url);
+    await maybeBroadcastToChannel(type, title, groupContent, url);
   } catch (err) {
     console.error("[telegram] channel broadcast error:", err);
   }
