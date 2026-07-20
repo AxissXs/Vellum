@@ -37,7 +37,6 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { useCreateTask, useReorderTasks } from "@/hooks/useTasks";
 import { useRealtime, type TaskUpdatePayload } from "@/hooks/useRealtime";
 import { applyTaskEventToColumns } from "@/lib/kanban-realtime";
-import { hasPermission } from "@/lib/permissions";
 
 type User = { id: string; name: string; avatarUrl: string | null };
 type Project = { id: string; name: string; color: string | null };
@@ -359,7 +358,8 @@ export default function KanbanBoard({
   sprintId,
   onTasksChange,
 }: KanbanBoardProps) {
-  const canCreateTasks = hasPermission(userRole, "create_tasks");
+  // Temporarily disabled on kanban — create via backlog / other surfaces.
+  const canCreateTasks = false;
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
