@@ -135,29 +135,29 @@
   - [ ] Gate behind feature flag: `tracking.lastSeen` via `isFeatureEnabled()` once feature flags exist
   - Acceptance criteria: Superadmin sees accurate "last seen" per user, DB writes are throttled, feature can be toggled off
 
-- [ ] **Feature flags system** - Superadmin-controlled enable/disable for platform features
+- [x] **Feature flags system** - Superadmin-controlled enable/disable for platform features
   > Full plan: [`TODO/feature-flags.md`](TODO/feature-flags.md)
 
   Add a `feature_flags` table and a superadmin UI to toggle features on/off. Every optional feature checks its flag before running. This reduces DB load, keeps the platform simple, and lets admins tailor Vellum to their needs. Work in 3 phases:
 
   **Phase 1 — Core infrastructure:**
-  - DB: `feature_flags` table (key, enabled, label, description, category, createdAt, updatedAt)
-  - Server helper: `isFeatureEnabled(key)` — 60s in-memory cache, invalidate on update
-  - API: `GET /api/feature-flags` (public — enabled flags for client gating)
-  - API: `GET/PUT /api/super-admin/feature-flags` (superadmin — list and update)
-  - UI: superadmin dashboard toggle panel, grouped by category
-  - Seed default flags (push, telegram, email, last seen, snapshots, audit, realtime)
+  - [x] DB: `feature_flags` table (key, enabled, label, description, category, createdAt, updatedAt)
+  - [x] Server helper: `isFeatureEnabled(key)` — 60s in-memory cache, invalidate on update
+  - [x] API: `GET /api/feature-flags` (public — enabled flags for client gating)
+  - [x] API: `GET/PUT /api/super-admin/feature-flags` (superadmin — list and update)
+  - [x] UI: superadmin dashboard toggle panel, grouped by category
+  - [x] Seed default flags (push, telegram, email, last seen, snapshots, audit, realtime)
 
   **Phase 2 — Migrate existing features** (one by one):
-  - Telegram notifications → check `notifications.telegram`
-  - Push notifications → check `notifications.push`
-  - Activity snapshots → check `tracking.activitySnapshots`
-  - Audit log snapshots → check `audit.enabled`
-  - Last seen tracking → check `tracking.lastSeen` (new feature, depends on this)
+  - [ ] Telegram notifications → check `notifications.telegram`
+  - [ ] Push notifications → check `notifications.push`
+  - [ ] Activity snapshots → check `tracking.activitySnapshots`
+  - [ ] Audit log snapshots → check `audit.enabled`
+  - [x] Last seen tracking → check `tracking.lastSeen`
 
   **Phase 3 — Docs & conventions:**
-  - AGENTS.md: new optional features must include a feature flag
-  - STRUCTURE.md updates
+  - [ ] AGENTS.md: new optional features must include a feature flag
+  - [ ] STRUCTURE.md updates
 
   - Acceptance criteria: Phase 1 shipped, superadmin can toggle features, cache works, disabled features skip logic, no perf regression
 
@@ -183,6 +183,20 @@
   - Postman collection export endpoint
   - Documentation page explaining auth flow, rate limits, example requests
   - Acceptance criteria: Users can create/revoke tokens, tokens inherit user permissions, Swagger UI works, Postman export available
+
+- [ ] **Caching layer** - Generic Redis/Upstash cache for DB lookups
+  > Full plan: [`TODO/caching.md`](TODO/caching.md)
+
+  Add a driver-agnostic caching layer using Redis. Supports Upstash serverless Redis and self-hosted Redis. Cache wraps around repeated DB queries (session lookups, user profiles, task lists, feature flags) to reduce database load. Includes tagged invalidation, graceful degradation when Redis is down, and a superadmin cache flush endpoint. Once the feature flags system is built, caching must be toggleable by superadmin.
+
+  - Core: `src/lib/cache.ts` with driver detection (Upstash/Redis/pass-through)
+  - API: `cache.wrap(key, fn, ttl)` for get-or-compute with automatic TTL
+  - Invalidation: `cache.invalidateTag(tag)` for bulk key invalidation
+  - Safety: Graceful degradation when Redis is unavailable
+  - Integration: Wrap `getSession()`, project/task/user lookups, feature flags
+  - Superadmin: `POST /api/super-admin/cache/flush` endpoint
+  - Phase 2: Gate behind `performance.caching` feature flag once feature flags exist
+  - Acceptance criteria: Cache works with any Redis provider, passes through when unconfigured, invalidation works, graceful on Redis failure, no stale data
 
 ## Priority: Low
 
@@ -256,6 +270,30 @@
   - Composite indexes for common filter combinations
   - Partial indexes for status filters
 
+- [ ] **Self-hosted installation docs & script** - End-user deployment guide
+  > Full plan: [`TODO/install-docs.md`](TODO/install-docs.md)
+
+  Create comprehensive installation documentation and an interactive quick-install shell script for end-users who want to self-host Vellum. Support Docker Compose, bare metal with systemd, and local development. Include Nginx reverse proxy setup, SSL with Let's Encrypt, and environment configuration.
+
+  - Docs: `docs/INSTALL.md` covering Docker, bare metal, local dev, and Vercel
+  - Script: `scripts/install.sh` — interactive shell script that detects OS, checks prerequisites, prompts for config, generates `.env`, `docker-compose.yml`, `nginx.conf`, and starts the app
+  - Script: `scripts/update.sh` — pulls latest code, runs migrations, restarts services
+  - Templates: `docker-compose.template.yml`, `nginx.template.conf`, `vellum.service.template`
+  - README.md links prominently to install guide
+  - Acceptance criteria: Install script works on Ubuntu 22.04+ and macOS 14+, Docker setup works with one command, all env vars documented
+
+- [ ] **Multi-database provider support** - Remove Neon lock-in, work with any PostgreSQL
+  > Full plan: [`TODO/multi-db.md`](TODO/multi-db.md)
+
+  Remove Neon-specific assumptions from the database layer so Vellum works with any standard PostgreSQL provider (local, AWS RDS, Supabase, DigitalOcean, Docker). Rename `DIRECT_DATABASE_URL` to provider-agnostic `MIGRATE_DATABASE_URL`, document provider quirks, and validate migrations across providers.
+
+  - Env: Rename `DIRECT_DATABASE_URL` → `MIGRATE_DATABASE_URL` with backward compatibility
+  - Config: `drizzle.config.ts` uses `MIGRATE_DATABASE_URL` (fallback to `DATABASE_URL`)
+  - Pool: `src/db/index.ts` supports `DATABASE_POOL_MAX` and SSL modes
+  - Docs: Provider comparison table (Neon, Local, AWS RDS, Supabase, Docker) with connection notes
+  - Validation: `scripts/db-check.ts` tests connectivity and prints provider info
+  - Acceptance criteria: Works on local Postgres (Docker), Neon, and one other provider without code changes, backward compatible
+
 ## New Features (Ideas)
 
 - [ ] **Time tracking** - Log time on tasks, reports
@@ -267,6 +305,12 @@
 - [ ] **Export/Import** - JSON/CSV backup and restore
 - [ ] **Multi-language (i18n)** - Translation system
 - [ ] **Public project views** - Shareable read-only links
+- [ ] **VSCode Extension** - IDE integration for workload tracking, timers, and task management
+  > Full plan: [`TODO/vscode-extension.md`](TODO/vscode-extension.md)
+  > Depends on: API tokens system
+  > Status: Long-term placeholder — separate repo once prerequisites are ready
+
+  Build a VSCode extension that connects to Vellum via API tokens, shows assigned tasks in a sidebar panel, tracks work time with idle detection, and logs sessions back to Vellum. Requires OAuth-style authentication, connected apps management in user settings, and a time-tracking API in the main app.
 
 ---
 

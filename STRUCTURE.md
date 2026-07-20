@@ -31,10 +31,16 @@ Vellum/
     ├── 0001_swift_lucky_pierre.sql
     ├── 0002_faulty_groot.sql
     ├── 0003_whole_kang.sql
-├── 0004_grey_monster_badoon.sql
-├── 0005_melodic_puck.sql
-├── 0006_powerful_scorpion.sql
-├── 0007_next_whistler.sql
+    ├── 0004_grey_monster_badoon.sql
+    ├── 0005_melodic_puck.sql
+    ├── 0006_powerful_scorpion.sql
+    ├── 0007_next_whistler.sql
+    ├── 0008_lumpy_captain_midlands.sql
+    ├── 0009_thankful_infant_terrible.sql
+    ├── 0010_past_kingpin.sql
+    ├── 0011_unknown_gertrude_yorkes.sql
+    ├── 0012_confused_epoch.sql
+    ├── 0013_slim_dark_phoenix.sql
 └── meta/
     ├── 0000_snapshot.json
     ├── 0001_snapshot.json
@@ -44,6 +50,12 @@ Vellum/
     ├── 0005_snapshot.json
     ├── 0006_snapshot.json
     ├── 0007_snapshot.json
+    ├── 0008_snapshot.json
+    ├── 0009_snapshot.json
+    ├── 0010_snapshot.json
+    ├── 0011_snapshot.json
+    ├── 0012_snapshot.json
+    ├── 0013_snapshot.json
     └── _journal.json
 ```
 
@@ -80,6 +92,7 @@ src/
 │   │   │   ├── SuperAdminTrashPanel.tsx      # Trash bin for soft-deleted entities
 │   │   │   ├── SuperAdminHealthPanel.tsx     # System health metrics
 │   │   │   ├── SuperAdminRolesPanel.tsx      # Role / permission matrix
+│   │   │   ├── SuperAdminFeatureFlagsPanel.tsx # Feature flags toggle panel
 │   │   │   └── SuperAdminTelegramPanel.tsx   # Telegram bot configuration
 │   │   ├── kanban/
 │   │   │   ├── page.tsx              # Global kanban board (server)
@@ -145,6 +158,8 @@ src/
 │       │   ├── unlink/route.ts        # DELETE - Unlink Telegram account
 │       │   ├── status/route.ts        # GET - Check Telegram link status
 │       │   └── webhook/route.ts       # POST - Receive Telegram Bot API updates
+│       ├── feature-flags/
+│       │   └── route.ts              # GET - Enabled feature flags (public, no auth)
 │       └── super-admin/
 │           ├── users/route.ts      # GET - List users with last login / IP
 │           ├── users/[id]/route.ts # GET/PATCH - User detail + update
@@ -154,6 +169,7 @@ src/
 │           ├── audit/route.ts      # GET - Filtered audit logs with pagination
 │           ├── audit/[id]/route.ts  # GET - Single audit log with snapshots + actor + entity
 │           ├── audit/export/route.ts  # GET - CSV export of audit logs
+│           ├── feature-flags/route.ts # GET, PUT - List/update feature flags (superadmin)
 │           ├── restore/route.ts     # PATCH - Bulk restore soft-deleted entities
 │           ├── trash/route.ts       # GET - List soft-deleted entities with filters
 │           └── telegram/
@@ -306,7 +322,7 @@ src/
 **Purpose**: Super Admin tabbed dashboard layout
 **Exports**: `SuperAdminClient()` - Client component
 
-- Tabs: Users, Live Activity, Sessions, Audit Logs, System Health, Role Matrix, Telegram
+- Tabs: Users, Live Activity, Sessions, Audit Logs, System Health, Role Matrix, Feature Flags, Telegram, Trash
 - Renders appropriate panel component per active tab
 
 ### `src/app/dashboard/super-admin/SuperAdminUsersPanel.tsx`
@@ -403,6 +419,16 @@ src/
 - Permission matrix table grouped by category
 - Toggle highlighting a role's column
 - Check/X icons for granted/denied permissions
+
+### `src/app/dashboard/super-admin/SuperAdminFeatureFlagsPanel.tsx`
+
+**Purpose**: Feature flags toggle panel for superadmins
+**Exports**: `SuperAdminFeatureFlagsPanel()` - Client component
+
+- Grouped by category (Notifications, Tracking, Security, Collaboration)
+- Toggle switch per feature with "Modified" badge
+- Batch save with optimistic updates and rollback
+- Last updated timestamp per flag
 
 ### `src/app/dashboard/super-admin/SuperAdminTelegramPanel.tsx`
 
@@ -672,6 +698,14 @@ src/
 
 - `GET()` - Returns `{ status: "ok" }`
 
+#### `src/app/api/feature-flags/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Public enabled feature flags
+**Functions**:
+
+- `GET()` - Returns `{ flags: Record<string, boolean> }` — only enabled flags, no auth required
+
 #### `src/app/api/push/subscribe/route.ts`
 
 **Methods**: `POST`, `DELETE`
@@ -822,6 +856,15 @@ src/
 **Functions**:
 
 - `GET()` - Returns `{ roles, permissions, rolePermissions }`
+
+#### `src/app/api/super-admin/feature-flags/route.ts`
+
+**Methods**: `GET`, `PUT`
+**Purpose**: Feature flags management (superadmin-only)
+**Functions**:
+
+- `GET()` - Returns `{ flags }` with all flags metadata (key, enabled, label, description, category, updatedAt)
+- `PUT(req)` - Body: `{ updates: Array<{ key, enabled }> }`. Updates flags and invalidates in-memory cache.
 
 #### `src/app/api/super-admin/restore/route.ts`
 
@@ -1077,6 +1120,7 @@ src/
 - `telegramPairingCodes` - Single-use codes for Telegram account linking
 - `telegramTopicCodes` - Single-use codes for binding forum topics to event types
 - `platformSettings` - Key-value store for superadmin configuration (e.g. `telegram_bot_token`)
+- `featureFlags` - Feature toggles (key, enabled, label, description, category)
 
 **Exports** (Enums):
 
@@ -1258,6 +1302,15 @@ src/
 - `IMPERSONATOR_SESSION_COOKIE` - Impersonator cookie name constant (`tf_impersonator`)
 - `SESSION_MAX_AGE` - Session duration (7 days)
 
+#### `src/lib/feature-flags.ts`
+
+**Purpose**: Feature flag lookup with 60s in-memory cache
+**Exports**:
+
+- `isFeatureEnabled(key): Promise<boolean>` - Check if a single flag is enabled (returns `false` if unknown)
+- `getAllFlags(): Promise<Map<string, boolean>>` - Load all flags with caching
+- `invalidateFlagCache(): void` - Clear the cache (called after flag updates)
+
 #### `src/lib/api.ts`
 
 **Purpose**: API client helpers
@@ -1275,7 +1328,7 @@ src/
 - `shouldUpdateLastSeen(userId): boolean` - Throttles updates to once per 60s per user (in-memory)
 - `updateLastSeen(userId, ipAddress): Promise<void>` - Writes `lastSeenAt` + `lastSeenIp` to `users` table; swallows errors so it never blocks requests
 
-**Notes**: Called from `getSession()`. Skipped during impersonation so target user's last-seen stays accurate. Gated by feature flag `tracking.lastSeen` once feature flags system is built.
+**Notes**: Called from `getSession()`. Skipped during impersonation so target user's last-seen stays accurate. Gated by feature flag `tracking.lastSeen`.
 
 #### `src/lib/audit.ts`
 
