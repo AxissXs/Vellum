@@ -70,17 +70,20 @@ export async function createTaskForUser(user: AuthUser, input: CreateTaskInput) 
   });
 
   if (task.assigneeId && task.assigneeId !== user.id) {
+    const actor = user.name || "Someone";
+    const forName = assigneeName || "someone";
     await sendNotification({
       userId: task.assigneeId,
       type: "task_assigned",
       title: "New Task Assigned",
-      content: `${user.name || "Someone"} assigned you "${task.title}"`,
+      content: `${actor} assigned you "${task.title}"`,
+      broadcastContent: `${actor} assigned "${task.title}" to ${forName}`,
       entityType: "task",
       entityId: task.id,
       actorUserId: user.id,
       pushPayload: {
         title: "New Task Assigned",
-        body: `${user.name || "Someone"} assigned you "${task.title}"`,
+        body: `${actor} assigned you "${task.title}"`,
         tag: `task-${task.id}`,
       },
       url: `/dashboard/tasks?taskId=${task.id}`,

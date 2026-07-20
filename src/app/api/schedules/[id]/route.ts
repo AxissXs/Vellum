@@ -157,17 +157,25 @@ export async function PATCH(
   const assigneeChanged =
     body.userId !== undefined && body.userId !== existing.userId;
   if (assigneeChanged && schedule.userId !== user.id) {
+    const [assignee] = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, schedule.userId))
+      .limit(1);
+    const actor = user.name || "Someone";
+    const forName = assignee?.name || "someone";
     await sendNotification({
       userId: schedule.userId,
       type: "schedule_assigned",
       title: "Schedule Assigned",
-      content: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
+      content: `${actor} scheduled "${schedule.title}" for you`,
+      broadcastContent: `${actor} scheduled "${schedule.title}" for ${forName}`,
       entityType: "schedule",
       entityId: schedule.id,
       actorUserId: user.id,
       pushPayload: {
         title: "Schedule Assigned",
-        body: `${user.name || "Someone"} scheduled "${schedule.title}" for you`,
+        body: `${actor} scheduled "${schedule.title}" for you`,
         tag: `schedule-${schedule.id}`,
       },
       url: "/dashboard/calendar",

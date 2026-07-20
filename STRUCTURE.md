@@ -1488,7 +1488,7 @@ src/
 
 - `isInAppEnabled(userId, eventType)` - Check in-app preference
 - `sendInAppNotification(...)` - Insert notification + Pusher badge event
-- `sendNotification(...)` - Fan-out to enabled channels (incl. `broadcastToSupergroup` / `maybeBroadcastToChannel`)
+- `sendNotification(...)` - Fan-out to enabled channels (incl. `broadcastToSupergroup` / `maybeBroadcastToChannel`); optional `broadcastContent` for group/channel (names instead of "you")
 
 #### `src/lib/push.ts`
 

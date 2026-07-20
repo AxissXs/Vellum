@@ -130,17 +130,20 @@ export async function updateTaskForUser(
     input.assigneeId !== undefined && input.assigneeId !== current.assigneeId;
 
   if (assigneeChanged && input.assigneeId && input.assigneeId !== user.id) {
+    const actor = user.name || "Someone";
+    const forName = assignee?.name || "someone";
     await sendNotification({
       userId: input.assigneeId,
       type: "task_assigned",
       title: "Task Assigned to You",
-      content: `${user.name || "Someone"} assigned you "${task.title}"`,
+      content: `${actor} assigned you "${task.title}"`,
+      broadcastContent: `${actor} assigned "${task.title}" to ${forName}`,
       entityType: "task",
       entityId: task.id,
       actorUserId: user.id,
       pushPayload: {
         title: "Task Assigned to You",
-        body: `${user.name || "Someone"} assigned you "${task.title}"`,
+        body: `${actor} assigned you "${task.title}"`,
         tag: `task-${task.id}`,
       },
       url: `/dashboard/tasks?taskId=${task.id}`,
