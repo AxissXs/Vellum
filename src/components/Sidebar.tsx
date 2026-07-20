@@ -18,6 +18,7 @@ import {
   Timer,
   X,
   Calendar,
+  BarChart3,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { brand } from "@/lib/brand";
@@ -57,6 +58,9 @@ export default function Sidebar({
     { href: "/dashboard/sprints", label: "Sprints", icon: Timer },
     { href: "/dashboard/activity", label: "Activity", icon: Activity },
     { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
+    ...(user.role === "superadmin" || user.role === "admin"
+      ? [{ href: "/dashboard/insights", label: "Insights", icon: BarChart3 }]
+      : []),
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ...(user.role === "superadmin" || user.role === "admin"
       ? [{ href: "/dashboard/admin", label: "Admin", icon: Shield }]

@@ -58,7 +58,10 @@ src/
 │   ├── dashboard/
 │   │   ├── ClientLayout.tsx   # Dashboard client layout wrapper (QueryProvider + Sidebar)
 │   │   ├── layout.tsx      # Dashboard layout (auth + sidebar)
-│   │   ├── page.tsx        # Dashboard home
+│   │   ├── page.tsx        # Dashboard home (personal My Day)
+│   │   ├── insights/
+│   │   │   ├── page.tsx              # Team/company insights (admin/superadmin)
+│   │   │   └── InsightsClient.tsx    # Pulse, 7d chart, workload, recent activity
 │   │   ├── activity/
 │   │   │   ├── page.tsx              # Activity page (server auth gate)
 │   │   │   └── ActivityClient.tsx    # Insight strip + filterable feed
@@ -193,6 +196,8 @@ src/
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
 │   ├── Sidebar.tsx         # Navigation sidebar (client)
 │   ├── SidebarMiniCalendar.tsx # Team month density widget in sidebar
+│   ├── dashboard/
+│   │   └── PersonalDashboard.tsx # Personal My Day home UI
 │   └── ui/
 │       └── Switch.tsx      # Toggle switch primitive
 ├── db/                     # Database Layer
@@ -219,8 +224,11 @@ src/
 │   └── useUsers.ts         # User mutations with optimistic updates
 ├── lib/                    # Utilities
 │   ├── activity.ts         # Deferred activity-log writes (`after()`)
+│   ├── activity-summary.ts # Shared activity summary aggregates (today/7d/actors)
 │   ├── activity-ui.ts      # Activity icons, colors, entity hrefs, time labels
 │   ├── api.ts              # API client helpers
+│   ├── dashboard-personal.ts # loadPersonalDashboard (My Day payload)
+│   ├── dashboard-insights.ts # loadTeamInsights (org performance payload)
 │   ├── holidays/
 │   │   ├── index.ts        # Country registry + getHolidaysInRange (client-safe)
 │   │   ├── types.ts        # Holiday / HolidayCountryCode types
@@ -315,8 +323,26 @@ src/
 
 ### `src/app/dashboard/page.tsx`
 
-**Purpose**: Dashboard home page
+**Purpose**: Personal “My Day” home for all roles
 **Exports**: `DashboardPage()` - Server component
+- Loads `loadPersonalDashboard(user)` → `PersonalDashboard`
+
+### `src/app/dashboard/insights/page.tsx`
+
+**Purpose**: Team/company performance insights (admin + superadmin only)
+**Exports**: `InsightsPage()` - Server component
+- Redirects others to `/dashboard`
+- Loads `loadTeamInsights()` → `InsightsClient`
+
+### `src/app/dashboard/insights/InsightsClient.tsx`
+
+**Purpose**: Org pulse, 7d activity chart, top contributors, workload, status/priority, recent feed
+**Exports**: `InsightsClient({ data, user })` - Client component (Recharts)
+
+### `src/components/dashboard/PersonalDashboard.tsx`
+
+**Purpose**: Personal dashboard UI (due today, focus, standup, notifications, my activity)
+**Exports**: `PersonalDashboard({ data, user })` - Server-friendly presentational component
 
 ### `src/app/dashboard/kanban/page.tsx`
 
@@ -1095,11 +1121,16 @@ src/
 - Collapsible icon-rail mode (`lg+` only via chevron toggle)
 - Off-canvas drawer below `lg`: slides in when `mobileOpen`, hidden (`-translate-x-full`) otherwise; always on-canvas at `lg+`
 - Mobile close (`X`) button (below `lg`); nav links call `onClose` to auto-close the drawer
-- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Calendar, Settings, Admin, Super Admin)
-- Role-based Admin / Super Admin links
+- Navigation links (Dashboard, Kanban, Projects, Tasks, Teams, Sprints, Activity, Calendar, Insights, Settings, Admin, Super Admin)
+- Role-based Insights / Admin / Super Admin links
 - `SidebarMiniCalendar` team density widget (hidden when collapsed on `lg+`)
 - User avatar with initials, role badge
 - Logout button
+
+#### `src/components/dashboard/PersonalDashboard.tsx`
+
+**Purpose**: Personal My Day presentational UI (client; relative timestamps)
+**Exports**: `PersonalDashboard({ data, user })`
 
 #### `src/components/SidebarMiniCalendar.tsx`
 
@@ -1395,6 +1426,23 @@ src/
 
 - `ActivityLogInput` - Shape for activity rows (optional `tag`, `severity`, `snapshots`)
 - `logActivity(input)` - Schedules insert with Next.js `after()` (non-blocking for response); writes optional `activity_log_snapshots`
+
+#### `src/lib/activity-summary.ts`
+
+**Purpose**: Shared activity summary for `/api/activity` and Insights
+**Exports**:
+- `getActivitySummary(filters?)` - today / last7d / activeUsers7d / byDay / topActors / byEntityType
+- `buildActivityFilterConditions(params)` - feed/summary SQL filters
+
+#### `src/lib/dashboard-personal.ts`
+
+**Purpose**: Server loader for personal dashboard
+**Exports**: `loadPersonalDashboard(user)`, `PersonalDashboardData`
+
+#### `src/lib/dashboard-insights.ts`
+
+**Purpose**: Server loader for team/company Insights page
+**Exports**: `loadTeamInsights()`, `TeamInsightsData`
 
 #### `src/lib/activity-ui.ts`
 

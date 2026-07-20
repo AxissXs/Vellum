@@ -23,6 +23,11 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
 
 ## Priority: High
 
+- [x] **Personal dashboard + Insights** - My Day home for all roles; team/company Insights for admin/superadmin
+  - `/dashboard` → `loadPersonalDashboard` (due today, focus, standup, notifications, my activity)
+  - `/dashboard/insights` → `loadTeamInsights` (pulse, 7d chart, workload, top contributors)
+  - Shared `getActivitySummary` extracted for activity API + Insights
+
 - [x] **DB / process optimization** - Cut session + query latency on hot paths
   - `getSession` React `cache()` + sessions⋈users join; async bcrypt
   - Tuned pg Pool; FK/order indexes (`drizzle/0004_flimsy_sauron.sql`)
@@ -182,8 +187,8 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - Name, email, password change
   - 2FA support
 
-- [ ] **Reporting dashboard** - Velocity, burndown, workload charts
-  - Chart.js or Recharts integration
+- [ ] **Reporting dashboard** - Velocity, burndown, advanced workload charts (beyond Insights v1)
+  - Chart.js or Recharts integration for sprint velocity
   - Export to PDF/CSV
 
 - [ ] **Mobile responsive improvements** - Better mobile UX (status: in_progress)
