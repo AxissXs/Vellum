@@ -977,10 +977,10 @@ src/
 #### `src/app/api/super-admin/telegram/settings/route.ts`
 
 **Methods**: `GET`, `PATCH`
-**Purpose**: Platform Telegram bot settings (token, IDs, topics, channel events, templates); auto `setWebhook` on save
+**Purpose**: Platform Telegram bot settings (token, IDs, topics, supergroup/channel event allowlists, templates); auto `setWebhook` on save
 **Functions**:
 
-- `GET()` - Settings, topics, channelEvents, templates, webhookUrl
+- `GET()` - Settings, topics, channelEvents, supergroupEvents, templates, webhookUrl
 - `PATCH(req)` - Update settings; optional `webhookOrigin` for Deploy without env URL
 
 #### `src/app/api/super-admin/telegram/topics/route.ts`
@@ -1508,12 +1508,12 @@ src/
 
 #### `src/lib/telegram.ts`
 
-**Purpose**: Telegram Bot API helpers — pairing DMs, templates, forum topics, channel allowlist, webhook secret/URL
+**Purpose**: Telegram Bot API helpers — pairing DMs, templates, forum topics, supergroup/channel allowlists, webhook secret/URL
 **Exports**:
 
 - `TELEGRAM_EVENT_TYPES` / `TelegramEventType`
 - `getBotToken` / `isTelegramConfigured` / `getWebhookUrl` / `getWebhookSecretToken`
-- `getTelegramTopicMapping` / `getChannelEvents` / `setChannelEvents`
+- `getTelegramTopicMapping` / `getChannelEvents` / `setChannelEvents` / `getSupergroupEvents` / `setSupergroupEvents`
 - `getTelegramTemplate` / `setTelegramTemplate` / `getDefaultTemplate`
 - `getTelegramBotInfo` / `setTelegramWebhook` / `sendTelegramMessage` / `answerCallbackQuery` / `editMessageText`
 - `InlineKeyboardMarkup` / `InlineKeyboardButton` types

@@ -63,6 +63,22 @@ export async function setChannelEvents(events: string[]) {
   );
 }
 
+export async function getSupergroupEvents(): Promise<string[]> {
+  const raw = await getPlatformSetting("telegram_supergroup_events");
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export async function setSupergroupEvents(events: string[]) {
+  await setPlatformSetting(
+    "telegram_supergroup_events",
+    events.length ? events.join(",") : null
+  );
+}
+
 export async function getTelegramTemplate(
   eventType: string
 ): Promise<string | null> {
@@ -307,6 +323,11 @@ export async function sendTelegramNotification({
 }
 
 export async function broadcastToSupergroup(eventType: string, text: string) {
+  const allowed = await getSupergroupEvents();
+  if (!allowed.includes(eventType)) {
+    return { ok: false, description: "Event not enabled for supergroup" };
+  }
+
   const supergroupId = await getPlatformSetting("telegram_supergroup_id");
   if (!supergroupId) {
     return { ok: false, description: "Supergroup not configured" };

@@ -43,6 +43,7 @@ type SettingsPayload = {
   settings: Record<string, string | null>;
   topics: Record<string, string | null>;
   channelEvents: string[];
+  supergroupEvents: string[];
   templates: Record<string, string | null>;
   webhookUrl: string | null;
 };
@@ -97,8 +98,8 @@ function SetupGuide({ webhookUrl }: { webhookUrl: string | null }) {
               )}
             </li>
             <li>
-              Map forum topics and channel events below if you want group/channel
-              broadcasts (in addition to private DMs).
+              Map forum topics and pick which events post to the
+              supergroup/channel (in addition to private DMs).
             </li>
             <li>
               Users pair in Settings → Telegram, then enable Telegram per event.
@@ -106,8 +107,8 @@ function SetupGuide({ webhookUrl }: { webhookUrl: string | null }) {
           </ol>
           <p className="text-xs text-amber-800/90 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2">
             Personal notifications are DMs after pairing. Group/channel posts
-            fire for every <code className="font-mono text-[11px]">sendNotification</code>{" "}
-            when configured — not controlled by each user&apos;s Telegram toggle.
+            only fire for events you enable below — not controlled by each
+            user&apos;s Telegram toggle.
           </p>
         </div>
       )}
@@ -213,6 +214,16 @@ function TelegramConfigForm({
       ])
     )
   );
+  const [supergroupEvents, setSupergroupEvents] = useState<
+    Record<string, boolean>
+  >(
+    Object.fromEntries(
+      eventTypes.map((ev) => [
+        ev,
+        (initialData.supergroupEvents ?? []).includes(ev),
+      ])
+    )
+  );
   const [templates, setTemplates] = useState<Record<string, string>>(
     Object.fromEntries(
       eventTypes.map((ev) => [ev, initialData.templates[ev] ?? ""])
@@ -233,6 +244,7 @@ function TelegramConfigForm({
       setWebhook: true,
       topics,
       channelEvents: eventTypes.filter((ev) => channelEvents[ev]),
+      supergroupEvents: eventTypes.filter((ev) => supergroupEvents[ev]),
       templates,
     };
     if (tokenInput.trim()) body.telegram_bot_token = tokenInput.trim();
@@ -315,6 +327,7 @@ function TelegramConfigForm({
           />
           <p className="text-xs text-slate-400 mt-1">
             Forum group for topic-routed activity posts. Bot must be an admin.
+            Broadcasts only for events checked under Supergroup Broadcast Events.
           </p>
         </div>
 
@@ -398,6 +411,40 @@ function TelegramConfigForm({
                 />
               </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageSquare size={18} className="text-slate-500" />
+          <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+            Supergroup broadcast events
+          </h3>
+        </div>
+        <p className="text-sm text-slate-500">
+          Which notification types post to the supergroup (routed by topic map
+          above).
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {eventTypes.map((ev) => (
+            <label
+              key={ev}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:bg-slate-100"
+            >
+              <input
+                type="checkbox"
+                checked={!!supergroupEvents[ev]}
+                onChange={(e) =>
+                  setSupergroupEvents((prev) => ({
+                    ...prev,
+                    [ev]: e.target.checked,
+                  }))
+                }
+                className="rounded border-slate-300 text-brand-500 focus:ring-brand-500/40"
+              />
+              <span className="text-sm text-slate-800">{eventLabels[ev]}</span>
+            </label>
           ))}
         </div>
       </div>
@@ -715,7 +762,8 @@ export default function SuperAdminTelegramPanel() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Telegram Bot</h2>
           <p className="text-sm text-slate-500">
-            Bot token, webhook, group topics, channel events, and templates.
+            Bot token, webhook, group/channel event allowlists, topics, and
+            templates.
           </p>
         </div>
       </div>

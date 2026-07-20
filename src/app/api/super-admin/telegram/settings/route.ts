@@ -40,6 +40,13 @@ export async function GET() {
     ? channelEventsRaw.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
 
+  const supergroupEventsRaw = await getPlatformSetting(
+    "telegram_supergroup_events"
+  );
+  const supergroupEvents = supergroupEventsRaw
+    ? supergroupEventsRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
   const templates: Record<string, string | null> = {};
   for (const ev of TELEGRAM_EVENT_TYPES) {
     templates[ev] = await getPlatformSetting(`telegram_template_${ev}`);
@@ -49,6 +56,7 @@ export async function GET() {
     settings,
     topics,
     channelEvents,
+    supergroupEvents,
     templates,
     webhookUrl: getWebhookUrl(),
   });
@@ -90,6 +98,16 @@ export async function PATCH(req: NextRequest) {
       : [];
     await setPlatformSetting(
       "telegram_channel_events",
+      list.length ? list.join(",") : null
+    );
+  }
+
+  if (body.supergroupEvents !== undefined) {
+    const list = Array.isArray(body.supergroupEvents)
+      ? body.supergroupEvents.filter((e: unknown) => typeof e === "string")
+      : [];
+    await setPlatformSetting(
+      "telegram_supergroup_events",
       list.length ? list.join(",") : null
     );
   }
@@ -146,6 +164,13 @@ export async function PATCH(req: NextRequest) {
     ? channelEventsRaw.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
 
+  const supergroupEventsRaw = await getPlatformSetting(
+    "telegram_supergroup_events"
+  );
+  const supergroupEvents = supergroupEventsRaw
+    ? supergroupEventsRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
   const templates: Record<string, string | null> = {};
   for (const ev of TELEGRAM_EVENT_TYPES) {
     templates[ev] = await getPlatformSetting(`telegram_template_${ev}`);
@@ -155,6 +180,7 @@ export async function PATCH(req: NextRequest) {
     settings,
     topics,
     channelEvents,
+    supergroupEvents,
     templates,
     webhookUrl: getWebhookUrl(
       typeof body.webhookOrigin === "string" ? body.webhookOrigin : null
