@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   QueryKey,
 } from "@tanstack/react-query";
@@ -31,6 +32,19 @@ type SprintUpdateInput = Partial<SprintCreateInput> & { id: string; projectId: s
 
 function getSprintQueryKey(projectId: string) {
   return ["sprints", projectId] as QueryKey;
+}
+
+export function useSprints(projectId: string | undefined) {
+  return useQuery({
+    queryKey: projectId ? getSprintQueryKey(projectId) : ["sprints", "none"],
+    queryFn: async () => {
+      const res = await api.get<{ sprints: Sprint[] }>(
+        `/api/sprints?projectId=${projectId}`
+      );
+      return res.sprints;
+    },
+    enabled: !!projectId,
+  });
 }
 
 export function useCreateSprint() {

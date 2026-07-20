@@ -692,6 +692,7 @@ export default function KanbanBoardClient({
 
   const taskDetailModal = selectedTask ? (
     <TaskDetailModal
+      key={selectedTask.id}
       task={selectedTask}
       users={users}
       currentUserId={currentUserId}

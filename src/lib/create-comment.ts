@@ -86,9 +86,7 @@ export async function createCommentForUser(
     });
   }
 
-  const projectUrl = task?.projectId
-    ? `/dashboard/projects/${task.projectId}`
-    : `/dashboard/tasks`;
+  const projectUrl = `/dashboard/tasks?taskId=${taskId}`;
 
   // Top-level comments notify assignee; replies notify parent author
   if (!parentId && task?.assigneeId && task.assigneeId !== user.id) {

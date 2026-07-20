@@ -33,6 +33,7 @@ const taskSelect = {
   assigneeName: users.name,
   assigneeAvatar: users.avatarUrl,
   projectName: projects.name,
+  projectColor: projects.color,
 };
 
 export async function queryTasks(filters: TaskListFilters = {}) {

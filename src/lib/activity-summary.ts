@@ -29,6 +29,7 @@ function daysAgoUtc(n: number): Date {
 
 export function buildActivityFilterConditions(params: {
   entityType?: string | null;
+  entityId?: string | null;
   userId?: string | null;
   from?: string | null;
   to?: string | null;
@@ -37,6 +38,9 @@ export function buildActivityFilterConditions(params: {
   const conditions: SQL[] = [];
   if (params.entityType) {
     conditions.push(eq(activityLogs.entityType, params.entityType));
+  }
+  if (params.entityId) {
+    conditions.push(eq(activityLogs.entityId, params.entityId));
   }
   if (params.userId) {
     conditions.push(eq(activityLogs.userId, params.userId));

@@ -83,7 +83,7 @@ export async function createTaskForUser(user: AuthUser, input: CreateTaskInput) 
         body: `${user.name || "Someone"} assigned you "${task.title}"`,
         tag: `task-${task.id}`,
       },
-      url: `/dashboard/projects/${task.projectId}`,
+      url: `/dashboard/tasks?taskId=${task.id}`,
     });
   }
 

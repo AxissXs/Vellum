@@ -7,6 +7,23 @@ import { hasPermission } from "@/lib/permissions";
 import { eq, and, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { updateTaskForUser } from "@/lib/update-task";
+import { getTaskById } from "@/lib/query-tasks";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getSession();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const task = await getTaskById(id);
+  if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ task });
+}
 
 export async function PATCH(
   req: NextRequest,

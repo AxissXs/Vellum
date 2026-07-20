@@ -30,6 +30,7 @@ export type ActivitySummary = {
 
 export type ActivityFilters = {
   entityType?: string;
+  entityId?: string;
   userId?: string;
   from?: string;
   to?: string;
@@ -48,6 +49,7 @@ export type ActivityResponse = {
 export function getActivityFiltersKey(filters: ActivityFilters): QueryKey {
   return [
     filters.entityType ?? null,
+    filters.entityId ?? null,
     filters.userId ?? null,
     filters.from ?? null,
     filters.to ?? null,
@@ -67,6 +69,7 @@ function buildActivitySearch(
     includeSummary: includeSummary ? "1" : "0",
   });
   if (filters.entityType) search.set("entityType", filters.entityType);
+  if (filters.entityId) search.set("entityId", filters.entityId);
   if (filters.userId) search.set("userId", filters.userId);
   if (filters.from) search.set("from", filters.from);
   if (filters.to) search.set("to", filters.to);
