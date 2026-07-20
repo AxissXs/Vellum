@@ -102,8 +102,62 @@ Custom session auth in `src/lib/auth.ts`:
 - **DB singleton uses `globalThis.__arenaNextJsPostgresqlPool`** in `src/db/index.ts` to avoid creating multiple pools in dev. Do not rename this global or switch to a plain `new Pool()` without preserving the pattern.
 - **Next.js config is `next.config.ts`** and is intentionally empty/minimal.
 - **Tailwind v4** uses `@tailwindcss/postcss` in `postcss.config.mjs`. Do not create a `tailwind.config.js`.
+- Dark mode is class-based via `@custom-variant dark (&:where(.dark, .dark *))` in `globals.css`. The `.dark` class is toggled on `<html>` by `ThemeProvider`.
+- **Use semantic tokens**, not raw `slate-*` or literal white/black. See [Theming](#theming) below.
 - Real-time via **Pusher** (not raw WebSockets). Server code in `src/lib/pusher*.ts`, client singleton in `src/lib/pusher-client.ts`, hook in `src/hooks/useRealtime.ts`.
 - Push notifications via Web Push (VAPID). Service worker at `public/sw.js`. Server utilities in `src/lib/push.ts`.
+
+## Theming
+
+All UI surfaces, text, borders, and overlays must use semantic tokens so they render correctly in both light and dark themes.
+
+### Available Tokens (Tailwind v4 `@theme inline`)
+
+| Token | Light | Dark | Use for |
+|-------|-------|------|---------|
+| `bg-surface-page` | `#ffffff` | `#020617` | Page / shell background |
+| `bg-surface-card` | `#0f172a` | `#0f172a` | Actually this stays same — use `bg-surface-page` for light bg |
+| `text-text-primary` | `#0f172a` | `#ffffff` | Headings, primary text |
+| `text-text-secondary` | `#334155` | `#e2e8f0` | Body text |
+| `text-text-muted` | `#64748b` | `#94a3b8` | Labels, descriptions |
+| `text-text-dim` | `#94a3b8` | `#64748b` | Placeholders, disabled text |
+| `text-text-inverse` | `#ffffff` | `#0f172a` | Text on brand/strong backgrounds |
+| `border-border-subtle` | `#e2e8f0` | `rgba(255,255,255,0.05)` | Subtle dividers |
+| `border-border-default` | `#cbd5e1` | `rgba(255,255,255,0.1)` | Card borders, inputs |
+| `border-border-strong` | `#94a3b8` | `rgba(255,255,255,0.15)` | Focus rings, emphasis |
+| `bg-overlay-hover` | `rgba(0,0,0,0.04)` | `rgba(255,255,255,0.05)` | Hover states |
+| `bg-overlay-active` | `rgba(0,0,0,0.08)` | `rgba(255,255,255,0.1)` | Active/pressed states |
+| `bg-overlay-5` / `bg-overlay-10` / `bg-overlay-15` | black-based | white-based | Custom opacity overlays |
+
+### DOs and DON'Ts
+
+**DO:**
+```tsx
+<div className="bg-surface-page text-text-primary border border-border-default">
+  <p className="text-text-muted hover:bg-overlay-hover">Hover me</p>
+</div>
+```
+
+**DON'T:**
+```tsx
+// Never hardcode literal dark-theme colors
+<div className="bg-slate-950 text-white border border-white/10">
+  <p className="text-slate-400 hover:bg-white/5">Hover me</p> {/* BAD */}
+</div>
+```
+
+**Special cases:**
+- **Modal backdrops** (`bg-black/50`, `bg-black/60`, `bg-black/70`) stay black in both themes for visual hierarchy.
+- **Brand colors** (`brand-50` through `brand-900`) are static and don't change per theme.
+- **`prose` content**: Use `className="prose dark:prore-invert"` so markdown renders correctly in both themes.
+- **Native controls** (`<select>`, scrollbars) auto-respect `color-scheme` set on `:root` and `.dark`.
+- **Toaster** from Sonner follows `resolvedTheme` automatically via `ThemeAwareToaster`.
+
+### Inverting the Slate Scale
+
+Existing `bg-slate-950`, `text-slate-400`, etc. still work because the slate color scale is inverted: in light mode `slate-950` renders as `#020617` (dark) and in dark mode it stays the same. This means existing components that used `bg-slate-950` for dark backgrounds will get light backgrounds in light mode, and vice versa.
+
+When writing new components, prefer **semantic tokens** over raw slate colors — they express intent (`surface-page`, `text-primary`) rather than a specific shade.
 
 ## Required Conventions
 

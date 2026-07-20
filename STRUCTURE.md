@@ -180,6 +180,7 @@ src/
 ├── components/             # Shared React Components
 │   ├── ImpersonationBanner.tsx  # Impersonation banner (amber bar with stop button)
 │   ├── LoginForm.tsx       # Login form (client)
+│   ├── ThemeToggle.tsx     # Theme mode switcher (light/dark/system)
 │   ├── PushNotificationToggle.tsx  # UI toggle for browser push notifications
 │   ├── NotificationBell.tsx        # In-app notification bell with dropdown panel
 │   ├── RichTextEditor.tsx  # TipTap editor wrapper
@@ -212,15 +213,17 @@ src/
 │   ├── pusher-client.ts    # Pusher client singleton + ref counting
 │   └── push.ts             # Web Push API server utilities (VAPID, send notifications, prefs)
 └── providers/              # React Context Providers
-    └── QueryProvider.tsx   # React Query + Sonner + Devtools provider
+    ├── QueryProvider.tsx   # React Query + Sonner + Devtools provider
+    └── ThemeProvider.tsx   # Theme context (light/dark/system)
 ```
 
 ## File Details
 
 ### `src/app/globals.css`
 
-**Purpose**: Global styles, Tailwind imports, CSS variables, `color-scheme: dark` for native form elements
+**Purpose**: Global styles, Tailwind v4 imports, semantic color tokens, dark mode `@custom-variant`, scrollbar styles, keyframe animations
 **Exports**: None (CSS file)
+**Tokens**: `--surface-*`, `--text-*`, `--border-*`, `--overlay-*`, `--status-*`, `--slate-*` (inverted scale), color-scheme per theme
 
 ### `src/app/layout.tsx`
 
@@ -1061,7 +1064,21 @@ src/
 **Exports**: `KeyboardShortcutsHelp({ open, onClose })` - Client component
 **Features**:
 
-- Dark-themed modal (`bg-slate-900`, `border-white/10`) with keyboard icon header
+- Dark-themed modal (`bg-surface-card`, `border-border-default`) with keyboard icon header
+
+#### `src/components/ThemeToggle.tsx`
+
+**Purpose**: Theme mode switcher (light / dark / system)
+**Exports**: `ThemeToggle()` - Client component
+**Features**:
+
+- Sun/Moon icon button with dropdown menu
+- Three modes: System (auto), Light, Dark
+- Persists choice to `localStorage` key `vellum-theme`
+- Uses `useTheme()` from `ThemeProvider`
+- Hydration-safe: renders a disabled placeholder until mounted
+
+---
 - Lists shortcuts stored in `SHORTCUTS` from `useKeyboardShortcuts.ts`
 - Close via button (`data-kbd-close`), `Esc`, or backdrop click
 - Accessible with `role="dialog"` and `aria-modal`
@@ -1279,8 +1296,20 @@ src/
 - Default stale time: 5 minutes
 - Retry: 1 for queries, 0 for mutations
 - Refetch on window focus: false
-- Includes `<Toaster position="top-right" theme="dark" />`
+- Includes `<Toaster position="top-right">` (theme auto-follows `ThemeProvider`)
 - Includes `<ReactQueryDevtools initialIsOpen={false} />`
+
+#### `src/providers/ThemeProvider.tsx`
+
+**Purpose**: Theme context provider with system preference detection and localStorage persistence
+**Exports**: `ThemeProvider({ children })` - Client component, `useTheme()`, `useIsMounted()`
+
+**Config**:
+- Three modes: `light`, `dark`, `system`
+- `system` follows `prefers-color-scheme` media query
+- Persists to `localStorage` key `vellum-theme`
+- Anti-FOUC: inline script in `layout.tsx` reads storage before hydration
+- SSR-safe: `getServerSnapshot` returns `"dark"` as default
 
 ---
 
