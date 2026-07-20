@@ -4,6 +4,7 @@ import { db } from "@/db";
 import {
   activityLogs,
   comments,
+  featureFlags,
   projects,
   tasks,
   teamMembers,
@@ -18,7 +19,72 @@ export function ensureDemoData() {
   return bootstrapPromise;
 }
 
+async function seedFeatureFlags() {
+  const [existing] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(featureFlags);
+
+  if (existing.count > 0) return;
+
+  const defaultFlags = [
+    {
+      key: "notifications.push",
+      label: "Push Notifications",
+      description: "Browser push notifications via Web Push (VAPID)",
+      category: "Notifications",
+      enabled: true,
+    },
+    {
+      key: "notifications.telegram",
+      label: "Telegram Bot",
+      description: "Telegram bot for DM and supergroup notifications",
+      category: "Notifications",
+      enabled: true,
+    },
+    {
+      key: "notifications.email",
+      label: "Email Notifications",
+      description: "Email notifications (Resend/SendGrid)",
+      category: "Notifications",
+      enabled: false,
+    },
+    {
+      key: "tracking.lastSeen",
+      label: "User Last Seen",
+      description: "Record last activity time/IP on every request",
+      category: "Tracking",
+      enabled: true,
+    },
+    {
+      key: "tracking.activitySnapshots",
+      label: "Activity Snapshots",
+      description: "Store entity snapshots in audit log (before/after)",
+      category: "Tracking",
+      enabled: true,
+    },
+    {
+      key: "audit.enabled",
+      label: "Audit Logging",
+      description: "Log all mutations to activity_logs",
+      category: "Security",
+      enabled: true,
+    },
+    {
+      key: "realtime.enabled",
+      label: "Real-time Updates",
+      description: "Pusher-based live updates",
+      category: "Collaboration",
+      enabled: true,
+    },
+  ];
+
+  await db.insert(featureFlags).values(defaultFlags);
+}
+
 async function seedIfEmpty() {
+  // Seed default feature flags on every boot (idempotent check inside)
+  await seedFeatureFlags();
+
   const [existingUsers] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(users);

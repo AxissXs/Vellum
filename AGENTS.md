@@ -167,9 +167,39 @@ Superadmin can impersonate any non-superadmin user via the Impersonation feature
 - **Audit**: Impersonation logged with `action: "impersonated_user"`, `tag: "impersonation"`, superadmin details in `details` field
 - **Auth**: Cookie `tf_impersonator` stores superadmin's original session ID; main `tf_session` cookie is set to impersonation session
 - **No lastLoginAt / lastSeenAt update**: Impersonation skips `userSessions` insert **and** last-seen tracking to avoid polluting the target user's activity history
-- **Cannot impersonate superadmins**: Target user must not have `role === "superadmin"`
 
-Reference implementation: `src/app/api/super-admin/impersonate/route.ts`
+### Feature Flags
+
+Once the feature flags system ships, every **optional** feature must be gated by a flag. Core features (auth, sessions, basic CRUD) are NEVER toggleable.
+
+- New optional features must declare a flag key in `TODO/feature-flags.md` seed defaults before implementation
+- Check the flag with `isFeatureEnabled("category.featureName")` before executing optional logic
+- When a feature is disabled, skip ALL related logic — no partial execution, no DB writes, no UI elements
+- Graceful toggle: enabling a feature mid-flight must not crash; disabling must not leave stale UI/data
+- Document the flag in the task's `TODO/*.md` file with a Phase-2 migration sub-task
+
+Example:
+```ts
+import { isFeatureEnabled } from "@/lib/feature-flags";
+
+if (await isFeatureEnabled("tracking.lastSeen")) {
+  await updateLastSeen(userId, ip);
+}
+```
+
+### Caching
+
+When building integrations that perform repeated DB reads (user profiles, feature flags, task lists), use the cache layer (`src/lib/cache.ts`) once it exists:
+
+```ts
+import { cache } from "@/lib/cache";
+
+const user = await cache.wrap(`user:${userId}`, () => getUser(userId), 120);
+```
+
+- Always invalidate cache keys after mutating the underlying data
+- Use `cache.invalidateTag("tagName")` for bulk invalidation when multiple keys are affected
+- When Redis is unavailable, cache operates in pass-through mode — app continues without error
 
 ## Documentation Update Rule
 

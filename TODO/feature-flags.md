@@ -26,6 +26,8 @@ Add a database-backed feature flag system that lets superadmins enable or disabl
 3. **Safe** — disabled features skip ALL related logic (no partial execution)
 4. **Observable** — superadmin UI shows what's on/off with clear labels
 5. **Agent-friendly** — new features MUST declare a flag if they're optional
+6. **Graceful** — enabling a feature mid-flight must not crash existing sessions or corrupt data. Disabled features must not leave stale UI elements, must not write to their tables, and their data must not leak into other views. Enabling a feature after a period of inactivity must resume cleanly without data loss.
+7. **Fundamental immutability** — Core features like authentication, session management, and basic CRUD are NOT toggleable. Only augmenting/optional features get flags.
 
 ## Database Changes
 
