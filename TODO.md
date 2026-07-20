@@ -159,6 +159,7 @@ Use the status tags defined in [Status Tags](#status-tags) on every task line.
   - Full-text search (PostgreSQL tsvector or Meilisearch)
   - Advanced filters (date ranges, assignee, priority, etc.)
   - Saved filters
+  - Note: `/dashboard/tasks` has client search + status/priority/project/assignee filters (not global)
 
 - [ ] **Dark/Light theme toggle** - Add theme switching
   - Persist in localStorage

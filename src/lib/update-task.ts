@@ -121,7 +121,7 @@ export async function updateTaskForUser(
           body: `${user.name || "Someone"} ${label} "${task.title}"`,
           tag: `task-${task.id}`,
         },
-        url: `/dashboard/projects/${task.projectId}`,
+        url: `/dashboard/tasks?taskId=${task.id}`,
       });
     }
   }
@@ -143,7 +143,7 @@ export async function updateTaskForUser(
         body: `${user.name || "Someone"} assigned you "${task.title}"`,
         tag: `task-${task.id}`,
       },
-      url: `/dashboard/projects/${task.projectId}`,
+      url: `/dashboard/tasks?taskId=${task.id}`,
     });
   }
 

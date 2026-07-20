@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     Math.max(1, parseInt(url.searchParams.get("pageSize") || "25", 10) || 25)
   );
   const entityType = url.searchParams.get("entityType");
+  const entityId = url.searchParams.get("entityId");
   const userId = url.searchParams.get("userId");
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
 
   const feedFilters = buildActivityFilterConditions({
     entityType,
+    entityId,
     userId,
     from,
     to,

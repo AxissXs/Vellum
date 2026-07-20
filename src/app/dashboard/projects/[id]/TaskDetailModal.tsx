@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, createElement } from "react";
 import {
   X, Loader2, Trash2, Calendar, Send, Edit2,
-  Check, MessageCircle, Pencil, ChevronDown,
+  Check, MessageCircle, Pencil, ChevronDown, History,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCreateComment, useUpdateComment, useDeleteComment } from "@/hooks/useComments";
 import { useRealtime } from "@/hooks/useRealtime";
+import { useSprints } from "@/hooks/useSprints";
+import { useActivityFeed } from "@/hooks/useActivity";
+import { getActivityColor, getActivityIcon } from "@/lib/activity-ui";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
 import TaskAssigneePopover from "@/components/TaskAssigneePopover";
 import { hasPermission } from "@/lib/permissions";
@@ -26,6 +29,8 @@ type Task = {
   creatorId: string;
   dueDate: string | null;
   position: string;
+  sprintId?: string | null;
+  estimate?: number | null;
   createdAt: string;
   updatedAt: string;
   assigneeName: string | null;
@@ -45,6 +50,36 @@ type Comment = {
   authorName: string | null;
   authorAvatar: string | null;
 };
+
+function TaskHistoryRow({
+  item,
+  formatRelative,
+}: {
+  item: {
+    id: string;
+    action: string;
+    entityType: string;
+    details: string | null;
+    userName: string | null;
+    createdAt: string;
+  };
+  formatRelative: (dateStr: string) => string;
+}) {
+  const colorClass = getActivityColor(item.action);
+  return (
+    <div className="flex gap-2.5">
+      <div className={clsx("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", colorClass)}>
+        {createElement(getActivityIcon(item.action, item.entityType), { size: 12 })}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-slate-800 wrap-break-word">{item.details || item.action}</p>
+        <p className="text-[10px] text-slate-500 mt-0.5">
+          {item.userName || "Unknown"} · {formatRelative(item.createdAt)}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const STATUS_CONFIG: { key: string; label: string; color: string; dot: string }[] = [
   { key: "backlog", label: "Backlog", color: "bg-slate-500/10 text-slate-600 border-slate-500/20", dot: "bg-slate-500" },
@@ -93,6 +128,7 @@ export default function TaskDetailModal({
   const canEdit = hasPermission(userRole, "edit_tasks");
   const canDelete = hasPermission(userRole, "delete_tasks");
   const canAssign = hasPermission(userRole, "assign_tasks");
+  const canEditSprints = hasPermission(userRole, "edit_sprints");
 
   const [task, setTask] = useState(initialTask);
   const [editing, setEditing] = useState(false);
@@ -100,6 +136,7 @@ export default function TaskDetailModal({
   const [deleting, setDeleting] = useState(false);
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [rightTab, setRightTab] = useState<"comments" | "history">("comments");
 
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || "");
@@ -107,6 +144,10 @@ export default function TaskDetailModal({
   const [editStatus, setEditStatus] = useState(task.status);
   const [editAssignee, setEditAssignee] = useState(task.assigneeId || "");
   const [editDueDate, setEditDueDate] = useState(task.dueDate?.split("T")[0] || "");
+  const [editEstimate, setEditEstimate] = useState(
+    task.estimate != null ? String(task.estimate) : ""
+  );
+  const [editSprintId, setEditSprintId] = useState(task.sprintId || "");
 
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -118,6 +159,12 @@ export default function TaskDetailModal({
     queryKey: ["comments", task.id],
     queryFn: () => fetchComments(task.id),
   });
+  const { data: sprints = [] } = useSprints(task.projectId);
+  const historyFeed = useActivityFeed(
+    { entityType: "task", entityId: task.id },
+    20
+  );
+  const historyItems = historyFeed.data?.pages.flatMap((p) => p.activities) ?? [];
 
   const createCommentMutation = useCreateComment();
   const updateCommentMutation = useUpdateComment();
@@ -140,19 +187,38 @@ export default function TaskDetailModal({
     return () => document.removeEventListener("mousedown", onClick);
   }, [showAssigneeDropdown]);
 
+  function startEditing() {
+    setEditTitle(task.title);
+    setEditDescription(task.description || "");
+    setEditPriority(task.priority);
+    setEditStatus(task.status);
+    setEditAssignee(task.assigneeId || "");
+    setEditDueDate(task.dueDate?.split("T")[0] || "");
+    setEditEstimate(task.estimate != null ? String(task.estimate) : "");
+    setEditSprintId(task.sprintId || "");
+    setEditing(true);
+  }
+
   async function handleSave() {
     setSaving(true);
+    const estimateValue =
+      editEstimate.trim() === "" ? null : Number.parseInt(editEstimate, 10);
+    const body: Record<string, unknown> = {
+      title: editTitle.trim(),
+      description: editDescription.trim() || null,
+      priority: editPriority,
+      status: editStatus,
+      assigneeId: editAssignee || null,
+      dueDate: editDueDate || null,
+      estimate: Number.isFinite(estimateValue as number) ? estimateValue : null,
+    };
+    if (canEditSprints) {
+      body.sprintId = editSprintId || null;
+    }
     const res = await fetch(`/api/tasks/${task.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: editTitle.trim(),
-        description: editDescription.trim() || null,
-        priority: editPriority,
-        status: editStatus,
-        assigneeId: editAssignee || null,
-        dueDate: editDueDate || null,
-      }),
+      body: JSON.stringify(body),
     });
     if (res.ok) {
       const data = await res.json();
@@ -164,12 +230,15 @@ export default function TaskDetailModal({
         createdAt: data.task.createdAt ?? task.createdAt,
         updatedAt: data.task.updatedAt ?? task.updatedAt,
         position: data.task.position ?? task.position,
+        sprintId: data.task.sprintId ?? null,
+        estimate: data.task.estimate ?? null,
         assigneeName: assignee?.name ?? null,
         assigneeAvatar: assignee?.avatarUrl ?? null,
       };
       setTask(updated);
       setEditing(false);
       onChange(updated);
+      queryClient.invalidateQueries({ queryKey: ["activity", "feed"] });
     }
     setSaving(false);
   }
@@ -303,7 +372,7 @@ export default function TaskDetailModal({
           <div className="flex items-center gap-1 shrink-0">
             {canEdit && (
               !editing ? (
-                <button onClick={() => setEditing(true)} className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition" title="Edit"><Pencil size={14} /></button>
+                <button onClick={startEditing} className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition" title="Edit"><Pencil size={14} /></button>
               ) : (
                 <>
                   <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}</button>
@@ -446,6 +515,48 @@ export default function TaskDetailModal({
                 )}
               </div>
 
+              {/* Estimate + Sprint */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="sm:w-28">
+                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Estimate</label>
+                  {editing ? (
+                    <input
+                      type="number"
+                      min={0}
+                      value={editEstimate}
+                      onChange={(e) => setEditEstimate(e.target.value)}
+                      placeholder="pts"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                  ) : (
+                    <span className="text-sm text-slate-700">
+                      {task.estimate != null ? `${task.estimate} pts` : <span className="text-slate-500">None</span>}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Sprint</label>
+                  {editing && canEditSprints ? (
+                    <select
+                      value={editSprintId}
+                      onChange={(e) => setEditSprintId(e.target.value)}
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      <option value="">No sprint</option>
+                      {sprints.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-sm text-slate-700">
+                      {sprints.find((s) => s.id === task.sprintId)?.name || (
+                        <span className="text-slate-500">None</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Description */}
               <div>
                 <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Description</label>
@@ -465,16 +576,69 @@ export default function TaskDetailModal({
               </div>
             </div>
 
-            {/* Right: Activity */}
+            {/* Right: Comments / History */}
             <div className="p-5 md:p-6 space-y-5 bg-slate-50 min-w-0">
-              <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <MessageCircle size={16} className="text-brand-500" />
-                Activity
-                <span className="text-xs text-slate-600 font-normal">{comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""}</span>
-              </h4>
+              <div className="flex items-center gap-1 border-b border-slate-200 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setRightTab("comments")}
+                  className={clsx(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition",
+                    rightTab === "comments"
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  <MessageCircle size={14} className="text-brand-500" />
+                  Comments
+                  <span className="text-[10px] text-slate-500 font-normal">
+                    {comments.length - totalReplyCount}
+                    {totalReplyCount > 0 ? `+${totalReplyCount}` : ""}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRightTab("history")}
+                  className={clsx(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition",
+                    rightTab === "history"
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  <History size={14} className="text-brand-500" />
+                  History
+                </button>
+              </div>
 
+              {rightTab === "history" ? (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                  {historyFeed.isLoading && (
+                    <div className="flex justify-center py-6">
+                      <Loader2 size={18} className="animate-spin text-slate-400" />
+                    </div>
+                  )}
+                  {!historyFeed.isLoading && historyItems.length === 0 && (
+                    <p className="text-sm text-slate-500 text-center py-4">No history yet</p>
+                  )}
+                  {historyItems.map((item) => (
+                    <TaskHistoryRow key={item.id} item={item} formatRelative={formatRelative} />
+                  ))}
+                  {historyFeed.hasNextPage && (
+                    <button
+                      type="button"
+                      onClick={() => historyFeed.fetchNextPage()}
+                      disabled={historyFeed.isFetchingNextPage}
+                      className="w-full text-xs text-brand-600 hover:text-brand-700 py-2 disabled:opacity-50"
+                    >
+                      {historyFeed.isFetchingNextPage ? "Loading…" : "Load more"}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <>
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                {topLevelComments.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No activity yet</p>}
+                {topLevelComments.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No comments yet</p>}
                 {topLevelComments.map((c) => {
                   const replies = repliesByParent.get(c.id) || [];
                   return (
@@ -570,6 +734,8 @@ export default function TaskDetailModal({
                   <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}{replyingToId ? "Reply" : "Add comment"}</button>
                 </div>
               </form>
+                </>
+              )}
             </div>
           </div>
         </div>

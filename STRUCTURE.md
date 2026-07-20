@@ -87,7 +87,8 @@ src/
 │   │   │           ├── page.tsx            # Project backlog (server)
 │   │   │           └── ProjectBacklogClient.tsx  # Backlog list + assign to sprint
 │   │   ├── tasks/
-│   │   │   └── page.tsx    # Tasks page
+│   │   │   ├── page.tsx          # Tasks page (server shell)
+│   │   │   └── TasksClient.tsx   # Filterable due-grouped work queue + modal
 │   │   ├── sprints/
 │   │   │   ├── page.tsx                    # Sprints list (server)
 │   │   │   ├── SprintsClient.tsx           # Sprint list + create (client)
@@ -439,12 +440,13 @@ src/
 
 ### `src/app/dashboard/projects/[id]/TaskDetailModal.tsx`
 
-**Purpose**: Modal for task details (description, comments, activity)
+**Purpose**: Modal for task details (description, comments, activity history)
 **Exports**: `TaskDetailModal({ task, users, currentUserId, userRole?, onClose, onChange, onDelete? })` - Client component
 
 - Two-column layout; visual status/priority selectors; searchable assignee (`TaskAssigneePopover`)
+- Estimate (pts) + sprint select (`useSprints`); sprint gated by `edit_sprints`
 - Soft-delete confirmation (restorable via Super Admin Trash)
-- Comments with 1-level threaded replies (`parentId`)
+- Right pane tabs: **Comments** (1-level threaded replies) | **History** (`useActivityFeed` with `entityType=task&entityId`)
 - Real-time comment updates via `useRealtime()`
 
 ### `src/app/dashboard/projects/[id]/ProjectManagementPanel.tsx`
@@ -503,8 +505,17 @@ src/
 
 ### `src/app/dashboard/tasks/page.tsx`
 
-**Purpose**: All tasks view (cross-project)
-**Exports**: `TasksPage()` - Server component
+**Purpose**: Cross-project tasks work queue (server shell)
+**Exports**: `TasksPage()` - Server component; loads tasks/users/projects → `TasksClient`
+
+### `src/app/dashboard/tasks/TasksClient.tsx`
+
+**Purpose**: Filterable, due-grouped task list with deep-linked detail modal
+**Exports**: `TasksClient({ initialTasks, users, projects, currentUserId, userRole })`, `TaskRow`
+**Features**:
+- Scope My / All; search; filters (status, priority, project, assignee); sort
+- Due groups: Overdue → Today → This week → Later → No due
+- Click opens `TaskDetailModal`; URL `?taskId=` sync (open/close); fetch missing via `GET /api/tasks/:id`
 
 ### `src/app/dashboard/teams/page.tsx`
 
@@ -1021,7 +1032,7 @@ src/
 **Purpose**: Activity logs with pagination, filters, and optional summary
 **Functions**:
 
-- `GET(req)` - Query `page`, `pageSize`, `entityType`, `userId`, `from`, `to`, `q`, `includeSummary`
+- `GET(req)` - Query `page`, `pageSize`, `entityType`, `entityId`, `userId`, `from`, `to`, `q`, `includeSummary`
   - Returns `{ activities, page, pageSize, total, totalPages, summary }`
   - `summary` (when requested / page 1): today, last7d, activeUsers7d, byEntityType, byDay, topActors
 
@@ -1298,6 +1309,7 @@ src/
 
 **Purpose**: React Query mutations for sprint operations with optimistic updates
 **Exports**:
+- `useSprints(projectId)` - List sprints for a project (`GET /api/sprints?projectId=`)
 - `useCreateSprint()` - Create sprint
 - `useUpdateSprint()` - Update sprint (including set active)
 - `useDeleteSprint()` - Delete sprint
@@ -1432,7 +1444,7 @@ src/
 **Purpose**: Shared activity summary for `/api/activity` and Insights
 **Exports**:
 - `getActivitySummary(filters?)` - today / last7d / activeUsers7d / byDay / topActors / byEntityType
-- `buildActivityFilterConditions(params)` - feed/summary SQL filters
+- `buildActivityFilterConditions(params)` - feed/summary SQL filters (`entityType`, `entityId`, `userId`, `from`, `to`, `q`)
 
 #### `src/lib/dashboard-personal.ts`
 
