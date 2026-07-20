@@ -83,7 +83,7 @@ function TopicCreator({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-slate-400 hover:text-brand-400 transition flex items-center gap-1"
+        className="text-xs text-text-dim hover:text-brand-400 transition flex items-center gap-1"
       >
         <Plus size={12} />
         Create topic
@@ -92,13 +92,13 @@ function TopicCreator({
   }
 
   return (
-    <div className="mt-2 space-y-2 bg-slate-900 border border-white/10 rounded-lg p-3">
+    <div className="mt-2 space-y-2 bg-surface-card border border-border-default rounded-lg p-3">
       <input
         type="text"
         value={topicName}
         onChange={(e) => setTopicName(e.target.value)}
         placeholder="Topic name"
-        className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+        className="w-full bg-surface-strong border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
       />
       <div className="flex items-center gap-2">
         <button
@@ -109,7 +109,7 @@ function TopicCreator({
             })
           }
           disabled={createTopic.isPending || !topicName.trim()}
-          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-md transition flex items-center gap-1"
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-xs font-medium px-3 py-1.5 rounded-md transition flex items-center gap-1"
         >
           {createTopic.isPending && (
             <Loader2 size={12} className="animate-spin" />
@@ -118,7 +118,7 @@ function TopicCreator({
         </button>
         <button
           onClick={() => setOpen(false)}
-          className="text-xs text-slate-400 hover:text-white transition"
+          className="text-xs text-text-dim hover:text-text-primary transition"
         >
           Cancel
         </button>
@@ -148,12 +148,12 @@ function TopicBinder({ eventType }: { eventType: string }) {
 
   if (code) {
     return (
-      <div className="mt-2 bg-slate-900 border border-white/10 rounded-lg p-3 space-y-1.5">
-        <p className="text-xs text-slate-400">
+      <div className="mt-2 bg-surface-card border border-border-default rounded-lg p-3 space-y-1.5">
+        <p className="text-xs text-text-dim">
           Send this command inside the target forum topic:
         </p>
         <div className="flex items-center gap-2">
-          <code className="text-sm text-emerald-400 font-mono bg-slate-800 px-2 py-1 rounded">
+          <code className="text-sm text-emerald-400 font-mono bg-surface-strong px-2 py-1 rounded">
             /bindtopic {code}
           </code>
           <button
@@ -161,15 +161,15 @@ function TopicBinder({ eventType }: { eventType: string }) {
               navigator.clipboard.writeText(`/bindtopic ${code}`);
               toast.success("Copied");
             }}
-            className="text-slate-400 hover:text-white transition"
+            className="text-text-dim hover:text-text-primary transition"
           >
             <Copy size={14} />
           </button>
         </div>
-        <p className="text-xs text-slate-500">Expires in 10 minutes</p>
+        <p className="text-xs text-text-dim">Expires in 10 minutes</p>
         <button
           onClick={() => setCode(null)}
-          className="text-xs text-slate-400 hover:text-white transition"
+          className="text-xs text-text-dim hover:text-text-primary transition"
         >
           Dismiss
         </button>
@@ -181,7 +181,7 @@ function TopicBinder({ eventType }: { eventType: string }) {
     <button
       onClick={() => generateCode.mutate()}
       disabled={generateCode.isPending}
-      className="text-xs text-slate-400 hover:text-sky-400 transition flex items-center gap-1"
+      className="text-xs text-text-dim hover:text-sky-400 transition flex items-center gap-1"
     >
       {generateCode.isPending ? (
         <Loader2 size={12} className="animate-spin" />
@@ -213,13 +213,13 @@ function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
 
   if (code) {
     return (
-      <div className="mt-2 bg-slate-900 border border-white/10 rounded-lg p-3 space-y-1.5">
-        <p className="text-xs text-slate-400">
+      <div className="mt-2 bg-surface-card border border-border-default rounded-lg p-3 space-y-1.5">
+        <p className="text-xs text-text-dim">
           Add the bot to your supergroup as an admin, then send this command
           inside the group:
         </p>
         <div className="flex items-center gap-2">
-          <code className="text-sm text-emerald-400 font-mono bg-slate-800 px-2 py-1 rounded">
+          <code className="text-sm text-emerald-400 font-mono bg-surface-strong px-2 py-1 rounded">
             /pairgroup {code}
           </code>
           <button
@@ -227,15 +227,15 @@ function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
               navigator.clipboard.writeText(`/pairgroup ${code}`);
               toast.success("Copied");
             }}
-            className="text-slate-400 hover:text-white transition"
+            className="text-text-dim hover:text-text-primary transition"
           >
             <Copy size={14} />
           </button>
         </div>
-        <p className="text-xs text-slate-500">Expires in 10 minutes</p>
+        <p className="text-xs text-text-dim">Expires in 10 minutes</p>
         <button
           onClick={() => setCode(null)}
-          className="text-xs text-slate-400 hover:text-white transition"
+          className="text-xs text-text-dim hover:text-text-primary transition"
         >
           Dismiss
         </button>
@@ -247,7 +247,7 @@ function SupergroupPairer({ onPaired }: { onPaired: (id: string) => void }) {
     <button
       onClick={() => generateCode.mutate()}
       disabled={generateCode.isPending}
-      className="text-xs text-slate-400 hover:text-sky-400 transition flex items-center gap-1"
+      className="text-xs text-text-dim hover:text-sky-400 transition flex items-center gap-1"
     >
       {generateCode.isPending && <Loader2 size={12} className="animate-spin" />}
       Pair supergroup
@@ -327,17 +327,17 @@ function TelegramConfigForm({
   return (
     <div className="space-y-10">
       {/* Configuration */}
-      <div className="bg-slate-800/50 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-6 space-y-6">
         <div className="flex items-center gap-2 mb-2">
-          <Settings size={18} className="text-slate-400" />
-          <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+          <Settings size={18} className="text-text-dim" />
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
             Configuration
           </h3>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
               Bot Token
             </label>
             <input
@@ -349,24 +349,24 @@ function TelegramConfigForm({
                   ? maskToken(initialData.settings.telegram_bot_token)
                   : "Enter your Telegram bot token"
               }
-              className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+              className="w-full bg-surface-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-text-dim mt-1">
               Get this from @BotFather on Telegram.
             </p>
           </div>
 
           {initialData.webhookUrl && (
-            <div className="bg-slate-900 border border-white/10 rounded-lg p-3 flex items-center justify-between gap-3">
+            <div className="bg-surface-card border border-border-default rounded-lg p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs text-slate-500 mb-0.5">Webhook URL</p>
+                <p className="text-xs text-text-dim mb-0.5">Webhook URL</p>
                 <p className="text-sm text-sky-400 truncate font-mono">
                   {initialData.webhookUrl}
                 </p>
               </div>
               <button
                 onClick={() => copyWebhook(initialData.webhookUrl!)}
-                className="shrink-0 text-slate-400 hover:text-white transition"
+                className="shrink-0 text-text-dim hover:text-text-primary transition"
                 title="Copy webhook URL"
               >
                 {copiedWebhook ? (
@@ -379,31 +379,31 @@ function TelegramConfigForm({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
               Supergroup ID{" "}
-              <span className="text-slate-500 font-normal">(optional)</span>
+              <span className="text-text-dim font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={supergroupInput}
               onChange={(e) => setSupergroupInput(e.target.value)}
               placeholder="-123456789"
-              className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+              className="w-full bg-surface-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             />
             <SupergroupPairer onPaired={(id) => setSupergroupInput(id)} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
               Channel ID{" "}
-              <span className="text-slate-500 font-normal">(optional)</span>
+              <span className="text-text-dim font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={channelInput}
               onChange={(e) => setChannelInput(e.target.value)}
               placeholder="-1001234567890"
-              className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+              className="w-full bg-surface-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             />
           </div>
         </div>
@@ -412,7 +412,7 @@ function TelegramConfigForm({
           <button
             onClick={handleSaveConfig}
             disabled={isSaving}
-            className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+            className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
           >
             {isSaving && <Loader2 size={16} className="animate-spin" />}
             Save
@@ -421,7 +421,7 @@ function TelegramConfigForm({
           <button
             onClick={() => onTest(tokenInput.trim() || undefined)}
             disabled={isTesting}
-            className="bg-white/5 hover:bg-white/10 disabled:opacity-50 text-slate-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+            className="bg-overlay-5 hover:bg-overlay-10 disabled:opacity-50 text-text-muted text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
           >
             {isTesting ? (
               <Loader2 size={16} className="animate-spin" />
@@ -434,14 +434,14 @@ function TelegramConfigForm({
       </div>
 
       {/* Topic Mappings */}
-      <div className="bg-slate-800/50 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-6 space-y-6">
         <div className="flex items-center gap-2 mb-2">
-          <MessageSquare size={18} className="text-slate-400" />
-          <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+          <MessageSquare size={18} className="text-text-dim" />
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
             Supergroup Topic Mapping
           </h3>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-text-dim">
           Map each notification category to a forum topic ID in the supergroup.
           Leave blank to send to the general chat. Use "Create topic" to create
           a new forum topic directly.
@@ -450,9 +450,9 @@ function TelegramConfigForm({
           {eventTypes.map((ev) => (
             <div
               key={ev}
-              className="bg-slate-900/30 border border-white/5 rounded-lg p-3 space-y-2"
+              className="bg-slate-900/30 border border-border-subtle rounded-lg p-3 space-y-2"
             >
-              <div className="text-sm text-white font-medium">
+              <div className="text-sm text-text-primary font-medium">
                 {eventLabels[ev]}
               </div>
               <div className="flex items-center gap-3">
@@ -463,7 +463,7 @@ function TelegramConfigForm({
                     setTopics((prev) => ({ ...prev, [ev]: e.target.value }))
                   }
                   placeholder="Topic ID (optional)"
-                  className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+                  className="flex-1 bg-surface-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
                 />
                 <TopicCreator
                   existingId={topics[ev] ?? ""}
@@ -480,7 +480,7 @@ function TelegramConfigForm({
         <button
           onClick={handleSaveTopics}
           disabled={isSaving}
-          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
         >
           {isSaving && <Loader2 size={16} className="animate-spin" />}
           Save
@@ -488,14 +488,14 @@ function TelegramConfigForm({
       </div>
 
       {/* Channel Events */}
-      <div className="bg-slate-800/50 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-6 space-y-6">
         <div className="flex items-center gap-2 mb-2">
-          <Link size={18} className="text-slate-400" />
-          <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+          <Link size={18} className="text-text-dim" />
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
             Channel Broadcast Events
           </h3>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-text-dim">
           Select which notification types should also be broadcast to the
           configured channel.
         </p>
@@ -503,7 +503,7 @@ function TelegramConfigForm({
           {eventTypes.map((ev) => (
             <label
               key={ev}
-              className="flex items-center gap-2 bg-slate-900/50 border border-white/5 rounded-lg px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition"
+              className="flex items-center gap-2 bg-surface-card/50 border border-border-subtle rounded-lg px-3 py-2 cursor-pointer hover:bg-overlay-5 transition"
             >
               <input
                 type="checkbox"
@@ -514,9 +514,9 @@ function TelegramConfigForm({
                     [ev]: e.target.checked,
                   }))
                 }
-                className="rounded border-white/10 bg-slate-800 text-brand-500 focus:ring-brand-500/50"
+                className="rounded border-border-default bg-surface-strong text-brand-500 focus:ring-brand-500/50"
               />
-              <span className="text-sm text-white">{eventLabels[ev]}</span>
+              <span className="text-sm text-text-primary">{eventLabels[ev]}</span>
             </label>
           ))}
         </div>
@@ -524,7 +524,7 @@ function TelegramConfigForm({
         <button
           onClick={handleSaveChannelEvents}
           disabled={isSaving}
-          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
         >
           {isSaving && <Loader2 size={16} className="animate-spin" />}
           Save
@@ -532,14 +532,14 @@ function TelegramConfigForm({
       </div>
 
       {/* Message Templates */}
-      <div className="bg-slate-800/50 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-6 space-y-6">
         <div className="flex items-center gap-2 mb-2">
-          <MessageSquare size={18} className="text-slate-400" />
-          <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
+          <MessageSquare size={18} className="text-text-dim" />
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
             Message Templates
           </h3>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-text-dim">
           Customize the HTML message sent for each event type. Variables:{" "}
           {"`{title}`"}, {"`{content}`"}, {"`{url}`"}. Leave blank to use
           defaults.
@@ -547,7 +547,7 @@ function TelegramConfigForm({
         <div className="space-y-4">
           {eventTypes.map((ev) => (
             <div key={ev}>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-text-muted mb-1.5">
                 {eventLabels[ev]}
               </label>
               <textarea
@@ -557,7 +557,7 @@ function TelegramConfigForm({
                 }
                 placeholder={`<b>{title}</b>\n\n{content}\n\n<a href="{url}">Open in Vellum</a>`}
                 rows={3}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 font-mono"
+                className="w-full bg-surface-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 font-mono"
               />
             </div>
           ))}
@@ -566,7 +566,7 @@ function TelegramConfigForm({
         <button
           onClick={handleSaveTemplates}
           disabled={isSaving}
-          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+          className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
         >
           {isSaving && <Loader2 size={16} className="animate-spin" />}
           Save
@@ -648,8 +648,8 @@ export default function SuperAdminTelegramPanel() {
       <div className="flex items-center gap-3">
         <Bot size={24} className="text-brand-400" />
         <div>
-          <h2 className="text-lg font-semibold text-white">Telegram Bot</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-lg font-semibold text-text-primary">Telegram Bot</h2>
+          <p className="text-sm text-text-dim">
             Configure the platform Telegram bot, topic mappings, channel events,
             and message templates.
           </p>
@@ -658,36 +658,36 @@ export default function SuperAdminTelegramPanel() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-slate-800/50 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+        <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-4 flex items-center gap-4">
           <div className="bg-brand-500/10 p-3 rounded-lg">
             <Users size={20} className="text-brand-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-2xl font-bold text-text-primary">
               {statsLoading ? "-" : (stats?.pairedUsers ?? 0)}
             </p>
-            <p className="text-sm text-slate-400">Paired Users</p>
+            <p className="text-sm text-text-dim">Paired Users</p>
           </div>
         </div>
 
-        <div className="bg-slate-800/50 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+        <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-4 flex items-center gap-4">
           <div className="bg-emerald-500/10 p-3 rounded-lg">
             <Bot size={20} className="text-emerald-400" />
           </div>
           <div>
-            <p className="text-sm font-medium text-white">
+            <p className="text-sm font-medium text-text-primary">
               {settingsData?.settings.telegram_bot_token
                 ? "Configured"
                 : "Not Configured"}
             </p>
-            <p className="text-sm text-slate-400">Bot Token</p>
+            <p className="text-sm text-text-dim">Bot Token</p>
           </div>
         </div>
       </div>
 
       {settingsLoading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="animate-spin text-slate-400" size={24} />
+          <Loader2 className="animate-spin text-text-dim" size={24} />
         </div>
       ) : settingsData ? (
         <TelegramConfigForm

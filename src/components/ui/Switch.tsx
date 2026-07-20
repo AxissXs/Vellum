@@ -18,7 +18,7 @@ export function Switch({ checked, onCheckedChange, disabled }: SwitchProps) {
       disabled={disabled}
       className={clsx(
         "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-        checked ? "bg-brand-500" : "bg-slate-700",
+        checked ? "bg-brand-500" : "bg-surface-elevated",
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >

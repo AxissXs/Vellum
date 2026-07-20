@@ -112,7 +112,7 @@ export default function AdminClient({
   const roleBadges: Record<string, string> = {
     superadmin: "bg-purple-500/10 text-purple-400 border-purple-500/20",
     admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    member: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+    member: "bg-slate-500/10 text-text-dim border-slate-500/20",
   };
 
   function getInitials(name: string) {
@@ -130,35 +130,35 @@ export default function AdminClient({
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Users</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Users</h2>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-text-primary hover:bg-brand-600 transition"
         >
           <Plus size={16} />
           Add User
         </button>
       </div>
 
-      <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
         <div className="divide-y divide-white/5">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition">
+            <div key={u.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-overlay-5 transition">
               <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 flex-shrink-0">
                 {getInitials(u.name)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-200 font-medium truncate">{u.name}</p>
-                <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                <p className="text-sm text-text-secondary font-medium truncate">{u.name}</p>
+                <p className="text-xs text-text-dim truncate">{u.email}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", roleBadges[u.role])}>
                   {u.role}
                 </span>
-                <span className="text-xs text-slate-600">{formatDate(u.createdAt)}</span>
+                <span className="text-xs text-text-dim">{formatDate(u.createdAt)}</span>
                 <button
                   onClick={() => openEdit(u)}
-                  className="px-2 py-1 text-xs rounded bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition"
+                  className="px-2 py-1 text-xs rounded bg-overlay-5 text-text-dim hover:text-text-primary hover:bg-overlay-10 transition"
                 >
                   Edit
                 </button>
@@ -166,7 +166,7 @@ export default function AdminClient({
                   <button
                     onClick={() => handleDelete(u.id)}
                     disabled={isLoading}
-                    className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
+                    className="p-1 rounded text-text-dim hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-50"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -181,12 +181,12 @@ export default function AdminClient({
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-slide-in">
+          <div className="relative bg-surface-card border border-border-default rounded-2xl w-full max-w-md p-6 shadow-2xl animate-slide-in">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-text-primary">
                 {editingUser ? "Edit User" : "Create User"}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-1 text-slate-400 hover:text-white">
+              <button onClick={() => setShowModal(false)} className="p-1 text-text-dim hover:text-text-primary">
                 <X size={18} />
               </button>
             </div>
@@ -199,30 +199,30 @@ export default function AdminClient({
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Name</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Email</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label className="block text-sm font-medium text-text-muted mb-1.5">
                   Password {editingUser ? "(leave blank to keep current)" : ""}
                 </label>
                 <input
@@ -230,17 +230,17 @@ export default function AdminClient({
                   required={!editingUser}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="••••••••"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Role</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Role</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
@@ -253,7 +253,7 @@ export default function AdminClient({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-text-primary hover:bg-brand-600 disabled:opacity-50 transition"
               >
                 {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                 {isLoading ? "Saving..." : editingUser ? "Save Changes" : "Create User"}

@@ -77,20 +77,20 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
+        <p className="text-text-dim mt-1">
           Manage your notification preferences and account settings.
         </p>
       </div>
 
       {/* Push Notifications Section */}
-      <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6">
+      <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-text-primary">
               Push Notifications
             </h2>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-text-dim mt-1">
               Get notified even when Vellum is closed.
             </p>
           </div>
@@ -109,12 +109,12 @@ export default function SettingsPage() {
 
       {/* Telegram Section — only when bot is configured */}
       {botConfigured && (
-        <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6">
+        <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <LinkIcon size={20} className="text-sky-400" />
             <div>
-              <h2 className="text-lg font-semibold text-white">Telegram</h2>
-              <p className="text-sm text-slate-400 mt-0.5">
+              <h2 className="text-lg font-semibold text-text-primary">Telegram</h2>
+              <p className="text-sm text-text-dim mt-0.5">
                 Receive notifications directly in Telegram.
               </p>
             </div>
@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
           {telegramLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="animate-spin text-slate-400" size={24} />
+              <Loader2 className="animate-spin text-text-dim" size={24} />
             </div>
           ) : telegramStatus?.linked ? (
             <div className="space-y-4">
@@ -138,7 +138,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => unlink()}
                 disabled={unlinking}
-                className="bg-white/5 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 text-slate-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+                className="bg-overlay-5 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 text-text-muted text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
               >
                 {unlinking ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -150,18 +150,18 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-text-dim">
                 Generate a pairing code and send it to the Vellum bot on Telegram.
               </p>
 
               {codeData?.code ? (
-                <div className="bg-slate-800/50 border border-white/5 rounded-lg p-4 flex items-center justify-between gap-4">
+                <div className="bg-surface-strong/50 border border-border-subtle rounded-lg p-4 flex items-center justify-between gap-4">
                   <code className="text-sm font-mono text-sky-400">
                     /start {codeData.code}
                   </code>
                   <button
                     onClick={() => copyCode(codeData.code)}
-                    className="text-slate-400 hover:text-white transition"
+                    className="text-text-dim hover:text-text-primary transition"
                     title="Copy"
                   >
                     {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
@@ -171,7 +171,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => generateCode()}
                   disabled={generatingCode}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
                 >
                   {generatingCode && <Loader2 size={16} className="animate-spin" />}
                   Generate Pairing Code
@@ -183,22 +183,22 @@ export default function SettingsPage() {
       )}
 
       {/* Notification Preferences */}
-      <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">
+      <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">
           Notification Preferences
         </h2>
-        <p className="text-sm text-slate-400 mb-6">
+        <p className="text-sm text-text-dim mb-6">
           Choose which events you want to be notified about and through which
           channels.
         </p>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="animate-spin text-slate-400" size={24} />
+            <Loader2 className="animate-spin text-text-dim" size={24} />
           </div>
         ) : (
           <div className="space-y-4">
-            <div className={`grid ${gridCols} gap-4 text-sm font-medium text-slate-400 pb-2 border-b border-white/5`}>
+            <div className={`grid ${gridCols} gap-4 text-sm font-medium text-text-dim pb-2 border-b border-border-subtle`}>
               <div>Event</div>
               <div className="text-center">Push</div>
               <div className="text-center">In-App</div>
@@ -209,9 +209,9 @@ export default function SettingsPage() {
             {preferences?.map((pref) => (
               <div
                 key={pref.eventType}
-                className={`grid ${gridCols} gap-4 items-center py-3 hover:bg-white/[0.02] rounded-lg px-2 transition`}
+                className={`grid ${gridCols} gap-4 items-center py-3 hover:bg-overlay-5 rounded-lg px-2 transition`}
               >
-                <div className="text-sm text-white">
+                <div className="text-sm text-text-primary">
                   {eventLabels[pref.eventType] || pref.eventType}
                 </div>
                 <div className="flex justify-center">
@@ -259,11 +259,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Active Sessions */}
-      <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6">
+      <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Active Sessions</h2>
-            <p className="text-sm text-slate-400 mt-1">
+            <h2 className="text-lg font-semibold text-text-primary">Active Sessions</h2>
+            <p className="text-sm text-text-dim mt-1">
               Manage devices where you are currently logged in.
             </p>
           </div>
@@ -271,7 +271,7 @@ export default function SettingsPage() {
             <button
               onClick={() => revokeAll()}
               disabled={revokingAll}
-              className="bg-white/5 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 text-slate-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+              className="bg-overlay-5 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 text-text-muted text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
             >
               {revokingAll ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -285,7 +285,7 @@ export default function SettingsPage() {
 
         {sessionsLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="animate-spin text-slate-400" size={24} />
+            <Loader2 className="animate-spin text-text-dim" size={24} />
           </div>
         ) : sessions && sessions.length > 0 ? (
           <div className="space-y-3">
@@ -295,17 +295,17 @@ export default function SettingsPage() {
               return (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between bg-slate-800/50 border border-white/5 rounded-lg px-4 py-3"
+                  className="flex items-center justify-between bg-surface-strong/50 border border-border-subtle rounded-lg px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
                     {isMobile ? (
-                      <Smartphone size={18} className="text-slate-400 flex-shrink-0" />
+                      <Smartphone size={18} className="text-text-dim flex-shrink-0" />
                     ) : (
-                      <Monitor size={18} className="text-slate-400 flex-shrink-0" />
+                      <Monitor size={18} className="text-text-dim flex-shrink-0" />
                     )}
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-white font-medium">
+                        <span className="text-sm text-text-primary font-medium">
                           {browser} on {os}
                         </span>
                         {session.isCurrent && (
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                      <div className="flex items-center gap-2 text-xs text-text-dim mt-0.5">
                         {session.ipAddress && <span>{session.ipAddress}</span>}
                         {session.ipAddress && <span>·</span>}
                         <span>Active {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}</span>
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                     <button
                       onClick={() => revokeSession(session.id)}
                       disabled={revoking}
-                      className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 text-xs font-medium px-3 py-1.5 rounded-lg transition"
+                      className="text-text-dim hover:text-red-400 hover:bg-red-500/10 text-xs font-medium px-3 py-1.5 rounded-lg transition"
                     >
                       Revoke
                     </button>
@@ -335,7 +335,7 @@ export default function SettingsPage() {
             })}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">No active sessions found.</p>
+          <p className="text-sm text-text-dim">No active sessions found.</p>
         )}
       </div>
     </div>

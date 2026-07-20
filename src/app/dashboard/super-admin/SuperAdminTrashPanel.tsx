@@ -183,15 +183,15 @@ export default function SuperAdminTrashPanel() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 bg-slate-800 rounded-lg px-3 py-2 border border-white/5">
-          <Filter size={14} className="text-slate-500" />
+        <div className="flex items-center gap-2 bg-surface-strong rounded-lg px-3 py-2 border border-border-subtle">
+          <Filter size={14} className="text-text-dim" />
           <select
             value={type}
             onChange={(e) => {
               setType(e.target.value);
               setPage(1);
             }}
-            className="bg-transparent text-sm text-slate-200 outline-none"
+            className="bg-transparent text-sm text-text-secondary outline-none"
           >
             <option value="">All Types</option>
             {Object.entries(typeLabels).map(([key, label]) => (
@@ -202,8 +202,8 @@ export default function SuperAdminTrashPanel() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-800 rounded-lg px-3 py-2 border border-white/5">
-          <Search size={14} className="text-slate-500" />
+        <div className="flex items-center gap-2 bg-surface-strong rounded-lg px-3 py-2 border border-border-subtle">
+          <Search size={14} className="text-text-dim" />
           <input
             type="text"
             placeholder="Search..."
@@ -212,7 +212,7 @@ export default function SuperAdminTrashPanel() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="bg-transparent text-sm text-slate-200 outline-none w-40"
+            className="bg-transparent text-sm text-text-secondary outline-none w-40"
           />
         </div>
 
@@ -230,12 +230,12 @@ export default function SuperAdminTrashPanel() {
       </div>
 
       {/* Table */}
-      <div className="border border-white/5 rounded-lg overflow-hidden">
+      <div className="border border-border-subtle rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-800 border-b border-white/5 text-left">
+            <tr className="bg-surface-strong border-b border-border-subtle text-left">
               <th className="px-4 py-3 w-10">
-                <button onClick={toggleAll} className="text-slate-400 hover:text-slate-200">
+                <button onClick={toggleAll} className="text-text-dim hover:text-text-secondary">
                   {selectedIds.size === items.length && items.length > 0 ? (
                     <CheckSquare size={16} />
                   ) : (
@@ -243,19 +243,19 @@ export default function SuperAdminTrashPanel() {
                   )}
                 </button>
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-wider">
                 Type
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-wider">
                 Title / Name
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-wider">
                 Deleted By
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-wider">
                 Deleted At
               </th>
-              <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider w-24">
+              <th className="px-4 py-3 text-xs font-medium text-text-dim uppercase tracking-wider w-24">
                 Actions
               </th>
             </tr>
@@ -265,8 +265,8 @@ export default function SuperAdminTrashPanel() {
               <tr>
                 <td colSpan={6} className="px-4 py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <Trash2 className="h-8 w-8 text-slate-600" />
-                    <p className="text-slate-400">Trash is empty</p>
+                    <Trash2 className="h-8 w-8 text-text-dim" />
+                    <p className="text-text-dim">Trash is empty</p>
                   </div>
                 </td>
               </tr>
@@ -275,14 +275,14 @@ export default function SuperAdminTrashPanel() {
                 <tr
                   key={`${item.type}-${item.id}`}
                   className={clsx(
-                    "hover:bg-white/[0.02] transition",
+                    "hover:bg-overlay-5 transition",
                     selectedIds.has(item.id) && "bg-brand-500/5"
                   )}
                 >
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleSelection(item.id)}
-                      className="text-slate-400 hover:text-slate-200"
+                      className="text-text-dim hover:text-text-secondary"
                     >
                       {selectedIds.has(item.id) ? (
                         <CheckSquare size={16} />
@@ -292,22 +292,22 @@ export default function SuperAdminTrashPanel() {
                     </button>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs px-2 py-1 rounded bg-slate-800 text-slate-300 border border-white/5">
+                    <span className="text-xs px-2 py-1 rounded bg-surface-strong text-text-muted border border-border-subtle">
                       {typeLabels[item.type] || item.type}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-slate-200 truncate max-w-xs">{item.title}</p>
+                    <p className="text-text-secondary truncate max-w-xs">{item.title}</p>
                     {item.extra?.projectName && (
-                      <p className="text-xs text-slate-600 mt-0.5">
+                      <p className="text-xs text-text-dim mt-0.5">
                         Project: {item.extra.projectName}
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-400">
+                  <td className="px-4 py-3 text-text-dim">
                     {item.deletedBy?.name || "Unknown"}
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">
+                  <td className="px-4 py-3 text-text-dim text-xs">
                     {formatDateShort(item.deletedAt)}
                   </td>
                   <td className="px-4 py-3">
@@ -331,24 +331,24 @@ export default function SuperAdminTrashPanel() {
       {/* Pagination */}
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-text-dim">
             {data.total} items total
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="p-1.5 rounded-lg border border-white/5 text-slate-400 hover:text-slate-200 disabled:opacity-30"
+              className="p-1.5 rounded-lg border border-border-subtle text-text-dim hover:text-text-secondary disabled:opacity-30"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-sm text-slate-400 px-2">
+            <span className="text-sm text-text-dim px-2">
               {page} / {data.totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
               disabled={page >= data.totalPages}
-              className="p-1.5 rounded-lg border border-white/5 text-slate-400 hover:text-slate-200 disabled:opacity-30"
+              className="p-1.5 rounded-lg border border-border-subtle text-text-dim hover:text-text-secondary disabled:opacity-30"
             >
               <ChevronRight size={16} />
             </button>
@@ -359,23 +359,23 @@ export default function SuperAdminTrashPanel() {
       {/* Confirmation Modal */}
       {confirmRestore && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-xl p-6 max-w-md w-full mx-4">
+          <div className="bg-surface-card border border-border-default rounded-xl p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
                 <RotateCcw size={18} className="text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Restore Items</h3>
-                <p className="text-sm text-slate-400">
+                <h3 className="text-lg font-semibold text-text-primary">Restore Items</h3>
+                <p className="text-sm text-text-dim">
                   Are you sure you want to restore {selectedIds.size} item(s)?
                 </p>
               </div>
             </div>
 
-            <div className="max-h-40 overflow-y-auto space-y-1 mb-4 bg-slate-800/50 rounded-lg p-3">
+            <div className="max-h-40 overflow-y-auto space-y-1 mb-4 bg-surface-strong/50 rounded-lg p-3">
               {selectedItems.map((item) => (
-                <div key={item.id} className="text-sm text-slate-300 flex items-center gap-2">
-                  <span className="text-xs text-slate-500">{typeLabels[item.type]}</span>
+                <div key={item.id} className="text-sm text-text-muted flex items-center gap-2">
+                  <span className="text-xs text-text-dim">{typeLabels[item.type]}</span>
                   <span className="truncate">{item.title}</span>
                 </div>
               ))}
@@ -384,14 +384,14 @@ export default function SuperAdminTrashPanel() {
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setConfirmRestore(false)}
-                className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition"
+                className="px-4 py-2 text-sm text-text-dim hover:text-text-secondary transition"
               >
                 Cancel
               </button>
               <button
                 onClick={() => restoreMutation.mutate(Array.from(selectedIds))}
                 disabled={restoreMutation.isPending}
-                className="flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 text-sm font-medium transition disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-text-primary px-4 py-2 text-sm font-medium transition disabled:opacity-50"
               >
                 {restoreMutation.isPending && (
                   <Loader2 size={14} className="animate-spin" />

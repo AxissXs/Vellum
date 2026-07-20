@@ -109,14 +109,14 @@ function SnapshotDiff({
   );
 
   if (changedKeys.length === 0) {
-    return <p className="text-xs text-slate-500">No field changes detected.</p>;
+    return <p className="text-xs text-text-dim">No field changes detected.</p>;
   }
 
   return (
     <div className="space-y-1">
       {changedKeys.map((key) => (
         <div key={key} className="flex items-start gap-2 text-xs">
-          <span className="text-slate-500 font-mono min-w-[120px] shrink-0">{key}</span>
+          <span className="text-text-dim font-mono min-w-[120px] shrink-0">{key}</span>
           <span className="text-red-400 line-through truncate max-w-[200px]">
             {String(before[key] ?? "null")}
           </span>
@@ -140,13 +140,13 @@ function SnapshotCard({
     ([k]) => !["createdAt", "updatedAt", "deletedAt", "deletedBy"].includes(k)
   );
   return (
-    <div className="border border-white/5 rounded-lg p-3 bg-slate-800/50">
-      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">{label}</p>
+    <div className="border border-border-subtle rounded-lg p-3 bg-surface-strong/50">
+      <p className="text-[10px] uppercase tracking-wider text-text-dim mb-2">{label}</p>
       <div className="space-y-1">
         {fields.map(([key, value]) => (
           <div key={key} className="flex items-start gap-2 text-xs">
-            <span className="text-slate-400 font-mono min-w-[100px] shrink-0">{key}</span>
-            <span className="text-slate-300 truncate max-w-[300px]">
+            <span className="text-text-dim font-mono min-w-[100px] shrink-0">{key}</span>
+            <span className="text-text-muted truncate max-w-[300px]">
               {value === null ? "null" : typeof value === "object" ? JSON.stringify(value) : String(value)}
             </span>
           </div>
@@ -191,13 +191,13 @@ export default function AuditLogDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-10">
-      <div className="bg-slate-900 border border-white/10 rounded-xl w-full max-w-2xl mx-4 shadow-2xl">
+      <div className="bg-surface-card border border-border-default rounded-xl w-full max-w-2xl mx-4 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h2 className="text-lg font-semibold text-white">Audit Log Detail</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
+          <h2 className="text-lg font-semibold text-text-primary">Audit Log Detail</h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition"
+            className="text-text-dim hover:text-text-primary transition"
           >
             <X size={18} />
           </button>
@@ -216,7 +216,7 @@ export default function AuditLogDetailModal({
           <div className="p-6 space-y-6">
             {/* Actor Section */}
             <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-full bg-slate-800 flex items-center justify-center text-lg font-bold text-slate-300 flex-shrink-0">
+              <div className="h-12 w-12 rounded-full bg-surface-strong flex items-center justify-center text-lg font-bold text-text-muted flex-shrink-0">
                 {data.actor.avatarUrl ? (
                   <img src={data.actor.avatarUrl} alt="" className="h-12 w-12 rounded-full" />
                 ) : (
@@ -225,19 +225,19 @@ export default function AuditLogDetailModal({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-white">{data.actor.name || "Unknown"}</h3>
+                  <h3 className="font-semibold text-text-primary">{data.actor.name || "Unknown"}</h3>
                   {data.actor.role && (
-                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-white/5">
+                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-strong text-text-dim border border-border-subtle">
                       {data.actor.role}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-slate-400">{data.actor.email}</p>
-                <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-500">
+                <p className="text-sm text-text-dim">{data.actor.email}</p>
+                <div className="flex items-center gap-4 mt-1.5 text-xs text-text-dim">
                   <span className="flex items-center gap-1">
                     <Globe size={12} />
                     {data.log.ipAddress || "unknown"}
-                    <button onClick={copyIP} className="text-slate-600 hover:text-slate-300">
+                    <button onClick={copyIP} className="text-text-dim hover:text-text-muted">
                       {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
                     </button>
                   </span>
@@ -245,7 +245,7 @@ export default function AuditLogDetailModal({
                   <span>{formatTimeAgo(data.log.createdAt)}</span>
                 </div>
                 {data.actor.lastLoginAt && (
-                  <p className="text-xs text-slate-600 mt-1">
+                  <p className="text-xs text-text-dim mt-1">
                     Last login: {formatDate(data.actor.lastLoginAt)}
                     {data.actor.lastIp && ` from ${data.actor.lastIp}`}
                   </p>
@@ -254,21 +254,21 @@ export default function AuditLogDetailModal({
             </div>
 
             {/* Event Summary */}
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-white/5">
+            <div className="bg-surface-strong/50 rounded-lg p-4 border border-border-subtle">
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-mono text-sm text-white">{data.log.action}</span>
+                <span className="font-mono text-sm text-text-primary">{data.log.action}</span>
                 <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded", severity.bg)}>
                   {severity.label}
                 </span>
                 {data.log.tag && (
-                  <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
+                  <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-elevated text-text-dim">
                     {tagLabels[data.log.tag] || data.log.tag}
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-300">{data.log.details}</p>
-              <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                <span className="text-slate-400">{data.log.entityType}</span>
+              <p className="text-sm text-text-muted">{data.log.details}</p>
+              <div className="flex items-center gap-3 mt-2 text-xs text-text-dim">
+                <span className="text-text-dim">{data.log.entityType}</span>
                 {data.log.entityId && (
                   <span className="font-mono">{data.log.entityId.slice(0, 8)}...</span>
                 )}
@@ -283,7 +283,7 @@ export default function AuditLogDetailModal({
                   </a>
                 )}
                 {!data.entity.exists && (
-                  <span className="text-slate-600">Entity no longer exists</span>
+                  <span className="text-text-dim">Entity no longer exists</span>
                 )}
               </div>
             </div>
@@ -298,7 +298,7 @@ export default function AuditLogDetailModal({
               <div>
                 <button
                   onClick={() => setShowSnapshots(!showSnapshots)}
-                  className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition"
+                  className="flex items-center gap-2 text-sm text-text-dim hover:text-text-primary transition"
                 >
                   {showSnapshots ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   Snapshots ({data.snapshots.length})
@@ -309,7 +309,7 @@ export default function AuditLogDetailModal({
                     data.snapshots[0].snapshotType === "before" &&
                     data.snapshots[1].snapshotType === "after" ? (
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">
+                        <p className="text-[10px] uppercase tracking-wider text-text-dim mb-2">
                           Changes
                         </p>
                         <SnapshotDiff
@@ -336,26 +336,26 @@ export default function AuditLogDetailModal({
               <div>
                 <button
                   onClick={() => setShowTimeline(!showTimeline)}
-                  className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition"
+                  className="flex items-center gap-2 text-sm text-text-dim hover:text-text-primary transition"
                 >
                   {showTimeline ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   Entity History ({data.timeline.length} events)
                 </button>
                 {showTimeline && (
-                  <div className="mt-3 space-y-0 border-l border-white/10 ml-2">
+                  <div className="mt-3 space-y-0 border-l border-border-default ml-2">
                     {data.timeline.map((t) => {
                       const s = severityConfig[t.severity] || severityConfig.info;
                       return (
                         <div key={t.id} className="relative pl-4 py-2">
                           <div className={clsx("absolute left-0 top-3 w-2 h-2 rounded-full -translate-x-1", s.dot)} />
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-slate-300">{t.action}</span>
+                            <span className="text-xs font-mono text-text-muted">{t.action}</span>
                             <span className={clsx("text-[9px] uppercase px-1 py-0.5 rounded", s.bg)}>
                               {s.label}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-0.5">{t.details}</p>
-                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-600">
+                          <p className="text-xs text-text-dim mt-0.5">{t.details}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-dim">
                             <span>{t.userName || "System"}</span>
                             <span>{formatTimeAgo(t.createdAt)}</span>
                           </div>

@@ -117,7 +117,7 @@ export default function SuperAdminAuditPanel() {
     <div className="space-y-4">
       {/* Tag + Severity Pills */}
       <div className="flex flex-wrap gap-2">
-        <span className="text-xs text-slate-500 self-center mr-1">Tag:</span>
+        <span className="text-xs text-text-dim self-center mr-1">Tag:</span>
         {["", "data_change", "security", "user_action", "impersonation"].map((t) => (
           <button
             key={t}
@@ -126,14 +126,14 @@ export default function SuperAdminAuditPanel() {
               "text-xs px-2.5 py-1 rounded-full border transition",
               tagFilter === t
                 ? "bg-brand-500/10 text-brand-400 border-brand-500/30"
-                : "text-slate-400 border-white/10 hover:border-white/20"
+                : "text-text-dim border-border-default hover:border-border-strong"
             )}
           >
             {t ? tagLabels[t] || t : "All"}
           </button>
         ))}
-        <span className="text-slate-600 mx-1">|</span>
-        <span className="text-xs text-slate-500 self-center mr-1">Severity:</span>
+        <span className="text-text-dim mx-1">|</span>
+        <span className="text-xs text-text-dim self-center mr-1">Severity:</span>
         {["", "info", "warning", "critical"].map((s) => (
           <button
             key={s}
@@ -142,7 +142,7 @@ export default function SuperAdminAuditPanel() {
               "text-xs px-2.5 py-1 rounded-full border transition flex items-center gap-1",
               severityFilter === s
                 ? "bg-brand-500/10 text-brand-400 border-brand-500/30"
-                : "text-slate-400 border-white/10 hover:border-white/20"
+                : "text-text-dim border-border-default hover:border-border-strong"
             )}
           >
             {s && <span className={clsx("w-1.5 h-1.5 rounded-full", severityConfig[s]?.dot || "bg-slate-400")} />}
@@ -152,8 +152,8 @@ export default function SuperAdminAuditPanel() {
       </div>
 
       {/* Filters */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl p-4 space-y-3">
-        <div className="flex items-center gap-2 text-slate-400 mb-2">
+      <div className="bg-surface-card border border-border-subtle rounded-xl p-4 space-y-3">
+        <div className="flex items-center gap-2 text-text-dim mb-2">
           <Filter size={14} />
           <span className="text-xs font-medium uppercase tracking-wider">Filters</span>
         </div>
@@ -163,37 +163,37 @@ export default function SuperAdminAuditPanel() {
             value={userId}
             onChange={(e) => { setUserId(e.target.value); setPage(1); }}
             placeholder="User ID"
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <input
             type="text"
             value={action}
             onChange={(e) => { setAction(e.target.value); setPage(1); }}
             placeholder="Action (e.g. created)"
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <input
             type="text"
             value={ip}
             onChange={(e) => { setIp(e.target.value); setPage(1); }}
             placeholder="IP Address"
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <input
             type="date"
             value={from}
             onChange={(e) => { setFrom(e.target.value); setPage(1); }}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <input
             type="date"
             value={to}
             onChange={(e) => { setTo(e.target.value); setPage(1); }}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-500">{data?.total ?? 0} total records</span>
+          <span className="text-xs text-text-dim">{data?.total ?? 0} total records</span>
           <button
             onClick={exportCSV}
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500/10 text-brand-400 border border-brand-500/20 px-3 py-1.5 text-xs font-medium hover:bg-brand-500/20 transition"
@@ -205,9 +205,9 @@ export default function SuperAdminAuditPanel() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
         {isLoading && (
-          <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+          <div className="flex items-center justify-center py-12 text-text-dim text-sm">
             <Loader2 size={16} className="animate-spin mr-2" />
             Loading audit logs...
           </div>
@@ -223,14 +223,14 @@ export default function SuperAdminAuditPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-5 py-3 font-medium text-slate-400">Action</th>
-                  <th className="px-5 py-3 font-medium text-slate-400">Severity</th>
-                  <th className="px-5 py-3 font-medium text-slate-400">User</th>
-                  <th className="px-5 py-3 font-medium text-slate-400">Entity</th>
-                  <th className="px-5 py-3 font-medium text-slate-400">Details</th>
-                  <th className="px-5 py-3 font-medium text-slate-400">IP</th>
-                  <th className="px-5 py-3 font-medium text-slate-400">Time</th>
+                <tr className="border-b border-border-subtle bg-overlay-5">
+                  <th className="px-5 py-3 font-medium text-text-dim">Action</th>
+                  <th className="px-5 py-3 font-medium text-text-dim">Severity</th>
+                  <th className="px-5 py-3 font-medium text-text-dim">User</th>
+                  <th className="px-5 py-3 font-medium text-text-dim">Entity</th>
+                  <th className="px-5 py-3 font-medium text-text-dim">Details</th>
+                  <th className="px-5 py-3 font-medium text-text-dim">IP</th>
+                  <th className="px-5 py-3 font-medium text-text-dim">Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -239,14 +239,14 @@ export default function SuperAdminAuditPanel() {
                   return (
                     <tr
                       key={log.id}
-                      className="hover:bg-white/[0.02] transition cursor-pointer"
+                      className="hover:bg-overlay-5 transition cursor-pointer"
                       onClick={() => setDetailLogId(log.id)}
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-300 font-medium">{log.action}</span>
+                          <span className="text-xs text-text-muted font-medium">{log.action}</span>
                           {log.tag && (
-                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 border border-white/5">
+                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-strong text-text-dim border border-border-subtle">
                               {tagLabels[log.tag] || log.tag}
                             </span>
                           )}
@@ -259,31 +259,31 @@ export default function SuperAdminAuditPanel() {
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <div className="text-xs text-slate-300">{log.userName ?? "System"}</div>
-                        <div className="text-[10px] text-slate-600">{log.userEmail}</div>
+                        <div className="text-xs text-text-muted">{log.userName ?? "System"}</div>
+                        <div className="text-[10px] text-text-dim">{log.userEmail}</div>
                       </td>
                       <td className="px-5 py-3">
-                        <span className="text-[10px] uppercase tracking-wider text-slate-500 bg-white/5 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] uppercase tracking-wider text-text-dim bg-overlay-5 px-1.5 py-0.5 rounded">
                           {log.entityType}
                         </span>
                         {log.entityId && (
-                          <div className="text-[10px] text-slate-600 mt-0.5 font-mono">{log.entityId.slice(0, 8)}...</div>
+                          <div className="text-[10px] text-text-dim mt-0.5 font-mono">{log.entityId.slice(0, 8)}...</div>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-xs text-slate-400 max-w-xs truncate">
+                      <td className="px-5 py-3 text-xs text-text-dim max-w-xs truncate">
                         {log.details ?? "—"}
                       </td>
                       <td className="px-5 py-3">
                         {log.ipAddress ? (
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                          <div className="flex items-center gap-1 text-[10px] text-text-dim">
                             <Globe size={10} />
                             {log.ipAddress}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-slate-600">—</span>
+                          <span className="text-[10px] text-text-dim">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">
+                      <td className="px-5 py-3 text-xs text-text-dim whitespace-nowrap">
                         {formatDateShort(log.createdAt)}
                       </td>
                     </tr>
@@ -291,7 +291,7 @@ export default function SuperAdminAuditPanel() {
                 })}
                 {logs.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={7} className="px-5 py-8 text-center text-text-dim text-sm">
                       No audit logs match your filters.
                     </td>
                   </tr>
@@ -303,22 +303,22 @@ export default function SuperAdminAuditPanel() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-white/5">
+          <div className="flex items-center justify-between px-5 py-3 border-t border-border-subtle">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white disabled:opacity-30 transition"
+              className="inline-flex items-center gap-1 text-xs text-text-dim hover:text-text-primary disabled:opacity-30 transition"
             >
               <ChevronLeft size={14} />
               Previous
             </button>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-text-dim">
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white disabled:opacity-30 transition"
+              className="inline-flex items-center gap-1 text-xs text-text-dim hover:text-text-primary disabled:opacity-30 transition"
             >
               Next
               <ChevronRight size={14} />

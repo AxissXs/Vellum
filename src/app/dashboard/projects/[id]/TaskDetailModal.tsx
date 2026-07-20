@@ -46,7 +46,7 @@ type Comment = {
 };
 
 const STATUS_CONFIG: { key: string; label: string; color: string; dot: string }[] = [
-  { key: "backlog", label: "Backlog", color: "bg-slate-500/10 text-slate-400 border-slate-500/20", dot: "bg-slate-500" },
+  { key: "backlog", label: "Backlog", color: "bg-slate-500/10 text-text-dim border-slate-500/20", dot: "bg-slate-500" },
   { key: "todo", label: "To Do", color: "bg-blue-500/10 text-blue-400 border-blue-500/20", dot: "bg-blue-500" },
   { key: "in_progress", label: "In Progress", color: "bg-amber-500/10 text-amber-400 border-amber-500/20", dot: "bg-amber-500" },
   { key: "review", label: "Review", color: "bg-purple-500/10 text-purple-400 border-purple-500/20", dot: "bg-purple-500" },
@@ -292,32 +292,32 @@ export default function TaskDetailModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-slate-900 border border-white/10 md:rounded-2xl w-full max-w-5xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
+      <div className="relative bg-surface-card border border-border-default md:rounded-2xl w-full max-w-5xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl animate-slide-in overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between p-5 md:p-6 border-b border-white/5 gap-4">
+        <div className="flex items-start justify-between p-5 md:p-6 border-b border-border-subtle gap-4">
           <div className="flex-1 min-w-0">
             {editing ? (
               <input
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full bg-overlay-5 border border-border-default rounded-lg px-3 py-2 text-lg font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
                 autoFocus
               />
             ) : (
               <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-lg font-semibold text-white break-words">{task.title}</h3>
+                <h3 className="text-lg font-semibold text-text-primary break-words">{task.title}</h3>
                 <span className={clsx("text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border shrink-0", statusCfg.color)}>
                   <span className={clsx("inline-block h-1.5 w-1.5 rounded-full mr-1", statusCfg.dot)} />
                   {statusCfg.label}
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-slate-500">
+            <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-text-dim">
               <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", PriorityBadge[task.priority])}>{task.priority}</span>
               <span>Created {formatDate(task.createdAt)}</span>
               {task.projectName && (
-                <a href={`/dashboard/projects/${task.projectId}`} className="inline-flex items-center gap-1 text-slate-400 hover:text-brand-400 transition" onClick={(e) => e.stopPropagation()}>
+                <a href={`/dashboard/projects/${task.projectId}`} className="inline-flex items-center gap-1 text-text-dim hover:text-brand-400 transition" onClick={(e) => e.stopPropagation()}>
                   <div className="h-2 w-2 rounded-full" style={{ backgroundColor: task.projectColor || "#6366f1" }} />
                   {task.projectName}
                 </a>
@@ -328,17 +328,17 @@ export default function TaskDetailModal({
           <div className="flex items-center gap-1 shrink-0">
             {!editing ? (
               <>
-                <button onClick={() => setEditing(true)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Edit (E)"><Pencil size={14} /></button>
+                <button onClick={() => setEditing(true)} className="p-2 rounded-lg text-text-dim hover:text-text-primary hover:bg-overlay-5 transition" title="Edit (E)"><Pencil size={14} /></button>
 
               </>
             ) : (
               <>
-                <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}</button>
-                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
+                <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 text-xs rounded-lg bg-brand-500 text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">{saving ? <Loader2 size={12} className="animate-spin" /> : "Save"}</button>
+                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-xs rounded-lg bg-overlay-5 text-text-dim hover:text-text-primary transition">Cancel</button>
               </>
             )}
-            <button onClick={handleDelete} disabled={deleting} className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete"><Trash2 size={14} /></button>
-            <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-white transition"><X size={18} /></button>
+            <button onClick={handleDelete} disabled={deleting} className="p-2 rounded-lg text-text-dim hover:text-red-400 hover:bg-red-500/10 transition" title="Delete"><Trash2 size={14} /></button>
+            <button onClick={onClose} className="p-2 rounded-lg text-text-dim hover:text-text-primary transition"><X size={18} /></button>
           </div>
         </div>
 
@@ -346,16 +346,16 @@ export default function TaskDetailModal({
         <div className="flex-1 overflow-y-auto">
           <div className="flex flex-col md:grid md:grid-cols-2 md:gap-0">
             {/* Left: Details */}
-            <div className="p-5 md:p-6 space-y-6 border-b md:border-b-0 md:border-r border-white/5 min-w-0">
+            <div className="p-5 md:p-6 space-y-6 border-b md:border-b-0 md:border-r border-border-subtle min-w-0">
               {/* Assignee + Due Date */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Assignee</label>
+                  <label className="text-[11px] uppercase tracking-wider text-text-dim block mb-1.5">Assignee</label>
                   {editing ? (
                     <div className="relative" data-assignee-dropdown>
                       <button
                         onClick={() => setShowAssigneeDropdown((v) => !v)}
-                        className="w-full flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/[0.07] transition"
+                        className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary hover:bg-overlay-10 transition"
                       >
                         <div className="flex items-center gap-2">
                           {editAssignee ? (
@@ -364,29 +364,29 @@ export default function TaskDetailModal({
                               <span>{users.find((u) => u.id === editAssignee)?.name || "Unknown"}</span>
                             </>
                           ) : (
-                            <span className="text-slate-500">Unassigned</span>
+                            <span className="text-text-dim">Unassigned</span>
                           )}
                         </div>
-                        <ChevronDown size={14} className="text-slate-500" />
+                        <ChevronDown size={14} className="text-text-dim" />
                       </button>
                       {showAssigneeDropdown && (
-                        <div className="absolute z-50 mt-1 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-2 max-h-64 overflow-hidden animate-slide-in">
+                        <div className="absolute z-50 mt-1 w-full bg-surface-card border border-border-default rounded-xl shadow-2xl py-2 max-h-64 overflow-hidden animate-slide-in">
                           <div className="px-2 pb-2">
                             <input
                               type="text"
                               value={assigneeSearch}
                               onChange={(e) => setAssigneeSearch(e.target.value)}
                               placeholder="Search users..."
-                              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              className="w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-1.5 text-xs text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
                               autoFocus
                             />
                           </div>
                           <div className="overflow-y-auto max-h-48 px-1">
                             <button
                               onClick={() => { setEditAssignee(""); setShowAssigneeDropdown(false); setAssigneeSearch(""); }}
-                              className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === "" ? "bg-brand-500/10 text-brand-400" : "text-slate-300 hover:bg-white/5")}
+                              className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === "" ? "bg-brand-500/10 text-brand-400" : "text-text-muted hover:bg-overlay-5")}
                             >
-                              <div className="h-5 w-5 rounded-full bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-slate-500 text-[9px]">—</div>
+                              <div className="h-5 w-5 rounded-full bg-surface-strong border border-dashed border-slate-600 flex items-center justify-center text-text-dim text-[9px]">—</div>
                               Unassigned
                             </button>
                             {users
@@ -395,7 +395,7 @@ export default function TaskDetailModal({
                                 <button
                                   key={u.id}
                                   onClick={() => { setEditAssignee(u.id); setShowAssigneeDropdown(false); setAssigneeSearch(""); }}
-                                  className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === u.id ? "bg-brand-500/10 text-brand-400" : "text-slate-300 hover:bg-white/5")}
+                                  className={clsx("w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition", editAssignee === u.id ? "bg-brand-500/10 text-brand-400" : "text-text-muted hover:bg-overlay-5")}
                                 >
                                   <div className="h-5 w-5 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-400">{getInitials(u.name)}</div>
                                   {u.name}
@@ -416,56 +416,56 @@ export default function TaskDetailModal({
                         size="md"
                       />
                       {task.assigneeName ? (
-                        <span className="text-sm text-slate-200">{task.assigneeName}</span>
-                      ) : <span className="text-sm text-slate-600">Unassigned</span>}
+                        <span className="text-sm text-text-secondary">{task.assigneeName}</span>
+                      ) : <span className="text-sm text-text-dim">Unassigned</span>}
                     </div>
                   )}
                 </div>
                 <div className="sm:w-40">
-                  <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Due Date</label>
+                  <label className="text-[11px] uppercase tracking-wider text-text-dim block mb-1.5">Due Date</label>
                   {editing ? (
-                    <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} className="w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500" />
                   ) : (
-                    <div className="flex items-center gap-1.5 text-sm text-slate-300"><Calendar size={14} className="text-slate-500" />{task.dueDate ? formatDate(task.dueDate) : <span className="text-slate-600">None</span>}</div>
+                    <div className="flex items-center gap-1.5 text-sm text-text-muted"><Calendar size={14} className="text-text-dim" />{task.dueDate ? formatDate(task.dueDate) : <span className="text-text-dim">None</span>}</div>
                   )}
                 </div>
               </div>
 
               {/* Status */}
               <div>
-                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Status</label>
+                <label className="text-[11px] uppercase tracking-wider text-text-dim block mb-1.5">Status</label>
                 {editing ? (
                   <div className="flex flex-wrap gap-2">
                     {STATUS_CONFIG.map((s) => (
-                      <button key={s.key} onClick={() => setEditStatus(s.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editStatus === s.key ? s.color : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>
+                      <button key={s.key} onClick={() => setEditStatus(s.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editStatus === s.key ? s.color : "bg-overlay-5 border-border-subtle text-text-muted hover:bg-overlay-10")}>
                         <span className={clsx("h-2 w-2 rounded-full", s.dot)} />{s.label}{editStatus === s.key && <Check size={12} className="ml-1" />}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", statusCfg.dot)} /><span className="text-sm text-slate-200">{statusCfg.label}</span></div>
+                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", statusCfg.dot)} /><span className="text-sm text-text-secondary">{statusCfg.label}</span></div>
                 )}
               </div>
 
               {/* Priority */}
               <div>
-                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Priority</label>
+                <label className="text-[11px] uppercase tracking-wider text-text-dim block mb-1.5">Priority</label>
                 {editing ? (
                   <div className="flex flex-wrap gap-2">
                     {PRIORITY_CONFIG.map((p) => (
-                      <button key={p.key} onClick={() => setEditPriority(p.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editPriority === p.key ? PriorityBadge[p.key] : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10")}>
+                      <button key={p.key} onClick={() => setEditPriority(p.key)} className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition", editPriority === p.key ? PriorityBadge[p.key] : "bg-overlay-5 border-border-subtle text-text-muted hover:bg-overlay-10")}>
                         <span className={clsx("h-2.5 w-2.5 rounded-full", p.color)} />{p.label}{editPriority === p.key && <Check size={12} className="ml-1" />}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", priorityCfg.color)} /><span className="text-sm text-slate-200">{priorityCfg.label}</span></div>
+                  <div className="flex items-center gap-1.5"><span className={clsx("h-2.5 w-2.5 rounded-full", priorityCfg.color)} /><span className="text-sm text-text-secondary">{priorityCfg.label}</span></div>
                 )}
               </div>
 
               {/* Description */}
               <div>
-                <label className="text-[11px] uppercase tracking-wider text-slate-600 block mb-1.5">Description</label>
+                <label className="text-[11px] uppercase tracking-wider text-text-dim block mb-1.5">Description</label>
                 {editing ? (
                   <RichTextEditor value={editDescription} onChange={setEditDescription} rows={6} placeholder="Add context, acceptance criteria, links, or implementation notes..." />
                 ) : (
@@ -474,8 +474,8 @@ export default function TaskDetailModal({
               </div>
 
               {/* Footer meta */}
-              <div className="pt-2 border-t border-white/5">
-                <div className="flex items-center gap-2 text-xs text-slate-600">
+              <div className="pt-2 border-t border-border-subtle">
+                <div className="flex items-center gap-2 text-xs text-text-dim">
                   <Calendar size={12} />
                   <span>Created {formatDate(task.createdAt)} · Updated {formatRelative(task.updatedAt)}</span>
                 </div>
@@ -483,15 +483,15 @@ export default function TaskDetailModal({
             </div>
 
             {/* Right: Activity */}
-            <div className="p-5 md:p-6 space-y-5 bg-slate-950/30 min-w-0">
-              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+            <div className="p-5 md:p-6 space-y-5 bg-surface-page/30 min-w-0">
+              <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
                 <MessageCircle size={16} className="text-brand-400" />
                 Activity
-                <span className="text-xs text-slate-600 font-normal">{comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""}</span>
+                <span className="text-xs text-text-dim font-normal">{comments.length - totalReplyCount}{totalReplyCount > 0 ? ` + ${totalReplyCount} repl${totalReplyCount === 1 ? "y" : "ies"}` : ""}</span>
               </h4>
 
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                {topLevelComments.length === 0 && <p className="text-sm text-slate-600 text-center py-4">No activity yet</p>}
+                {topLevelComments.length === 0 && <p className="text-sm text-text-dim text-center py-4">No activity yet</p>}
                 {topLevelComments.map((c) => {
                   const replies = repliesByParent.get(c.id) || [];
                   return (
@@ -502,13 +502,13 @@ export default function TaskDetailModal({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-xs font-medium text-slate-200 truncate">{c.authorName || "Unknown"}</span>
-                              <span className="text-[10px] text-slate-600 shrink-0">{formatRelative(c.createdAt)}</span>
+                              <span className="text-xs font-medium text-text-secondary truncate">{c.authorName || "Unknown"}</span>
+                              <span className="text-[10px] text-text-dim shrink-0">{formatRelative(c.createdAt)}</span>
                             </div>
                             {c.authorId === currentUserId && editingCommentId !== c.id && (
                               <div className="flex items-center gap-0.5 shrink-0">
-                                <button onClick={() => startEditComment(c)} className="p-1 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
-                                <button onClick={() => handleDeleteComment(c.id)} disabled={deleteCommentMutation.isPending} className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
+                                <button onClick={() => startEditComment(c)} className="p-1 rounded text-text-dim hover:text-brand-400 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
+                                <button onClick={() => handleDeleteComment(c.id)} disabled={deleteCommentMutation.isPending} className="p-1 rounded text-text-dim hover:text-red-400 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
                               </div>
                             )}
                           </div>
@@ -517,8 +517,8 @@ export default function TaskDetailModal({
                             <form onSubmit={(e) => { e.preventDefault(); saveEditComment(c); }} className="mt-1.5 space-y-2">
                               <RichTextEditor value={editCommentContent} onChange={setEditCommentContent} rows={3} placeholder="Edit your comment..." users={users} />
                               <div className="flex gap-2 justify-end">
-                                <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
-                                <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
+                                <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-overlay-5 text-text-dim hover:text-text-primary transition">Cancel</button>
+                                <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
                               </div>
                             </form>
                           ) : (
@@ -526,7 +526,7 @@ export default function TaskDetailModal({
                           )}
 
                           {editingCommentId !== c.id && (
-                            <button onClick={() => { setReplyingToId(replyingToId === c.id ? null : c.id); setNewComment(""); }} className="text-[11px] text-slate-500 hover:text-brand-400 transition mt-1">
+                            <button onClick={() => { setReplyingToId(replyingToId === c.id ? null : c.id); setNewComment(""); }} className="text-[11px] text-text-dim hover:text-brand-400 transition mt-1">
                               {replyingToId === c.id ? "Cancel reply" : replies.length > 0 ? `Reply (${replies.length})` : "Reply"}
                             </button>
                           )}
@@ -535,20 +535,20 @@ export default function TaskDetailModal({
 
                       {/* Nested replies */}
                       {replies.length > 0 && (
-                        <div className="ml-4 pl-4 border-l-2 border-white/5 space-y-3">
+                        <div className="ml-4 pl-4 border-l-2 border-border-subtle space-y-3">
                           {replies.map((reply) => (
                             <div key={reply.id} className="flex gap-2">
                               <div className="h-5 w-5 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-[8px] font-bold text-brand-400 flex-shrink-0 mt-0.5">{getInitials(reply.authorName)}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-xs font-medium text-slate-200 truncate">{reply.authorName || "Unknown"}</span>
-                                    <span className="text-[10px] text-slate-600 shrink-0">{formatRelative(reply.createdAt)}</span>
+                                    <span className="text-xs font-medium text-text-secondary truncate">{reply.authorName || "Unknown"}</span>
+                                    <span className="text-[10px] text-text-dim shrink-0">{formatRelative(reply.createdAt)}</span>
                                   </div>
                                   {reply.authorId === currentUserId && editingCommentId !== reply.id && (
                                     <div className="flex items-center gap-0.5 shrink-0">
-                                      <button onClick={() => startEditComment(reply)} className="p-0.5 rounded text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
-                                      <button onClick={() => handleDeleteComment(reply.id)} disabled={deleteCommentMutation.isPending} className="p-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
+                                      <button onClick={() => startEditComment(reply)} className="p-0.5 rounded text-text-dim hover:text-brand-400 hover:bg-brand-500/10 transition" title="Edit"><Edit2 size={10} /></button>
+                                      <button onClick={() => handleDeleteComment(reply.id)} disabled={deleteCommentMutation.isPending} className="p-0.5 rounded text-text-dim hover:text-red-400 hover:bg-red-500/10 transition" title="Delete">{deleteCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}</button>
                                     </div>
                                   )}
                                 </div>
@@ -556,8 +556,8 @@ export default function TaskDetailModal({
                                   <form onSubmit={(e) => { e.preventDefault(); saveEditComment(reply); }} className="mt-1 space-y-2">
                                     <RichTextEditor value={editCommentContent} onChange={setEditCommentContent} rows={3} placeholder="Edit your reply..." users={users} />
                                     <div className="flex gap-2 justify-end">
-                                      <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-white/5 text-slate-400 hover:text-white transition">Cancel</button>
-                                      <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
+                                      <button type="button" onClick={cancelEditComment} className="px-2.5 py-1 text-[11px] rounded bg-overlay-5 text-text-dim hover:text-text-primary transition">Cancel</button>
+                                      <button type="submit" disabled={updateCommentMutation.isPending || !editCommentContent.trim()} className="px-2.5 py-1 text-[11px] rounded bg-brand-500 text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">{updateCommentMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Save"}</button>
                                     </div>
                                   </form>
                                 ) : (
@@ -574,18 +574,18 @@ export default function TaskDetailModal({
               </div>
 
               {/* Comment form */}
-              <form onSubmit={handleAddComment} className="space-y-2 pt-2 border-t border-white/5">
+              <form onSubmit={handleAddComment} className="space-y-2 pt-2 border-t border-border-subtle">
                 {replyingToId ? (
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] text-brand-400">
                       Replying to {topLevelComments.find((c) => c.id === replyingToId)?.authorName || "Unknown"}
                     </span>
-                    <button type="button" onClick={cancelReply} className="text-[11px] text-slate-500 hover:text-slate-300 transition">Cancel</button>
+                    <button type="button" onClick={cancelReply} className="text-[11px] text-text-dim hover:text-text-muted transition">Cancel</button>
                   </div>
                 ) : null}
                 <RichTextEditor value={newComment} onChange={setNewComment} rows={3} placeholder={replyingToId ? "Write a reply..." : "Write an update, decision, blocker, or link..."} users={users} />
                 <div className="flex justify-end">
-                  <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}{replyingToId ? "Reply" : "Add comment"}</button>
+                  <button type="submit" disabled={createCommentMutation.isPending || !newComment.trim()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500 text-sm font-medium text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">{createCommentMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}{replyingToId ? "Reply" : "Add comment"}</button>
                 </div>
               </form>
             </div>

@@ -34,7 +34,7 @@ type Team = {
 const roleColors: Record<string, string> = {
   lead: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   manager: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  contributor: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  contributor: "bg-slate-500/10 text-text-dim border-slate-500/20",
   reviewer: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 };
 
@@ -184,14 +184,14 @@ export default function TeamManagementClient({
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-6">
-      <aside className="bg-slate-900 border border-white/5 rounded-xl p-4 h-fit">
+      <aside className="bg-surface-card border border-border-subtle rounded-xl p-4 h-fit">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-white">Team directory</h2>
-            <p className="text-xs text-slate-500">{teams.length} teams</p>
+            <h2 className="font-semibold text-text-primary">Team directory</h2>
+            <p className="text-xs text-text-dim">{teams.length} teams</p>
           </div>
           {canManage && (
-            <button onClick={openCreateTeam} className="rounded-lg bg-brand-500 p-2 text-white hover:bg-brand-600 transition">
+            <button onClick={openCreateTeam} className="rounded-lg bg-brand-500 p-2 text-text-primary hover:bg-brand-600 transition">
               <Plus size={16} />
             </button>
           )}
@@ -199,9 +199,9 @@ export default function TeamManagementClient({
 
         <div className="space-y-2">
           {teams.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
-              <Users className="mx-auto mb-3 text-slate-600" size={28} />
-              <p className="text-sm text-slate-500">No teams yet.</p>
+            <div className="rounded-xl border border-dashed border-border-default p-8 text-center">
+              <Users className="mx-auto mb-3 text-text-dim" size={28} />
+              <p className="text-sm text-text-dim">No teams yet.</p>
             </div>
           ) : teams.map((team) => (
             <button
@@ -209,14 +209,14 @@ export default function TeamManagementClient({
               onClick={() => setSelectedTeamId(team.id)}
               className={clsx(
                 "w-full rounded-xl border p-3 text-left transition",
-                selectedTeam?.id === team.id ? "border-brand-500/40 bg-brand-500/10" : "border-white/5 bg-slate-950/40 hover:border-white/10"
+                selectedTeam?.id === team.id ? "border-brand-500/40 bg-brand-500/10" : "border-border-subtle bg-surface-page/40 hover:border-border-default"
               )}
             >
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-white truncate">{team.name}</h3>
-                <span className="text-xs rounded-full bg-slate-800 px-2 py-0.5 text-slate-400">{team.memberCount}</span>
+                <h3 className="text-sm font-semibold text-text-primary truncate">{team.name}</h3>
+                <span className="text-xs rounded-full bg-surface-strong px-2 py-0.5 text-text-dim">{team.memberCount}</span>
               </div>
-              <p className="mt-1 line-clamp-2 text-xs text-slate-500">{team.focus || team.description || "No focus set"}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-text-dim">{team.focus || team.description || "No focus set"}</p>
             </button>
           ))}
         </div>
@@ -224,27 +224,27 @@ export default function TeamManagementClient({
 
       <main className="space-y-6">
         {!selectedTeam ? (
-          <div className="bg-slate-900 border border-white/5 rounded-xl p-12 text-center">
-            <Users className="mx-auto mb-3 text-slate-600" size={36} />
-            <h3 className="font-semibold text-white">Select or create a team</h3>
-            <p className="text-sm text-slate-500 mt-1">Manage team structure, allocation, and project responsibilities.</p>
+          <div className="bg-surface-card border border-border-subtle rounded-xl p-12 text-center">
+            <Users className="mx-auto mb-3 text-text-dim" size={36} />
+            <h3 className="font-semibold text-text-primary">Select or create a team</h3>
+            <p className="text-sm text-text-dim mt-1">Manage team structure, allocation, and project responsibilities.</p>
           </div>
         ) : (
           <>
-            <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+            <section className="bg-surface-card border border-border-subtle rounded-xl p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{selectedTeam.name}</h1>
-                  <p className="mt-1 text-sm text-slate-400">{selectedTeam.description || "No description"}</p>
+                  <h1 className="text-2xl font-bold text-text-primary">{selectedTeam.name}</h1>
+                  <p className="mt-1 text-sm text-text-dim">{selectedTeam.description || "No description"}</p>
                   {selectedTeam.focus && (
-                    <p className="mt-2 rounded-lg bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
-                      <span className="text-slate-500">Focus:</span> {selectedTeam.focus}
+                    <p className="mt-2 rounded-lg bg-surface-page/60 px-3 py-2 text-sm text-text-muted">
+                      <span className="text-text-dim">Focus:</span> {selectedTeam.focus}
                     </p>
                   )}
                 </div>
                 {canManage && (
                   <div className="flex gap-2">
-                    <button onClick={() => openEditTeam(selectedTeam)} className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/15 transition">
+                    <button onClick={() => openEditTeam(selectedTeam)} className="inline-flex items-center gap-2 rounded-lg bg-overlay-10 px-3 py-2 text-sm font-medium text-text-primary hover:bg-overlay-15 transition">
                       <Save size={14} /> Edit
                     </button>
                     {canDelete && (
@@ -257,62 +257,62 @@ export default function TeamManagementClient({
               </div>
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="rounded-xl bg-slate-950/50 p-4">
-                  <p className="text-2xl font-bold text-white">{selectedTeam.memberCount}</p>
-                  <p className="text-xs text-slate-500">Members</p>
+                <div className="rounded-xl bg-surface-page/50 p-4">
+                  <p className="text-2xl font-bold text-text-primary">{selectedTeam.memberCount}</p>
+                  <p className="text-xs text-text-dim">Members</p>
                 </div>
-                <div className="rounded-xl bg-slate-950/50 p-4">
-                  <p className="text-2xl font-bold text-white">{selectedTeam.lead?.name || "—"}</p>
-                  <p className="text-xs text-slate-500">Team lead</p>
+                <div className="rounded-xl bg-surface-page/50 p-4">
+                  <p className="text-2xl font-bold text-text-primary">{selectedTeam.lead?.name || "—"}</p>
+                  <p className="text-xs text-text-dim">Team lead</p>
                 </div>
-                <div className="rounded-xl bg-slate-950/50 p-4">
-                  <p className="text-2xl font-bold text-white">
+                <div className="rounded-xl bg-surface-page/50 p-4">
+                  <p className="text-2xl font-bold text-text-primary">
                     {selectedTeam.members.length > 0
                       ? Math.round(selectedTeam.members.reduce((sum, member) => sum + Number(member.allocation || 0), 0) / selectedTeam.members.length)
                       : 0}%
                   </p>
-                  <p className="text-xs text-slate-500">Avg allocation</p>
+                  <p className="text-xs text-text-dim">Avg allocation</p>
                 </div>
               </div>
             </section>
 
             {canManage && (
-              <section className="bg-slate-900 border border-white/5 rounded-xl p-5">
+              <section className="bg-surface-card border border-border-subtle rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <UserPlus size={18} className="text-brand-400" />
-                  <h2 className="font-semibold text-white">Add member</h2>
+                  <h2 className="font-semibold text-text-primary">Add member</h2>
                 </div>
                 <form onSubmit={addMember} className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                  <select value={memberUserId} onChange={(e) => setMemberUserId(e.target.value)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <select value={memberUserId} onChange={(e) => setMemberUserId(e.target.value)} className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="">Select user</option>
                     {availableUsers.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
                   </select>
-                  <select value={memberRole} onChange={(e) => setMemberRole(e.target.value)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <select value={memberRole} onChange={(e) => setMemberRole(e.target.value)} className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="lead">Lead</option>
                     <option value="manager">Manager</option>
                     <option value="contributor">Contributor</option>
                     <option value="reviewer">Reviewer</option>
                   </select>
-                  <select value={memberProjectId} onChange={(e) => setMemberProjectId(e.target.value)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <select value={memberProjectId} onChange={(e) => setMemberProjectId(e.target.value)} className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="">No project</option>
                     {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
                   </select>
-                  <input value={memberAllocation} onChange={(e) => setMemberAllocation(e.target.value)} placeholder="Allocation %" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-                  <button disabled={savingMember || !memberUserId} className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition">
+                  <input value={memberAllocation} onChange={(e) => setMemberAllocation(e.target.value)} placeholder="Allocation %" className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  <button disabled={savingMember || !memberUserId} className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">
                     {savingMember ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                     Add
                   </button>
-                  <input value={memberResponsibilities} onChange={(e) => setMemberResponsibilities(e.target.value)} placeholder="Responsibilities / ownership" className="md:col-span-5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  <input value={memberResponsibilities} onChange={(e) => setMemberResponsibilities(e.target.value)} placeholder="Responsibilities / ownership" className="md:col-span-5 rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </form>
               </section>
             )}
 
-            <section className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
-              <div className="border-b border-white/5 px-5 py-4">
-                <h2 className="font-semibold text-white">Members & responsibilities</h2>
+            <section className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
+              <div className="border-b border-border-subtle px-5 py-4">
+                <h2 className="font-semibold text-text-primary">Members & responsibilities</h2>
               </div>
               {selectedTeam.members.length === 0 ? (
-                <div className="p-10 text-center text-sm text-slate-500">No members assigned.</div>
+                <div className="p-10 text-center text-sm text-text-dim">No members assigned.</div>
               ) : (
                 <div className="divide-y divide-white/5">
                   {selectedTeam.members.map((member) => (
@@ -322,17 +322,17 @@ export default function TeamManagementClient({
                           {getInitials(member.name)}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{member.name}</p>
-                          <p className="text-xs text-slate-500 truncate">{member.email}</p>
+                          <p className="text-sm font-medium text-text-primary truncate">{member.name}</p>
+                          <p className="text-xs text-text-dim truncate">{member.email}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                         <span className={clsx("text-[10px] uppercase tracking-wider rounded border px-2 py-1", roleColors[member.teamRole] || roleColors.contributor)}>{member.teamRole}</span>
-                        <span className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">{member.allocation}%</span>
-                        {member.projectName && <span className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">{member.projectName}</span>}
-                        {member.responsibilities && <span className="max-w-xs truncate rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">{member.responsibilities}</span>}
+                        <span className="rounded bg-surface-strong px-2 py-1 text-xs text-text-dim">{member.allocation}%</span>
+                        {member.projectName && <span className="rounded bg-surface-strong px-2 py-1 text-xs text-text-dim">{member.projectName}</span>}
+                        {member.responsibilities && <span className="max-w-xs truncate rounded bg-surface-strong px-2 py-1 text-xs text-text-dim">{member.responsibilities}</span>}
                         {canManage && (
-                          <button onClick={() => removeMember(member.membershipId)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition">
+                          <button onClick={() => removeMember(member.membershipId)} className="rounded-lg p-1.5 text-text-dim hover:bg-red-500/10 hover:text-red-400 transition">
                             <Trash2 size={14} />
                           </button>
                         )}
@@ -349,20 +349,20 @@ export default function TeamManagementClient({
       {showTeamModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowTeamModal(false)} />
-          <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl animate-slide-in">
+          <div className="relative w-full max-w-md rounded-2xl border border-border-default bg-surface-card p-6 shadow-2xl animate-slide-in">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">{editingTeam ? "Edit team" : "Create team"}</h2>
-              <button onClick={() => setShowTeamModal(false)} className="p-1 text-slate-400 hover:text-white"><X size={18} /></button>
+              <h2 className="text-lg font-semibold text-text-primary">{editingTeam ? "Edit team" : "Create team"}</h2>
+              <button onClick={() => setShowTeamModal(false)} className="p-1 text-text-dim hover:text-text-primary"><X size={18} /></button>
             </div>
             <form onSubmit={saveTeam} className="space-y-4">
-              <input value={teamName} onChange={(e) => setTeamName(e.target.value)} required placeholder="Team name" className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <textarea value={teamDescription} onChange={(e) => setTeamDescription(e.target.value)} rows={2} placeholder="Description" className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <input value={teamFocus} onChange={(e) => setTeamFocus(e.target.value)} placeholder="Current focus / mission" className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <select value={teamLeadId} onChange={(e) => setTeamLeadId(e.target.value)} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <input value={teamName} onChange={(e) => setTeamName(e.target.value)} required placeholder="Team name" className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <textarea value={teamDescription} onChange={(e) => setTeamDescription(e.target.value)} rows={2} placeholder="Description" className="w-full resize-none rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <input value={teamFocus} onChange={(e) => setTeamFocus(e.target.value)} placeholder="Current focus / mission" className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <select value={teamLeadId} onChange={(e) => setTeamLeadId(e.target.value)} className="w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="">No lead</option>
                 {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
               </select>
-              <button disabled={savingTeam} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 transition">
+              <button disabled={savingTeam} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">
                 {savingTeam ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 {editingTeam ? "Save team" : "Create team"}
               </button>

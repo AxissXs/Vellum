@@ -56,17 +56,17 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
         {/* Logo & Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500 shadow-lg shadow-brand-500/25 mb-4">
-            <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-8 w-8 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">Vellum</h1>
-          <p className="text-sm text-slate-400 mt-1">Team management, simplified.</p>
+          <h1 className="text-2xl font-bold text-text-primary">Vellum</h1>
+          <p className="text-sm text-text-dim mt-1">Team management, simplified.</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-lg font-semibold text-white mb-6">Sign in to your account</h2>
+        <div className="bg-overlay-5 backdrop-blur-xl border border-border-default rounded-2xl p-8 shadow-2xl">
+          <h2 className="text-lg font-semibold text-text-primary mb-6">Sign in to your account</h2>
 
           {(error || initialError) && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400 mb-6">
@@ -76,7 +76,7 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-text-muted mb-1.5">
                 Email address
               </label>
               <input
@@ -87,13 +87,13 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                 placeholder="you@company.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label htmlFor="password" className="block text-sm font-medium text-text-muted mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -105,13 +105,13 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 pr-10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 pr-10 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text-muted"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -121,7 +121,7 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-text-primary hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-surface-card disabled:opacity-50 transition"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
               {loading ? "Signing in..." : "Sign in"}
@@ -130,8 +130,8 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
 
           {/* Demo credentials - only in development */}
           {isDev && (
-            <div className="mt-6 pt-6 border-t border-white/5">
-              <p className="text-xs text-slate-500 mb-3">Demo accounts (password: <code className="text-brand-400">password123</code>)</p>
+            <div className="mt-6 pt-6 border-t border-border-subtle">
+              <p className="text-xs text-text-dim mb-3">Demo accounts (password: <code className="text-brand-400">password123</code>)</p>
               <div className="grid grid-cols-1 gap-1.5">
                 {[
                   { email: "alex@vellum.app", role: "Superadmin" },
@@ -145,10 +145,10 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
                       setEmail(demo.email);
                       setPassword("password123");
                     }}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-xs hover:bg-white/5 transition text-left group"
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-xs hover:bg-overlay-5 transition text-left group"
                   >
-                    <span className="text-slate-300 group-hover:text-white">{demo.email}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-slate-500 bg-white/5 px-2 py-0.5 rounded">
+                    <span className="text-text-muted group-hover:text-text-primary">{demo.email}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-text-dim bg-overlay-5 px-2 py-0.5 rounded">
                       {demo.role}
                     </span>
                   </button>
@@ -158,7 +158,7 @@ export default function LoginForm({ initialError = "", isDev = false }: LoginFor
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-6">
+        <p className="text-center text-xs text-text-dim mt-6">
           Built with ❤️ for teams everywhere
         </p>
       </div>

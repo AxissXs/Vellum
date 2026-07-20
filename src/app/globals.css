@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* ── Dark variant driven by `.dark` class on `<html>` ── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Brand colors (static across themes) ── */
 @theme {
   --color-brand-50: #eef2ff;
   --color-brand-100: #e0e7ff;
@@ -13,19 +17,169 @@
   --color-brand-900: #312e81;
 }
 
+/* ── Semantic tokens exposed as Tailwind colors ── */
+@theme inline {
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-base: var(--surface-base);
+  --color-surface-strong: var(--surface-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-overlay-hover: var(--overlay-hover);
+  --color-overlay-active: var(--overlay-active);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-warning-bg: var(--status-warning-bg);
+
+  /* Inverted slate scale so existing `bg-slate-950`, `text-slate-400`, etc.
+     render correctly in both themes without manual replacements.            */
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+
+  /* Opacity-based overlay colors that swap automatically */
+  --color-overlay-5: var(--overlay-5);
+  --color-overlay-10: var(--overlay-10);
+  --color-overlay-15: var(--overlay-15);
+}
+
+/* ═══════════════ LIGHT MODE (default) ═══════════════ */
+:root {
+  /* Page / shell background */
+  --surface-page: #ffffff;
+  /* Cards, panels, modals */
+  --surface-card: #f8fafc;
+  /* Dropdowns, popovers, tooltips */
+  --surface-elevated: #ffffff;
+  /* Inputs, inner surfaces */
+  --surface-base: #f1f5f9;
+  /* Stronger surfaces: tables, headers */
+  --surface-strong: #e2e8f0;
+
+  /* Foreground text */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Hover / active overlays */
+  --overlay-hover: rgba(0, 0, 0, 0.04);
+  --overlay-active: rgba(0, 0, 0, 0.08);
+
+  /* Borders */
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+
+  /* Status backgrounds */
+  --status-danger-bg: #fef2f2;
+  --status-success-bg: #f0fdf4;
+  --status-warning-bg: #fffbeb;
+
+  /* Light-mode inverted slate (same as actual light slate) */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Direct overlays for legacy classes */
+  --overlay-5: rgba(0, 0, 0, 0.05);
+  --overlay-10: rgba(0, 0, 0, 0.1);
+  --overlay-15: rgba(0, 0, 0, 0.15);
+
+  color-scheme: light;
+}
+
+/* ═══════════════ DARK MODE ═══════════════ */
+.dark {
+  --surface-page: #020617;
+  --surface-card: #0f172a;
+  --surface-elevated: #1e293b;
+  --surface-base: #1e293b;
+  --surface-strong: #334155;
+
+  --text-primary: #ffffff;
+  --text-secondary: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --text-inverse: #0f172a;
+
+  --overlay-hover: rgba(255, 255, 255, 0.05);
+  --overlay-active: rgba(255, 255, 255, 0.1);
+
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-success-bg: rgba(34, 197, 94, 0.1);
+  --status-warning-bg: rgba(245, 158, 11, 0.1);
+
+  /* Slate stays the same in dark mode (original values) */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Direct overlays flip to white */
+  --overlay-5: rgba(255, 255, 255, 0.05);
+  --overlay-10: rgba(255, 255, 255, 0.1);
+  --overlay-15: rgba(255, 255, 255, 0.15);
+
+  color-scheme: dark;
+}
+
+/* ── Scrollbar ── */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--slate-300) transparent;
+}
+.dark * {
+  scrollbar-color: var(--slate-700) transparent;
 }
 
 html, body {
   height: 100%;
-  color-scheme: dark;
 }
 
+/* ── Animation utilities ── */
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .animate-slide-in {
@@ -34,7 +188,7 @@ html, body {
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50%      { opacity: 0.5; }
 }
 
 .animate-pulse-dot {

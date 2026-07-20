@@ -60,7 +60,7 @@ type UserDetail = {
 const roleBadges: Record<string, string> = {
   superadmin: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  member: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  member: "bg-slate-500/10 text-text-dim border-slate-500/20",
 };
 
 const statusBadges: Record<string, string> = {
@@ -209,11 +209,11 @@ export default function UserDetailModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-slate-900 border border-white/10 rounded-xl w-full max-w-2xl mx-4 shadow-2xl">
+      <div className="bg-surface-card border border-border-default rounded-xl w-full max-w-2xl mx-4 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h2 className="text-lg font-semibold text-white">User Details</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
+          <h2 className="text-lg font-semibold text-text-primary">User Details</h2>
+          <button onClick={onClose} className="text-text-dim hover:text-text-primary transition">
             <X size={18} />
           </button>
         </div>
@@ -240,7 +240,7 @@ export default function UserDetailModal({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h3 className="text-xl font-semibold text-white">{user.name}</h3>
+                  <h3 className="text-xl font-semibold text-text-primary">{user.name}</h3>
                   <span className={clsx("text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border font-medium", roleBadges[user.role] || roleBadges.member)}>
                     {user.role}
                   </span>
@@ -248,8 +248,8 @@ export default function UserDetailModal({
                     {user.status}
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">{user.email}</p>
-                <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                <p className="text-sm text-text-dim mt-1">{user.email}</p>
+                <div className="flex items-center gap-4 mt-2 text-xs text-text-dim">
                   <span>Joined {formatDate(user.createdAt)}</span>
                   {user.lastLoginAt && (
                     <span className="flex items-center gap-1">
@@ -279,7 +279,7 @@ export default function UserDetailModal({
                 value={user.role}
                 onChange={(e) => updateUser.mutate({ patch: { role: e.target.value } })}
                 disabled={updateUser.isPending}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="rounded-lg border border-border-default bg-overlay-5 px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="member">Member</option>
                 <option value="admin">Admin</option>
@@ -290,14 +290,14 @@ export default function UserDetailModal({
                 value={user.status}
                 onChange={(e) => updateUser.mutate({ patch: { status: e.target.value } })}
                 disabled={updateUser.isPending}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="rounded-lg border border-border-default bg-overlay-5 px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="banned">Banned</option>
               </select>
 
-              {updateUser.isPending && <Loader2 size={14} className="animate-spin text-slate-500" />}
+              {updateUser.isPending && <Loader2 size={14} className="animate-spin text-text-dim" />}
 
               {user.role !== "superadmin" && (
                 <button
@@ -314,34 +314,34 @@ export default function UserDetailModal({
             {/* Login Sessions */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-slate-300">
+                <h4 className="text-sm font-medium text-text-muted">
                   Login Sessions
-                  <span className="ml-2 text-xs text-slate-500">
+                  <span className="ml-2 text-xs text-text-dim">
                     {successfulLogins.length} successful, {failedLogins.length} failed
                   </span>
                 </h4>
               </div>
-              <div className="bg-slate-950/50 rounded-lg border border-white/5 overflow-hidden">
+              <div className="bg-surface-page/50 rounded-lg border border-border-subtle overflow-hidden">
                 {sessions.length === 0 ? (
-                  <p className="px-4 py-6 text-center text-sm text-slate-500">No login sessions yet.</p>
+                  <p className="px-4 py-6 text-center text-sm text-text-dim">No login sessions yet.</p>
                 ) : (
                   <div className="max-h-64 overflow-y-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-white/5">
-                          <th className="px-4 py-2 font-medium text-slate-500">Status</th>
-                          <th className="px-4 py-2 font-medium text-slate-500">IP</th>
-                          <th className="px-4 py-2 font-medium text-slate-500">Browser</th>
-                          <th className="px-4 py-2 font-medium text-slate-500">OS</th>
-                          <th className="px-4 py-2 font-medium text-slate-500">Device</th>
-                          <th className="px-4 py-2 font-medium text-slate-500">When</th>
+                        <tr className="border-b border-border-subtle">
+                          <th className="px-4 py-2 font-medium text-text-dim">Status</th>
+                          <th className="px-4 py-2 font-medium text-text-dim">IP</th>
+                          <th className="px-4 py-2 font-medium text-text-dim">Browser</th>
+                          <th className="px-4 py-2 font-medium text-text-dim">OS</th>
+                          <th className="px-4 py-2 font-medium text-text-dim">Device</th>
+                          <th className="px-4 py-2 font-medium text-text-dim">When</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
                         {sessions.map((s) => {
                           const ua = parseUserAgent(s.userAgent);
                           return (
-                            <tr key={s.id} className="hover:bg-white/[0.02]">
+                            <tr key={s.id} className="hover:bg-overlay-5">
                               <td className="px-4 py-2">
                                 {s.success ? (
                                   <span className="inline-flex items-center gap-1 text-emerald-400">
@@ -353,21 +353,21 @@ export default function UserDetailModal({
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-2 text-slate-400">
+                              <td className="px-4 py-2 text-text-dim">
                                 <span className="flex items-center gap-1">
                                   <Globe size={10} />
                                   {s.ipAddress || "—"}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-slate-400">{ua.browser}</td>
-                              <td className="px-4 py-2 text-slate-400">{ua.os}</td>
-                              <td className="px-4 py-2 text-slate-400">
+                              <td className="px-4 py-2 text-text-dim">{ua.browser}</td>
+                              <td className="px-4 py-2 text-text-dim">{ua.os}</td>
+                              <td className="px-4 py-2 text-text-dim">
                                 <span className="flex items-center gap-1">
                                   {ua.device === "Mobile" ? <Smartphone size={10} /> : <Monitor size={10} />}
                                   {ua.device}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-slate-500">{formatTimeAgo(s.createdAt)}</td>
+                              <td className="px-4 py-2 text-text-dim">{formatTimeAgo(s.createdAt)}</td>
                             </tr>
                           );
                         })}
@@ -380,21 +380,21 @@ export default function UserDetailModal({
 
             {/* Recent Activity */}
             <div>
-              <h4 className="text-sm font-medium text-slate-300 mb-3">Recent Activity</h4>
-              <div className="bg-slate-950/50 rounded-lg border border-white/5 overflow-hidden">
+              <h4 className="text-sm font-medium text-text-muted mb-3">Recent Activity</h4>
+              <div className="bg-surface-page/50 rounded-lg border border-border-subtle overflow-hidden">
                 {activity.length === 0 ? (
-                  <p className="px-4 py-6 text-center text-sm text-slate-500">No activity yet.</p>
+                  <p className="px-4 py-6 text-center text-sm text-text-dim">No activity yet.</p>
                 ) : (
                   <div className="max-h-64 overflow-y-auto divide-y divide-white/5">
                     {activity.map((a) => {
                       const sev = severityConfig[a.severity] || severityConfig.info;
                       return (
-                        <div key={a.id} className="px-4 py-3 hover:bg-white/[0.02]">
+                        <div key={a.id} className="px-4 py-3 hover:bg-overlay-5">
                           <div className="flex items-center gap-2">
                             <span className={clsx("w-1.5 h-1.5 rounded-full flex-shrink-0", sev.dot)} />
-                            <span className="text-sm text-slate-200">{actionLabel(a.action)}</span>
-                            <span className="text-xs text-slate-500">·</span>
-                            <span className="text-xs text-slate-500">{a.entityType}</span>
+                            <span className="text-sm text-text-secondary">{actionLabel(a.action)}</span>
+                            <span className="text-xs text-text-dim">·</span>
+                            <span className="text-xs text-text-dim">{a.entityType}</span>
                             {a.tag && (
                               <span className={clsx("text-[10px] px-1.5 py-0.5 rounded border", sev.bg)}>
                                 {a.tag}
@@ -402,9 +402,9 @@ export default function UserDetailModal({
                             )}
                           </div>
                           {a.details && (
-                            <p className="text-xs text-slate-500 mt-1 ml-3.5">{a.details}</p>
+                            <p className="text-xs text-text-dim mt-1 ml-3.5">{a.details}</p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 ml-3.5 text-[10px] text-slate-600">
+                          <div className="flex items-center gap-3 mt-1 ml-3.5 text-[10px] text-text-dim">
                             <span>{formatTimeAgo(a.createdAt)}</span>
                             {a.ipAddress && (
                               <span className="flex items-center gap-1">

@@ -30,26 +30,26 @@ export default function NotificationBell() {
         onClick={() => setOpen(!open)}
         className={clsx(
           "relative p-2 rounded-lg transition",
-          "text-slate-400 hover:text-white hover:bg-white/5"
+          "text-text-dim hover:text-text-primary hover:bg-overlay-5"
         )}
         aria-label="Notifications"
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-text-primary rounded-full">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[360px] max-h-[480px] bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-            <h3 className="text-sm font-semibold text-white">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-[360px] max-h-[480px] bg-surface-card border border-border-default rounded-xl shadow-2xl overflow-hidden z-50 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+            <h3 className="text-sm font-semibold text-text-primary">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllRead()}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition"
+                className="text-xs text-text-dim hover:text-text-primary flex items-center gap-1 transition"
               >
                 <CheckCheck size={12} />
                 Mark all read
@@ -59,9 +59,9 @@ export default function NotificationBell() {
 
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
-              <div className="p-8 text-center text-slate-500 text-sm">Loading...</div>
+              <div className="p-8 text-center text-text-dim text-sm">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-sm">
+              <div className="p-8 text-center text-text-dim text-sm">
                 <Bell size={24} className="mx-auto mb-2 opacity-30" />
                 No notifications yet
               </div>
@@ -71,8 +71,8 @@ export default function NotificationBell() {
                   <li
                     key={n.id}
                     className={clsx(
-                      "px-4 py-3 hover:bg-white/5 transition group",
-                      !n.read && "bg-white/[0.02]"
+                      "px-4 py-3 hover:bg-overlay-5 transition group",
+                      !n.read && "bg-overlay-5"
                     )}
                     onClick={() => {
                       if (!n.read) markRead(n.id);
@@ -93,17 +93,17 @@ export default function NotificationBell() {
                         <p
                           className={clsx(
                             "text-sm leading-snug",
-                            n.read ? "text-slate-400" : "text-slate-200"
+                            n.read ? "text-text-dim" : "text-text-secondary"
                           )}
                         >
                           {n.content}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-text-dim">
                             {formatTimeAgo(n.createdAt)}
                           </p>
                           {n.url && (
-                            <ExternalLink size={10} className="text-slate-600 group-hover:text-brand-400 transition-colors" />
+                            <ExternalLink size={10} className="text-text-dim group-hover:text-brand-400 transition-colors" />
                           )}
                         </div>
                       </div>
@@ -113,7 +113,7 @@ export default function NotificationBell() {
                             e.stopPropagation();
                             markRead(n.id);
                           }}
-                          className="p-1 rounded-md text-slate-500 hover:text-white hover:bg-white/5 transition flex-shrink-0"
+                          className="p-1 rounded-md text-text-dim hover:text-text-primary hover:bg-overlay-5 transition flex-shrink-0"
                           title="Mark as read"
                         >
                           <Check size={12} />

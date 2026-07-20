@@ -28,7 +28,7 @@ const categoryColors: Record<string, string> = {
   Tracking: "text-emerald-400",
   Security: "text-amber-400",
   Collaboration: "text-violet-400",
-  general: "text-slate-400",
+  general: "text-text-dim",
 };
 
 export default function SuperAdminFeatureFlagsPanel() {
@@ -112,7 +112,7 @@ export default function SuperAdminFeatureFlagsPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="animate-spin text-slate-400" size={24} />
+        <Loader2 className="animate-spin text-text-dim" size={24} />
       </div>
     );
   }
@@ -131,10 +131,10 @@ export default function SuperAdminFeatureFlagsPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <ToggleLeft size={20} className="text-slate-400" />
+          <ToggleLeft size={20} className="text-text-dim" />
           <div>
-            <h2 className="text-lg font-semibold text-white">Feature Flags</h2>
-            <p className="text-sm text-slate-400 mt-0.5">
+            <h2 className="text-lg font-semibold text-text-primary">Feature Flags</h2>
+            <p className="text-sm text-text-dim mt-0.5">
               Enable or disable platform features. Changes take effect immediately.
             </p>
           </div>
@@ -145,8 +145,8 @@ export default function SuperAdminFeatureFlagsPanel() {
           className={
             "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition " +
             (changed.size === 0 || updateFlags.isPending
-              ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-              : "bg-brand-500 text-white hover:bg-brand-600")
+              ? "bg-surface-strong text-text-dim cursor-not-allowed"
+              : "bg-brand-500 text-text-primary hover:bg-brand-600")
           }
         >
           {updateFlags.isPending ? (
@@ -166,7 +166,7 @@ export default function SuperAdminFeatureFlagsPanel() {
               <h3
                 className={clsx(
                   "text-sm font-semibold uppercase tracking-wider mb-3",
-                  categoryColors[category] ?? "text-slate-400"
+                  categoryColors[category] ?? "text-text-dim"
                 )}
               >
                 {category}
@@ -182,12 +182,12 @@ export default function SuperAdminFeatureFlagsPanel() {
                         "flex items-start justify-between gap-4 rounded-lg border p-4 transition " +
                         (hasChanged
                           ? "border-brand-500/30 bg-brand-500/5"
-                          : "border-white/5 hover:border-white/10 bg-slate-950/50")
+                          : "border-border-subtle hover:border-border-default bg-surface-page/50")
                       }
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-white">{flag.label}</span>
+                          <span className="text-sm font-medium text-text-primary">{flag.label}</span>
                           {hasChanged && (
                             <span className="text-xs text-brand-400 font-medium">
                               Modified
@@ -195,10 +195,10 @@ export default function SuperAdminFeatureFlagsPanel() {
                           )}
                         </div>
                         {flag.description && (
-                          <p className="text-xs text-slate-400 mt-1">{flag.description}</p>
+                          <p className="text-xs text-text-dim mt-1">{flag.description}</p>
                         )}
-                        <p className="text-xs text-slate-500 mt-2">
-                          Key: <code className="text-slate-400">{flag.key}</code>
+                        <p className="text-xs text-text-dim mt-2">
+                          Key: <code className="text-text-dim">{flag.key}</code>
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1.5 pt-0.5">
@@ -208,7 +208,7 @@ export default function SuperAdminFeatureFlagsPanel() {
                           disabled={updateFlags.isPending}
                         />
                         {flag.updatedAt && (
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-text-dim">
                             Updated {formatDistanceToNow(new Date(flag.updatedAt), { addSuffix: true })}
                           </span>
                         )}

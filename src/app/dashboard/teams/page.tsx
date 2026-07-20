@@ -65,8 +65,8 @@ export default async function TeamsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Teams</h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-text-primary">Teams</h1>
+        <p className="text-text-dim text-sm mt-1">
           Manage team structure, leads, allocations, responsibilities, and project assignments.
         </p>
       </div>

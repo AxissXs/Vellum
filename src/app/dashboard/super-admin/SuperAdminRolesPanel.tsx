@@ -51,7 +51,7 @@ export default function SuperAdminRolesPanel() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+      <div className="flex items-center justify-center py-12 text-text-dim text-sm">
         <Loader2 size={16} className="animate-spin mr-2" />
         Loading role matrix...
       </div>
@@ -90,26 +90,26 @@ export default function SuperAdminRolesPanel() {
                 "text-left p-4 rounded-xl border transition",
                 isSelected
                   ? "bg-brand-500/5 border-brand-500/30"
-                  : "bg-slate-900 border-white/5 hover:border-white/10"
+                  : "bg-surface-card border-border-subtle hover:border-border-default"
               )}
             >
               <div className="flex items-center gap-2 mb-2">
                 <ShieldCheck
                   size={16}
                   className={clsx(
-                    isSelected ? "text-brand-400" : "text-slate-400"
+                    isSelected ? "text-brand-400" : "text-text-dim"
                   )}
                 />
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-text-primary">
                   {role.name}
                 </h3>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-xs text-text-dim leading-relaxed">
                 {role.description}
               </p>
               <div className="mt-3 flex items-center gap-1">
-                <span className="text-xs text-slate-400">{perms.length}</span>
-                <span className="text-xs text-slate-600">permissions</span>
+                <span className="text-xs text-text-dim">{perms.length}</span>
+                <span className="text-xs text-text-dim">permissions</span>
               </div>
             </button>
           );
@@ -117,12 +117,12 @@ export default function SuperAdminRolesPanel() {
       </div>
 
       {/* Permission matrix */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02]">
-          <h3 className="text-sm font-medium text-white">
+      <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-border-subtle bg-overlay-5">
+          <h3 className="text-sm font-medium text-text-primary">
             Permission Matrix
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-text-dim mt-0.5">
             Overview of what each role can do across the platform
           </p>
         </div>
@@ -134,13 +134,13 @@ export default function SuperAdminRolesPanel() {
               <div key={category}>
                 <button
                   onClick={() => toggleCategory(category)}
-                  className="w-full flex items-center justify-between px-5 py-3 text-sm font-medium text-slate-300 hover:bg-white/[0.02] transition"
+                  className="w-full flex items-center justify-between px-5 py-3 text-sm font-medium text-text-muted hover:bg-overlay-5 transition"
                 >
                   <span>{category}</span>
                   <ChevronDown
                     size={14}
                     className={clsx(
-                      "text-slate-500 transition-transform",
+                      "text-text-dim transition-transform",
                       isExpanded && "rotate-180"
                     )}
                   />
@@ -150,8 +150,8 @@ export default function SuperAdminRolesPanel() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead>
-                        <tr className="border-b border-white/5 bg-white/[0.01]">
-                          <th className="px-5 py-2 font-medium text-slate-400 w-1/3">
+                        <tr className="border-b border-border-subtle">
+                          <th className="px-5 py-2 font-medium text-text-dim w-1/3">
                             Permission
                           </th>
                           {roles.map((role) => (
@@ -161,7 +161,7 @@ export default function SuperAdminRolesPanel() {
                                 "px-5 py-2 font-medium text-center whitespace-nowrap",
                                 selectedRole === role.id
                                   ? "text-brand-400"
-                                  : "text-slate-400"
+                                  : "text-text-dim"
                               )}
                             >
                               {role.name}
@@ -173,9 +173,9 @@ export default function SuperAdminRolesPanel() {
                         {perms.map((perm) => (
                           <tr
                             key={perm.id}
-                            className="hover:bg-white/[0.02] transition"
+                            className="hover:bg-overlay-5 transition"
                           >
-                            <td className="px-5 py-2.5 text-slate-300">
+                            <td className="px-5 py-2.5 text-text-muted">
                               {perm.label}
                             </td>
                             {roles.map((role) => {
@@ -199,7 +199,7 @@ export default function SuperAdminRolesPanel() {
                                   ) : (
                                     <X
                                       size={14}
-                                      className="mx-auto text-slate-600"
+                                      className="mx-auto text-text-dim"
                                     />
                                   )}
                                 </td>
@@ -218,17 +218,17 @@ export default function SuperAdminRolesPanel() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-slate-500">
+      <div className="flex items-center gap-4 text-xs text-text-dim">
         <div className="flex items-center gap-1.5">
           <Check size={12} className="text-emerald-400" />
           <span>Granted</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <X size={12} className="text-slate-600" />
+          <X size={12} className="text-text-dim" />
           <span>Denied</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Info size={12} className="text-slate-500" />
+          <Info size={12} className="text-text-dim" />
           <span>Click a role card to highlight its column</span>
         </div>
       </div>

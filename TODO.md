@@ -80,7 +80,7 @@
   - Advanced filters (date ranges, assignee, priority, etc.)
   - Saved filters
 
-- [ ] **Dark/Light theme toggle** - Add theme switching
+- ~~**Dark/Light theme toggle**~~ ✅ — Full theme system with semantic tokens, system preference detection, and Tailwind v4 dark class strategy
   - Persist in localStorage
   - System preference detection
   - Tailwind dark mode class strategy

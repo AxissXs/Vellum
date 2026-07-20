@@ -69,36 +69,36 @@ export default async function ActivityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Activity</h1>
-        <p className="text-slate-400 text-sm mt-1">Recent actions across all projects</p>
+        <h1 className="text-2xl font-bold text-text-primary">Activity</h1>
+        <p className="text-text-dim text-sm mt-1">Recent actions across all projects</p>
       </div>
 
       {rows.length === 0 ? (
-        <div className="bg-slate-900 border border-white/5 rounded-2xl p-12 text-center">
-          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-slate-800 flex items-center justify-center">
-            <Activity size={28} className="text-slate-500" />
+        <div className="bg-surface-card border border-border-subtle rounded-2xl p-12 text-center">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-surface-strong flex items-center justify-center">
+            <Activity size={28} className="text-text-dim" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No activity yet</h3>
-          <p className="text-sm text-slate-500">Activity will appear here as your team works.</p>
+          <h3 className="text-lg font-semibold text-text-primary mb-2">No activity yet</h3>
+          <p className="text-sm text-text-dim">Activity will appear here as your team works.</p>
         </div>
       ) : (
-        <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
+        <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
           <div className="divide-y divide-white/5">
             {rows.map((log) => {
               const Icon = actionIcons[log.action] || Activity;
-              const colorClass = actionColors[log.action] || "bg-slate-500/10 text-slate-400";
+              const colorClass = actionColors[log.action] || "bg-slate-500/10 text-text-dim";
               return (
                 <div key={log.id} className="flex items-center gap-4 px-5 py-3.5">
                   <div className={clsx("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0", colorClass)}>
                     <Icon size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-300">{log.details}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-text-muted">{log.details}</p>
+                    <p className="text-xs text-text-dim mt-0.5">
                       {log.userName || "Unknown"} · {formatTime(log.createdAt)}
                     </p>
                   </div>
-                  <div className="h-7 w-7 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-surface-strong flex items-center justify-center text-[10px] font-bold text-text-dim flex-shrink-0">
                     {getInitials(log.userName)}
                   </div>
                 </div>

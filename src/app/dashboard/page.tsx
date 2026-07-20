@@ -109,8 +109,8 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Welcome back, {user?.name?.split(" ")[0]} 👋</h1>
-        <p className="text-slate-400 mt-1">Here&apos;s what&apos;s happening across your teams today.</p>
+        <h1 className="text-2xl font-bold text-text-primary">Welcome back, {user?.name?.split(" ")[0]} 👋</h1>
+        <p className="text-text-dim mt-1">Here&apos;s what&apos;s happening across your teams today.</p>
       </div>
 
       {/* Stats Grid */}
@@ -118,14 +118,14 @@ export default async function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-slate-900 border border-white/5 rounded-xl p-5 hover:border-white/10 transition">
+            <div key={stat.label} className="bg-surface-card border border-border-subtle rounded-xl p-5 hover:border-border-default transition">
               <div className="flex items-center gap-3">
                 <div className={clsx("h-10 w-10 rounded-xl flex items-center justify-center", stat.color)}>
                   <Icon size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
-                  <p className="text-xs text-slate-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-text-primary">{stat.value}</p>
+                  <p className="text-xs text-text-dim">{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -135,10 +135,10 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Completion */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-6 lg:col-span-1">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-6 lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={18} className="text-emerald-400" />
-            <h3 className="font-semibold text-white text-sm">Completion Rate</h3>
+            <h3 className="font-semibold text-text-primary text-sm">Completion Rate</h3>
           </div>
           <div className="flex items-center justify-center">
             <div className="relative h-32 w-32">
@@ -156,22 +156,22 @@ export default async function DashboardPage() {
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-white">{completionRate}%</span>
-                  <p className="text-[10px] text-slate-500">complete</p>
+                  <span className="text-3xl font-bold text-text-primary">{completionRate}%</span>
+                  <p className="text-[10px] text-text-dim">complete</p>
                 </div>
               </div>
             </div>
           </div>
-          <p className="text-center text-xs text-slate-500 mt-4">
+          <p className="text-center text-xs text-text-dim mt-4">
             {doneCount.count} of {taskCount.count} tasks completed
           </p>
         </div>
 
         {/* Priority Breakdown */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-6 lg:col-span-1">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-6 lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle size={18} className="text-amber-400" />
-            <h3 className="font-semibold text-white text-sm">By Priority</h3>
+            <h3 className="font-semibold text-text-primary text-sm">By Priority</h3>
           </div>
           <div className="space-y-3">
             {(["urgent", "high", "medium", "low"] as const).map((p) => {
@@ -182,10 +182,10 @@ export default async function DashboardPage() {
               return (
                 <div key={p}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-400">{priorityLabels[p]}</span>
-                    <span className="text-slate-500">{count}</span>
+                    <span className="text-text-dim">{priorityLabels[p]}</span>
+                    <span className="text-text-dim">{count}</span>
                   </div>
-                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-surface-strong rounded-full overflow-hidden">
                     <div
                       className={clsx("h-full rounded-full transition-all", priorityColors[p])}
                       style={{ width: `${pct}%` }}
@@ -198,17 +198,17 @@ export default async function DashboardPage() {
         </div>
 
         {/* Active Tasks */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-6 lg:col-span-1">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-6 lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
             <Clock size={18} className="text-blue-400" />
-            <h3 className="font-semibold text-white text-sm">Active Tasks</h3>
+            <h3 className="font-semibold text-text-primary text-sm">Active Tasks</h3>
           </div>
           {activeTasks.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-8">No active tasks</p>
+            <p className="text-sm text-text-dim text-center py-8">No active tasks</p>
           ) : (
             <div className="space-y-2">
               {activeTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                <div key={task.id} className="flex items-center gap-3 py-2 border-b border-border-subtle last:border-0">
                   <div
                     className={clsx(
                       "h-2 w-2 rounded-full flex-shrink-0",
@@ -216,9 +216,9 @@ export default async function DashboardPage() {
                     )}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-slate-300 truncate">{task.title}</p>
+                    <p className="text-sm text-text-muted truncate">{task.title}</p>
                     {task.assigneeId && (
-                      <p className="text-xs text-slate-600">{userMap.get(task.assigneeId) || "Unassigned"}</p>
+                      <p className="text-xs text-text-dim">{userMap.get(task.assigneeId) || "Unassigned"}</p>
                     )}
                   </div>
                   <span className={clsx(
@@ -238,29 +238,29 @@ export default async function DashboardPage() {
 
       {/* Recent Projects */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Recent Projects</h2>
+        <h2 className="text-lg font-semibold text-text-primary mb-4">Recent Projects</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {recentProjects.map((project) => (
             <a
               key={project.id}
               href={`/dashboard/projects/${project.id}`}
-              className="bg-slate-900 border border-white/5 rounded-xl p-5 hover:border-white/10 transition group"
+              className="bg-surface-card border border-border-subtle rounded-xl p-5 hover:border-border-default transition group"
             >
               <div className="flex items-center gap-3 mb-3">
                 <div
-                  className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-lg"
+                  className="h-10 w-10 rounded-xl flex items-center justify-center text-text-primary text-lg"
                   style={{ backgroundColor: project.color || "#6366f1" }}
                 >
                   📁
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-white text-sm truncate group-hover:text-brand-400 transition">
+                  <h3 className="font-semibold text-text-primary text-sm truncate group-hover:text-brand-400 transition">
                     {project.name}
                   </h3>
                 </div>
               </div>
               {project.description && (
-                <p className="text-xs text-slate-500 line-clamp-2">{project.description}</p>
+                <p className="text-xs text-text-dim line-clamp-2">{project.description}</p>
               )}
             </a>
           ))}

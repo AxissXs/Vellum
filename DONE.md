@@ -440,4 +440,47 @@ Telegram, push, snapshots, audit) deferred to follow-up work.
 
 ---
 
+## Dark/Light Theme Toggle (July 2026)
+
+> Comprehensive theme system with semantic color tokens, system preference detection, and zero-FOUC class injection.
+
+**Infrastructure**
+- **CSS**: `@custom-variant dark (&:where(.dark, .dark *))` in `globals.css` drives Tailwind v4's dark mode via class strategy
+- **Semantic tokens**: `--slate-*` variables swap automatically between light and dark modes; existing `bg-slate-950`, `text-slate-400`, etc. now render correctly in both themes without manual replacements
+- **Custom tokens**: `--surface-page`, `--surface-card`, `--text-primary`, `--text-muted`, `--border-default`, `--overlay-hover`, `--overlay-active`, `--status-danger-bg`, etc. for theme-aware components
+- **Anti-FOUC script**: Inline `<script>` in `layout.tsx` reads `localStorage` before hydration and applies `.dark` class to `<html>` instantly
+- **Color scheme**: `color-scheme` CSS property set per-theme so native controls (scrollbars, inputs, selects) respect the active theme
+
+**Theme Provider**
+- `src/providers/ThemeProvider.tsx` — React context with `useSyncExternalStore` for system preference, `setTheme()`, `toggleTheme()`
+- `useIsMounted()` SSR-safe hook for hydration-guarding theme-sensitive components
+- Persists preference to `localStorage` key `vellum-theme`
+- Three modes: `light`, `dark`, `system`
+
+**UI**
+- `src/components/ThemeToggle.tsx` — Sun/Moon icon button with dropdown menu (System / Light / Dark)
+- Integrated into `ClientLayout.tsx` dashboard header next to Notification Bell
+- Dropdown uses semantic tokens for consistent theming
+
+**Edge Cases Handled**
+- `prose-invert` → `prose dark:prose-invert` so prose content is readable in both themes
+- `Toaster` from Sonner now follows `resolvedTheme` dynamically via `ThemeAwareToaster`
+- Modal backdrops (`bg-black/50`, `bg-black/60`, `bg-black/70`) remain dark in both themes for visual hierarchy
+- All remaining hardcoded `bg-white/*`, `border-white/*`, `text-white` references converted to semantic equivalents
+
+**Files Changed**
+- `src/app/globals.css` — theme tokens, `@custom-variant dark`, scrollbar colors
+- `src/app/layout.tsx` — anti-FOUC script, `ThemeProvider` wrapper, `suppressHydrationWarning`
+- `src/providers/ThemeProvider.tsx` — new
+- `src/providers/QueryProvider.tsx` — `ThemeAwareToaster`
+- `src/components/ThemeToggle.tsx` — new
+- `src/app/dashboard/ClientLayout.tsx` — theme toggle integration
+- `src/app/globals.css` — semantic tokens + `@custom-variant dark`
+- `src/components/RichTextEditor.tsx` — `prose dark:prose-invert`, code color fix
+- `src/components/ThemeToggle.tsx` — uses semantic tokens instead of hardcoded dark values
+- 38 additional files — bulk replacement of hardcoded `slate`, `white`, `black` color classes via `scripts/apply-theme-tokens.ts`
+- `scripts/apply-theme-tokens.ts` — bulk replacement script (committed as helper)
+
+---
+
 *Last updated: July 2026*

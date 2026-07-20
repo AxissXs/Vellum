@@ -72,15 +72,15 @@ export default function SetupPage() {
 
   if (step === "success") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-surface-page flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+          <div className="bg-surface-card/50 border border-border-default rounded-2xl p-8 backdrop-blur-sm">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-6">
                 <CheckCircle className="w-8 h-8 text-emerald-400" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Setup Complete!</h1>
-              <p className="text-slate-400 mb-6">
+              <h1 className="text-2xl font-bold text-text-primary mb-2">Setup Complete!</h1>
+              <p className="text-text-dim mb-6">
                 Your Vellum workspace has been created successfully. Redirecting to login...
               </p>
               <Loader2 className="w-6 h-6 text-brand-500 animate-spin mx-auto" />
@@ -92,24 +92,24 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-surface-page flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500/20 mb-4">
             <Shield className="w-8 h-8 text-brand-400" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome to Vellum</h1>
-          <p className="text-slate-400">Set up your workspace and create the first superadmin account</p>
+          <h1 className="text-3xl font-bold text-text-primary mb-2">Welcome to Vellum</h1>
+          <p className="text-text-dim">Set up your workspace and create the first superadmin account</p>
         </div>
 
-        <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+        <div className="bg-surface-card/50 border border-border-default rounded-2xl p-8 backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="bg-slate-800/50 border border-white/5 rounded-xl p-4 mb-2">
-              <div className="flex items-center gap-3 text-slate-400 text-sm mb-3">
+            <div className="bg-surface-strong/50 border border-border-subtle rounded-xl p-4 mb-2">
+              <div className="flex items-center gap-3 text-text-dim text-sm mb-3">
                 <Shield className="w-5 h-5 text-brand-400" />
-                <span className="font-medium text-slate-300">Superadmin Account</span>
+                <span className="font-medium text-text-muted">Superadmin Account</span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-text-dim">
                 This account will have full access to manage users, teams, and all projects.
               </p>
             </div>
@@ -123,17 +123,17 @@ export default function SetupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="name" className="block text-sm font-medium text-text-muted mb-1.5">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-dim" />
                   <input
                     id="name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-border-default bg-overlay-5 px-10 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="Alex Morgan"
                     required
                     disabled={loading}
@@ -142,17 +142,17 @@ export default function SetupPage() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="email" className="block text-sm font-medium text-text-muted mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-dim" />
                   <input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-border-default bg-overlay-5 px-10 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="alex@company.com"
                     required
                     disabled={loading}
@@ -163,17 +163,17 @@ export default function SetupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-text-muted mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-dim" />
                   <input
                     id="password"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-border-default bg-overlay-5 px-10 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="••••••••"
                     required
                     disabled={loading}
@@ -183,17 +183,17 @@ export default function SetupPage() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-muted mb-1.5">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-dim" />
                   <input
                     id="confirmPassword"
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                    className="w-full rounded-lg border border-border-default bg-overlay-5 px-10 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                     placeholder="••••••••"
                     required
                     disabled={loading}
@@ -203,29 +203,29 @@ export default function SetupPage() {
             </div>
 
             <div>
-              <label htmlFor="teamName" className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label htmlFor="teamName" className="block text-sm font-medium text-text-muted mb-1.5">
                 Team Name
               </label>
               <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-dim" />
                 <input
                   id="teamName"
                   type="text"
                   value={formData.teamName}
                   onChange={(e) => setFormData({ ...formData, teamName: e.target.value })}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-10 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                   placeholder="Engineering"
                   required
                   disabled={loading}
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-1.5">Your first team will be created automatically</p>
+              <p className="text-xs text-text-dim mt-1.5">Your first team will be created automatically</p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-3 text-sm font-semibold text-text-primary hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-surface-card disabled:opacity-50 transition"
             >
               {loading ? (
                 <>
@@ -240,7 +240,7 @@ export default function SetupPage() {
               )}
             </button>
 
-            <p className="text-center text-xs text-slate-500">
+            <p className="text-center text-xs text-text-dim">
               By creating an account, you agree to our{' '}
               <a href="/terms" className="text-brand-400 hover:underline">Terms of Service</a>{' '}
               and{' '}
@@ -249,7 +249,7 @@ export default function SetupPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-8">
+        <p className="text-center text-xs text-text-dim mt-8">
           Built with ❤️ for teams everywhere
         </p>
       </div>

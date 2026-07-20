@@ -53,7 +53,7 @@ export default function SuperAdminClient() {
                 "flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition whitespace-nowrap",
                 isActive
                   ? "bg-brand-500/10 text-brand-400 border border-brand-500/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+                  : "text-text-dim hover:text-text-secondary hover:bg-overlay-5 border border-transparent"
               )}
             >
               <Icon size={16} />
@@ -64,7 +64,7 @@ export default function SuperAdminClient() {
       </div>
 
       {/* Panels */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl p-6">
+      <div className="bg-surface-card border border-border-subtle rounded-xl p-6">
         {activeTab === "users" && <SuperAdminUsersPanel />}
 
         {activeTab === "activity" && <SuperAdminActivityPanel />}

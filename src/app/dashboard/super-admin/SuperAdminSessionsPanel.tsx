@@ -69,16 +69,16 @@ export default function SuperAdminSessionsPanel() {
   return (
     <div className="space-y-4">
       {/* Stats card */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl p-5 inline-flex items-center gap-3">
+      <div className="bg-surface-card border border-border-subtle rounded-xl p-5 inline-flex items-center gap-3">
         <KeyRound size={20} className="text-brand-400" />
         <div>
-          <p className="text-2xl font-bold text-white">{sessions.length}</p>
-          <p className="text-xs text-slate-500">Active sessions</p>
+          <p className="text-2xl font-bold text-text-primary">{sessions.length}</p>
+          <p className="text-xs text-text-dim">Active sessions</p>
         </div>
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+        <div className="flex items-center justify-center py-12 text-text-dim text-sm">
           <Loader2 size={16} className="animate-spin mr-2" />
           Loading active sessions...
         </div>
@@ -91,30 +91,30 @@ export default function SuperAdminSessionsPanel() {
       )}
 
       {!isLoading && !isError && (
-        <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
+        <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-5 py-3 font-medium text-slate-400">User</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Role</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">IP</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Started</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Expires</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 text-right">Actions</th>
+                <tr className="border-b border-border-subtle bg-overlay-5">
+                  <th className="px-5 py-3 font-medium text-text-dim">User</th>
+                  <th className="px-5 py-3 font-medium text-text-dim whitespace-nowrap">Role</th>
+                  <th className="px-5 py-3 font-medium text-text-dim whitespace-nowrap">IP</th>
+                  <th className="px-5 py-3 font-medium text-text-dim whitespace-nowrap">Started</th>
+                  <th className="px-5 py-3 font-medium text-text-dim whitespace-nowrap">Expires</th>
+                  <th className="px-5 py-3 font-medium text-text-dim text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {sessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-white/[0.02] transition">
+                  <tr key={s.id} className="hover:bg-overlay-5 transition">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 flex-shrink-0">
                           {s.userName?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) ?? "??"}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm text-slate-200 font-medium truncate">{s.userName ?? "Unknown"}</p>
-                          <p className="text-xs text-slate-500 truncate">{s.userEmail}</p>
+                          <p className="text-sm text-text-secondary font-medium truncate">{s.userName ?? "Unknown"}</p>
+                          <p className="text-xs text-text-dim truncate">{s.userEmail}</p>
                         </div>
                       </div>
                     </td>
@@ -123,21 +123,21 @@ export default function SuperAdminSessionsPanel() {
                         "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border",
                         s.userRole === "superadmin" && "bg-purple-500/10 text-purple-400 border-purple-500/20",
                         s.userRole === "admin" && "bg-blue-500/10 text-blue-400 border-blue-500/20",
-                        s.userRole === "member" && "bg-slate-500/10 text-slate-400 border-slate-500/20",
+                        s.userRole === "member" && "bg-slate-500/10 text-text-dim border-slate-500/20",
                       )}>
                         {s.userRole ?? "member"}
                       </span>
                     </td>
-                    <td className="px-5 py-3 whitespace-nowrap text-xs text-slate-400">
+                    <td className="px-5 py-3 whitespace-nowrap text-xs text-text-dim">
                       {s.ipAddress ?? "—"}
                     </td>
-                    <td className="px-5 py-3 whitespace-nowrap text-xs text-slate-400">
+                    <td className="px-5 py-3 whitespace-nowrap text-xs text-text-dim">
                       <div className="flex items-center gap-1">
                         <Monitor size={10} />
                         {timeAgo(s.createdAt)}
                       </div>
                     </td>
-                    <td className="px-5 py-3 whitespace-nowrap text-xs text-slate-500">
+                    <td className="px-5 py-3 whitespace-nowrap text-xs text-text-dim">
                       <div className="flex items-center gap-1">
                         <Clock size={10} />
                         {formatDate(s.expiresAt)}
@@ -157,7 +157,7 @@ export default function SuperAdminSessionsPanel() {
                 ))}
                 {sessions.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={6} className="px-5 py-8 text-center text-text-dim text-sm">
                       No active sessions found.
                     </td>
                   </tr>

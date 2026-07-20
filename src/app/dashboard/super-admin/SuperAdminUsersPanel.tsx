@@ -41,7 +41,7 @@ function formatDate(dateStr: string) {
 const roleBadges: Record<string, string> = {
   superadmin: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  member: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  member: "bg-slate-500/10 text-text-dim border-slate-500/20",
 };
 
 const statusBadges: Record<string, string> = {
@@ -189,20 +189,20 @@ export default function SuperAdminUsersPanel() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full rounded-lg border border-white/10 bg-white/5 pl-9 pr-4 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full rounded-lg border border-border-default bg-overlay-5 pl-9 pr-4 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="all">All roles</option>
           <option value="superadmin">Superadmin</option>
@@ -213,7 +213,7 @@ export default function SuperAdminUsersPanel() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="all">All statuses</option>
           <option value="active">Active</option>
@@ -223,9 +223,9 @@ export default function SuperAdminUsersPanel() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden">
         {isLoading && (
-          <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+          <div className="flex items-center justify-center py-12 text-text-dim text-sm">
             <Loader2 size={16} className="animate-spin mr-2" />
             Loading users...
           </div>
@@ -241,42 +241,42 @@ export default function SuperAdminUsersPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-5 py-3 font-medium text-slate-400">User</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Role</th>
-                  <th className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap">Status</th>
+                <tr className="border-b border-border-subtle bg-overlay-5">
+                  <th className="px-5 py-3 font-medium text-text-dim">User</th>
+                  <th className="px-5 py-3 font-medium text-text-dim whitespace-nowrap">Role</th>
+                  <th className="px-5 py-3 font-medium text-text-dim whitespace-nowrap">Status</th>
                   <th
-                    className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap cursor-pointer select-none"
+                    className="px-5 py-3 font-medium text-text-dim whitespace-nowrap cursor-pointer select-none"
                     onClick={() => toggleSort("createdAt")}
                   >
                     Created {sortBy === "createdAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
                   </th>
                   <th
-                    className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap cursor-pointer select-none"
+                    className="px-5 py-3 font-medium text-text-dim whitespace-nowrap cursor-pointer select-none"
                     onClick={() => toggleSort("lastLoginAt")}
                   >
                     Last Login {sortBy === "lastLoginAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
                   </th>
                   <th
-                    className="px-5 py-3 font-medium text-slate-400 whitespace-nowrap cursor-pointer select-none"
+                    className="px-5 py-3 font-medium text-text-dim whitespace-nowrap cursor-pointer select-none"
                     onClick={() => toggleSort("lastSeenAt")}
                   >
                     Last Seen {sortBy === "lastSeenAt" && (sortDir === "asc" ? <ChevronUp size={12} className="inline" /> : <ChevronDown size={12} className="inline" />)}
                   </th>
-                  <th className="px-5 py-3 font-medium text-slate-400 text-right">Actions</th>
+                  <th className="px-5 py-3 font-medium text-text-dim text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-white/[0.02] transition cursor-pointer" onClick={() => setSelectedUserId(u.id)}>
+                  <tr key={u.id} className="hover:bg-overlay-5 transition cursor-pointer" onClick={() => setSelectedUserId(u.id)}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-400 flex-shrink-0">
                           {getInitials(u.name)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-slate-200 truncate">{u.name}</p>
-                          <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                          <p className="font-medium text-text-secondary truncate">{u.name}</p>
+                          <p className="text-xs text-text-dim truncate">{u.email}</p>
                         </div>
                       </div>
                     </td>
@@ -290,26 +290,26 @@ export default function SuperAdminUsersPanel() {
                         {u.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 whitespace-nowrap text-slate-500">
+                    <td className="px-5 py-3 whitespace-nowrap text-text-dim">
                       {formatDate(u.createdAt)}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap">
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-text-dim">
                         {timeAgo(u.lastLoginAt)}
                       </div>
                       {u.lastIp && (
-                        <div className="flex items-center gap-1 text-[10px] text-slate-600 mt-0.5">
+                        <div className="flex items-center gap-1 text-[10px] text-text-dim mt-0.5">
                           <Globe size={10} />
                           {u.lastIp}
                         </div>
                       )}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap">
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-text-dim">
                         {timeAgo(u.lastSeenAt)}
                       </div>
                       {u.lastSeenIp && (
-                        <div className="flex items-center gap-1 text-[10px] text-slate-600 mt-0.5">
+                        <div className="flex items-center gap-1 text-[10px] text-text-dim mt-0.5">
                           <Globe size={10} />
                           {u.lastSeenIp}
                         </div>
@@ -323,7 +323,7 @@ export default function SuperAdminUsersPanel() {
                           onChange={(e) => updateUser.mutate({ id: u.id, patch: { role: e.target.value } })}
                           onClick={(e) => e.stopPropagation()}
                           disabled={updateUser.isPending}
-                          className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="rounded border border-border-default bg-overlay-5 px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
                           title="Change role"
                         >
                           <option value="member">Member</option>
@@ -337,7 +337,7 @@ export default function SuperAdminUsersPanel() {
                           onChange={(e) => updateUser.mutate({ id: u.id, patch: { status: e.target.value } })}
                           onClick={(e) => e.stopPropagation()}
                           disabled={updateUser.isPending}
-                          className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="rounded border border-border-default bg-overlay-5 px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
                           title="Change status"
                         >
                           <option value="active">Active</option>
@@ -346,7 +346,7 @@ export default function SuperAdminUsersPanel() {
                         </select>
 
                         {updateUser.isPending && (
-                          <Loader2 size={14} className="animate-spin text-slate-500" />
+                          <Loader2 size={14} className="animate-spin text-text-dim" />
                         )}
 
                         {u.role !== "superadmin" && (
@@ -369,7 +369,7 @@ export default function SuperAdminUsersPanel() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    <td colSpan={7} className="px-5 py-8 text-center text-text-dim text-sm">
                       No users match your filters.
                     </td>
                   </tr>

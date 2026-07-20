@@ -113,23 +113,23 @@ export default function TaskAssigneePopover({
             {getInitials(selectedUser.name)}
           </div>
         ) : (
-          <div className={clsx(avatarSize, "rounded-full bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-slate-500")}>
+          <div className={clsx(avatarSize, "rounded-full bg-surface-strong border border-dashed border-slate-600 flex items-center justify-center text-text-dim")}>
             <User size={size === "sm" ? 10 : 12} />
           </div>
         )}
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-56 bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-2 animate-slide-in">
+        <div className="absolute z-50 mt-1 w-56 bg-surface-card border border-border-default rounded-xl shadow-2xl py-2 animate-slide-in">
           <div className="px-2 pb-1.5">
             <div className="relative">
-              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-dim" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search users..."
-                className="w-full rounded-lg border border-white/10 bg-white/5 pl-7 pr-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full rounded-lg border border-border-default bg-overlay-5 pl-7 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500"
                 autoFocus
               />
             </div>
@@ -146,20 +146,20 @@ export default function TaskAssigneePopover({
                 "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition",
                 localAssigneeId === null || localAssigneeId === undefined
                   ? "bg-brand-500/10 text-brand-400"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  : "text-text-muted hover:bg-overlay-5 hover:text-text-primary"
               )}
             >
-              <div className="h-6 w-6 rounded-full bg-slate-800 border border-dashed border-slate-600 flex items-center justify-center text-slate-500">
+              <div className="h-6 w-6 rounded-full bg-surface-strong border border-dashed border-slate-600 flex items-center justify-center text-text-dim">
                 <User size={12} />
               </div>
               <span className="flex-1 text-left truncate">Unassigned</span>
               {(localAssigneeId === null || localAssigneeId === undefined) && <Check size={12} />}
             </button>
 
-            <div className="border-t border-white/5 my-1" />
+            <div className="border-t border-border-subtle my-1" />
 
             {filtered.length === 0 && (
-              <p className="text-xs text-slate-600 text-center py-2">No users found</p>
+              <p className="text-xs text-text-dim text-center py-2">No users found</p>
             )}
             {filtered.map((u) => {
               const isSelected = u.id === localAssigneeId;
@@ -172,7 +172,7 @@ export default function TaskAssigneePopover({
                   }}
                   className={clsx(
                     "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition",
-                    isSelected ? "bg-brand-500/10 text-brand-400" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    isSelected ? "bg-brand-500/10 text-brand-400" : "text-text-muted hover:bg-overlay-5 hover:text-text-primary"
                   )}
                 >
                   <div className="h-6 w-6 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-[9px] font-bold text-brand-400">

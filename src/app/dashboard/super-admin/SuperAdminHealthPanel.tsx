@@ -26,10 +26,10 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-slate-900 border border-white/5 rounded-xl p-5 flex items-start justify-between">
+    <div className="bg-surface-card border border-border-subtle rounded-xl p-5 flex items-start justify-between">
       <div>
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-xs text-slate-500 mt-1">{label}</p>
+        <p className="text-2xl font-bold text-text-primary">{value}</p>
+        <p className="text-xs text-text-dim mt-1">{label}</p>
       </div>
       <div
         className={clsx(
@@ -72,7 +72,7 @@ export default function SuperAdminHealthPanel() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+      <div className="flex items-center justify-center py-12 text-text-dim text-sm">
         <Loader2 size={16} className="animate-spin mr-2" />
         Loading system health...
       </div>
@@ -96,11 +96,11 @@ export default function SuperAdminHealthPanel() {
   return (
     <div className="space-y-6">
       {/* Version info */}
-      <div className="flex items-center gap-3 bg-slate-900 border border-white/5 rounded-xl px-5 py-3">
-        <Info size={16} className="text-slate-400 flex-shrink-0" />
-        <span className="text-sm text-slate-400">App Version:</span>
-        <span className="text-sm font-mono font-medium text-white">v{data.appVersion}</span>
-        <span className="text-xs text-slate-600 ml-auto">client: {process.env.NEXT_PUBLIC_APP_VERSION}</span>
+      <div className="flex items-center gap-3 bg-surface-card border border-border-subtle rounded-xl px-5 py-3">
+        <Info size={16} className="text-text-dim flex-shrink-0" />
+        <span className="text-sm text-text-dim">App Version:</span>
+        <span className="text-sm font-mono font-medium text-text-primary">v{data.appVersion}</span>
+        <span className="text-xs text-text-dim ml-auto">client: {process.env.NEXT_PUBLIC_APP_VERSION}</span>
       </div>
 
       {/* Top stats grid */}
@@ -134,20 +134,20 @@ export default function SuperAdminHealthPanel() {
       {/* Secondary stats + breakdowns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* User status breakdown */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <UsersRound size={16} className="text-slate-400" />
-            <h3 className="text-sm font-medium text-white">User Status</h3>
+            <UsersRound size={16} className="text-text-dim" />
+            <h3 className="text-sm font-medium text-text-primary">User Status</h3>
           </div>
           <div className="space-y-3">
             {Object.entries(data.userStatusBreakdown).map(([status, count]) => (
               <div key={status} className="flex items-center justify-between">
-                <span className="text-sm text-slate-400 capitalize">{status}</span>
+                <span className="text-sm text-text-dim capitalize">{status}</span>
                 <span
                   className={clsx(
                     "text-xs font-medium px-2 py-0.5 rounded-full border",
                     statusColors[status] ??
-                      "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                      "bg-slate-500/10 text-text-dim border-slate-500/20"
                   )}
                 >
                   {count}
@@ -155,26 +155,26 @@ export default function SuperAdminHealthPanel() {
               </div>
             ))}
             {Object.keys(data.userStatusBreakdown).length === 0 && (
-              <p className="text-sm text-slate-600">No users found.</p>
+              <p className="text-sm text-text-dim">No users found.</p>
             )}
           </div>
         </div>
 
         {/* 24h activity summary */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Activity size={16} className="text-slate-400" />
-            <h3 className="text-sm font-medium text-white">Last 24 Hours</h3>
+            <Activity size={16} className="text-text-dim" />
+            <h3 className="text-sm font-medium text-text-primary">Last 24 Hours</h3>
           </div>
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-slate-400">Activities</span>
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm text-text-dim">Activities</span>
+                <span className="text-sm font-medium text-text-primary">
                   {data.activity24h}
                 </span>
               </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-overlay-5 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-brand-500 rounded-full"
                   style={{ width: `${Math.min(data.activity24h * 2, 100)}%` }}
@@ -183,17 +183,17 @@ export default function SuperAdminHealthPanel() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-slate-400">Failed Logins</span>
+                <span className="text-sm text-text-dim">Failed Logins</span>
                 <span
                   className={clsx(
                     "text-sm font-medium",
-                    data.failedLogins24h > 0 ? "text-red-400" : "text-white"
+                    data.failedLogins24h > 0 ? "text-red-400" : "text-text-primary"
                   )}
                 >
                   {data.failedLogins24h}
                 </span>
               </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-overlay-5 rounded-full overflow-hidden">
                 <div
                   className={clsx(
                     "h-full rounded-full",
@@ -205,10 +205,10 @@ export default function SuperAdminHealthPanel() {
                 />
               </div>
             </div>
-            <div className="pt-2 border-t border-white/5">
+            <div className="pt-2 border-t border-border-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Total Teams</span>
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm text-text-dim">Total Teams</span>
+                <span className="text-sm font-medium text-text-primary">
                   {data.totalTeams}
                 </span>
               </div>
@@ -217,10 +217,10 @@ export default function SuperAdminHealthPanel() {
         </div>
 
         {/* Action breakdown */}
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <ShieldAlert size={16} className="text-slate-400" />
-            <h3 className="text-sm font-medium text-white">Top Actions (24h)</h3>
+            <ShieldAlert size={16} className="text-text-dim" />
+            <h3 className="text-sm font-medium text-text-primary">Top Actions (24h)</h3>
           </div>
           <div className="space-y-2">
             {data.actionBreakdown.map((item) => (
@@ -228,16 +228,16 @@ export default function SuperAdminHealthPanel() {
                 key={item.action}
                 className="flex items-center justify-between"
               >
-                <span className="text-sm text-slate-400 truncate mr-3">
+                <span className="text-sm text-text-dim truncate mr-3">
                   {item.action}
                 </span>
-                <span className="text-xs font-medium text-white bg-white/5 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-medium text-text-primary bg-overlay-5 px-2 py-0.5 rounded-full">
                   {item.count}
                 </span>
               </div>
             ))}
             {data.actionBreakdown.length === 0 && (
-              <p className="text-sm text-slate-600">No activity in last 24h.</p>
+              <p className="text-sm text-text-dim">No activity in last 24h.</p>
             )}
           </div>
         </div>

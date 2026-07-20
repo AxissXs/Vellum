@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import NotificationBell from "@/components/NotificationBell";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import KeyboardShortcutsHelp from "@/components/KeyboardShortcutsHelp";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Keyboard } from "lucide-react";
 import { useEffect } from "react";
@@ -41,7 +42,7 @@ export default function DashboardLayout({ children, user, isImpersonating }: Das
 
   return (
     <QueryProvider>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen bg-surface-page">
         <Sidebar user={user} />
         <main className="pl-[260px] transition-all duration-200">
           <div className="max-w-[1600px] mx-auto">
@@ -51,11 +52,12 @@ export default function DashboardLayout({ children, user, isImpersonating }: Das
               <div className="flex items-center gap-3">
                 <button
                   onClick={toggleHelp}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition"
+                  className="p-2 text-text-dim hover:text-text-primary hover:bg-overlay-10 rounded-lg transition"
                   aria-label="Keyboard shortcuts"
                   title="Keyboard shortcuts (?)">
                   <Keyboard size={20} />
                 </button>
+                <ThemeToggle />
                 <NotificationBell />
               </div>
             </div>

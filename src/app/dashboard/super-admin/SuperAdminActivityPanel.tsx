@@ -93,17 +93,17 @@ export default function SuperAdminActivityPanel() {
       {/* Live Feed */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
             <Zap size={16} className="text-amber-400" />
             Live Activity Feed
           </h3>
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+          <span className="text-[10px] text-text-dim uppercase tracking-wider">
             {isLoading ? "Loading…" : `Updated ${timeAgo(new Date(dataUpdatedAt).toISOString())}`}
           </span>
         </div>
 
         {isLoading && (
-          <div className="flex items-center justify-center py-12 text-slate-500 text-sm">
+          <div className="flex items-center justify-center py-12 text-text-dim text-sm">
             <Loader2 size={16} className="animate-spin mr-2" />
             Loading activity feed...
           </div>
@@ -116,13 +116,13 @@ export default function SuperAdminActivityPanel() {
         )}
 
         {!isLoading && !isError && (
-          <div className="bg-slate-900 border border-white/5 rounded-xl overflow-hidden max-h-[600px] overflow-y-auto">
+          <div className="bg-surface-card border border-border-subtle rounded-xl overflow-hidden max-h-[600px] overflow-y-auto">
             <ul className="divide-y divide-white/5">
               {feed.map((item) => (
                 <ActivityRow key={`${item.type}-${item.id}`} item={item} />
               ))}
               {feed.length === 0 && (
-                <li className="px-5 py-8 text-center text-slate-500 text-sm">
+                <li className="px-5 py-8 text-center text-text-dim text-sm">
                   No activity recorded yet.
                 </li>
               )}
@@ -146,12 +146,12 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
+    <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
       <div className="flex items-center gap-3 mb-2">
         <span className={clsx(color)}>{icon}</span>
-        <span className="text-xs text-slate-500">{label}</span>
+        <span className="text-xs text-text-dim">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-2xl font-bold text-text-primary">{value}</p>
     </div>
   );
 }
@@ -175,7 +175,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   }
 
   return (
-    <li className="flex items-start gap-3 px-5 py-3 hover:bg-white/[0.02] transition">
+    <li className="flex items-start gap-3 px-5 py-3 hover:bg-overlay-5 transition">
       <div
         className={clsx(
           "mt-0.5 h-7 w-7 rounded-full border flex items-center justify-center flex-shrink-0",
@@ -186,19 +186,19 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-slate-200 font-medium">
+          <span className="text-sm text-text-secondary font-medium">
             {item.userName ?? "Unknown"}
           </span>
-          <span className="text-xs text-slate-500">{item.userEmail}</span>
+          <span className="text-xs text-text-dim">{item.userEmail}</span>
         </div>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-xs text-text-dim mt-0.5">
           {item.details ?? `${item.action}${item.entityType ? ` on ${item.entityType}` : ""}`}
         </p>
         {item.ipAddress && (
-          <p className="text-[10px] text-slate-600 mt-0.5">IP: {item.ipAddress}</p>
+          <p className="text-[10px] text-text-dim mt-0.5">IP: {item.ipAddress}</p>
         )}
       </div>
-      <span className="text-[10px] text-slate-600 whitespace-nowrap flex-shrink-0">
+      <span className="text-[10px] text-text-dim whitespace-nowrap flex-shrink-0">
         {formatTime(item.createdAt)}
       </span>
     </li>

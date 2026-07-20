@@ -32,8 +32,8 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-text-primary">Admin Panel</h1>
+        <p className="text-text-dim text-sm mt-1">
           Manage users and system settings
           {currentUser.role === "superadmin" && (
             <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
@@ -45,17 +45,17 @@ export default async function AdminPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <p className="text-3xl font-bold text-white">{userRows.length}</p>
-          <p className="text-xs text-slate-500 mt-1">Total Users</p>
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
+          <p className="text-3xl font-bold text-text-primary">{userRows.length}</p>
+          <p className="text-xs text-text-dim mt-1">Total Users</p>
         </div>
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <p className="text-3xl font-bold text-white">{projectCount.count}</p>
-          <p className="text-xs text-slate-500 mt-1">Total Projects</p>
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
+          <p className="text-3xl font-bold text-text-primary">{projectCount.count}</p>
+          <p className="text-xs text-text-dim mt-1">Total Projects</p>
         </div>
-        <div className="bg-slate-900 border border-white/5 rounded-xl p-5">
-          <p className="text-3xl font-bold text-white">{taskCount.count}</p>
-          <p className="text-xs text-slate-500 mt-1">Total Tasks</p>
+        <div className="bg-surface-card border border-border-subtle rounded-xl p-5">
+          <p className="text-3xl font-bold text-text-primary">{taskCount.count}</p>
+          <p className="text-xs text-text-dim mt-1">Total Tasks</p>
         </div>
       </div>
 
