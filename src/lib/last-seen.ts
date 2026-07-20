@@ -1,10 +1,7 @@
-import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-// TODO: Gate behind feature flag `tracking.lastSeen` once feature flag system is built.
-// When `isFeatureEnabled("tracking.lastSeen")` returns false, skip all logic.
+import { isFeatureEnabled } from "./feature-flags";
 
 const THROTTLE_MS = 60_000; // 1 minute throttle per user
 
@@ -21,6 +18,10 @@ export function shouldUpdateLastSeen(userId: string): boolean {
 }
 
 export async function updateLastSeen(userId: string, ipAddress: string): Promise<void> {
+  if (!(await isFeatureEnabled("tracking.lastSeen"))) {
+    return;
+  }
+
   try {
     await db
       .update(users)

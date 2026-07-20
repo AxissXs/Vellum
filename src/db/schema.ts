@@ -310,3 +310,14 @@ export const platformSettings = pgTable("platform_settings", {
   value: text("value"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const featureFlags = pgTable("feature_flags", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  enabled: boolean("enabled").notNull().default(true),
+  label: text("label").notNull(),
+  description: text("description"),
+  category: text("category").notNull().default("general"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

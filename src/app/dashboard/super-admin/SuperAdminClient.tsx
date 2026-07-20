@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   MessageCircle,
   Trash2,
+  ToggleLeft,
 } from "lucide-react";
 import { clsx } from "clsx";
 import SuperAdminUsersPanel from "./SuperAdminUsersPanel";
@@ -18,6 +19,7 @@ import SuperAdminSessionsPanel from "./SuperAdminSessionsPanel";
 import SuperAdminAuditPanel from "./SuperAdminAuditPanel";
 import SuperAdminHealthPanel from "./SuperAdminHealthPanel";
 import SuperAdminRolesPanel from "./SuperAdminRolesPanel";
+import SuperAdminFeatureFlagsPanel from "./SuperAdminFeatureFlagsPanel";
 import SuperAdminTelegramPanel from "./SuperAdminTelegramPanel";
 import SuperAdminTrashPanel from "./SuperAdminTrashPanel";
 
@@ -28,6 +30,7 @@ const tabs = [
   { id: "audit", label: "Audit Logs", icon: ClipboardList },
   { id: "health", label: "System Health", icon: HeartPulse },
   { id: "roles", label: "Role Matrix", icon: ShieldCheck },
+  { id: "feature-flags", label: "Feature Flags", icon: ToggleLeft },
   { id: "telegram", label: "Telegram", icon: MessageCircle },
   { id: "trash", label: "Trash", icon: Trash2 },
 ];
@@ -73,6 +76,8 @@ export default function SuperAdminClient() {
         {activeTab === "health" && <SuperAdminHealthPanel />}
 
         {activeTab === "roles" && <SuperAdminRolesPanel />}
+
+        {activeTab === "feature-flags" && <SuperAdminFeatureFlagsPanel />}
 
         {activeTab === "telegram" && <SuperAdminTelegramPanel />}
 

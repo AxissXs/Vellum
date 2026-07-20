@@ -407,4 +407,35 @@ Resolved duplicate, missing, and incorrect notifications across the platform.
 
 ---
 
+## Feature Flags System - Phase 1 (July 2026)
+
+> Database-backed feature flag system with superadmin toggle UI and 60s in-memory cache.
+
+**Phase 1 — Core infrastructure:**
+- **DB**: Added `feature_flags` table (`key`, `enabled`, `label`, `description`, `category`, `createdAt`, `updatedAt`)
+- **Migration**: `drizzle/0013_slim_dark_phoenix.sql`
+- **Seed**: 7 default flags in `bootstrap.ts` (push, telegram, email, last seen, snapshots, audit, realtime)
+- **Server helper**: `src/lib/feature-flags.ts` — `isFeatureEnabled()`, `getAllFlags()` with 60s cache, `invalidateFlagCache()`
+- **Public API**: `GET /api/feature-flags` — returns enabled flags as `{ flags: Record<string, boolean> }`
+- **Superadmin API**: `GET/PUT /api/super-admin/feature-flags` — full metadata list + batch update + cache invalidation
+- **UI**: `SuperAdminFeatureFlagsPanel.tsx` — grouped by category, toggle switches, "Modified" badges, save button, optimistic updates with rollback
+- **Tab**: Added "Feature Flags" tab to `SuperAdminClient.tsx`
+- **Last-seen gating**: `last-seen.ts` now checks `isFeatureEnabled("tracking.lastSeen")` before writing; gate TODO removed from `auth.ts`
+
+**Phase 2 — Partial (lastSeen only)**: Last seen tracking is now gated behind the `tracking.lastSeen` flag. Remaining Phase 2 items (
+Telegram, push, snapshots, audit) deferred to follow-up work.
+
+**Files changed:**
+- `src/db/schema.ts` — added `featureFlags` table
+- `src/db/bootstrap.ts` — added `seedFeatureFlags()` helper
+- `src/lib/feature-flags.ts` — new
+- `src/lib/last-seen.ts` — gated by feature flag
+- `src/lib/auth.ts` — removed stale TODO comment
+- `src/app/api/feature-flags/route.ts` — new
+- `src/app/api/super-admin/feature-flags/route.ts` — new
+- `src/app/dashboard/super-admin/SuperAdminFeatureFlagsPanel.tsx` — new
+- `src/app/dashboard/super-admin/SuperAdminClient.tsx` — added tab + import
+
+---
+
 *Last updated: July 2026*

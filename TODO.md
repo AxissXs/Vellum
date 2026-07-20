@@ -135,29 +135,29 @@
   - [ ] Gate behind feature flag: `tracking.lastSeen` via `isFeatureEnabled()` once feature flags exist
   - Acceptance criteria: Superadmin sees accurate "last seen" per user, DB writes are throttled, feature can be toggled off
 
-- [ ] **Feature flags system** - Superadmin-controlled enable/disable for platform features
+- [x] **Feature flags system** - Superadmin-controlled enable/disable for platform features
   > Full plan: [`TODO/feature-flags.md`](TODO/feature-flags.md)
 
   Add a `feature_flags` table and a superadmin UI to toggle features on/off. Every optional feature checks its flag before running. This reduces DB load, keeps the platform simple, and lets admins tailor Vellum to their needs. Work in 3 phases:
 
   **Phase 1 — Core infrastructure:**
-  - DB: `feature_flags` table (key, enabled, label, description, category, createdAt, updatedAt)
-  - Server helper: `isFeatureEnabled(key)` — 60s in-memory cache, invalidate on update
-  - API: `GET /api/feature-flags` (public — enabled flags for client gating)
-  - API: `GET/PUT /api/super-admin/feature-flags` (superadmin — list and update)
-  - UI: superadmin dashboard toggle panel, grouped by category
-  - Seed default flags (push, telegram, email, last seen, snapshots, audit, realtime)
+  - [x] DB: `feature_flags` table (key, enabled, label, description, category, createdAt, updatedAt)
+  - [x] Server helper: `isFeatureEnabled(key)` — 60s in-memory cache, invalidate on update
+  - [x] API: `GET /api/feature-flags` (public — enabled flags for client gating)
+  - [x] API: `GET/PUT /api/super-admin/feature-flags` (superadmin — list and update)
+  - [x] UI: superadmin dashboard toggle panel, grouped by category
+  - [x] Seed default flags (push, telegram, email, last seen, snapshots, audit, realtime)
 
   **Phase 2 — Migrate existing features** (one by one):
-  - Telegram notifications → check `notifications.telegram`
-  - Push notifications → check `notifications.push`
-  - Activity snapshots → check `tracking.activitySnapshots`
-  - Audit log snapshots → check `audit.enabled`
-  - Last seen tracking → check `tracking.lastSeen` (new feature, depends on this)
+  - [ ] Telegram notifications → check `notifications.telegram`
+  - [ ] Push notifications → check `notifications.push`
+  - [ ] Activity snapshots → check `tracking.activitySnapshots`
+  - [ ] Audit log snapshots → check `audit.enabled`
+  - [x] Last seen tracking → check `tracking.lastSeen`
 
   **Phase 3 — Docs & conventions:**
-  - AGENTS.md: new optional features must include a feature flag
-  - STRUCTURE.md updates
+  - [ ] AGENTS.md: new optional features must include a feature flag
+  - [ ] STRUCTURE.md updates
 
   - Acceptance criteria: Phase 1 shipped, superadmin can toggle features, cache works, disabled features skip logic, no perf regression
 
