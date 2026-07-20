@@ -1,6 +1,6 @@
 {
   "name": "vellum",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -41,7 +41,7 @@
     "react-dom": "19.2.6",
     "sonner": "^2.0.7",
     "uuid": "^14.0.1",
-    "vercel": "^55.0.0",
+    "vercel": "^56.3.2",
     "web-push": "^3.6.7"
   },
   "devDependencies": {

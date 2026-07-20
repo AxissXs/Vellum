@@ -17,6 +17,7 @@ import {
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -90,10 +91,12 @@ function TaskCard({
   task,
   users,
   onClick,
+  isOverlay,
 }: {
   task: Task;
   users: User[];
-  onClick: () => void;
+  onClick?: () => void;
+  isOverlay?: boolean;
 }) {
   const {
     attributes,
@@ -102,12 +105,12 @@ function TaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.id, disabled: isOverlay });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
   };
 
   return (
@@ -120,19 +123,22 @@ function TaskCard({
       className={clsx(
         "bg-slate-800/50 border border-white/10 rounded-xl p-3 cursor-pointer transition-all hover:border-brand-500/50 hover:bg-white/5",
         priorityColors[task.priority],
-        isDragging && "shadow-2xl ring-2 ring-brand-500/50 z-10"
+        isOverlay && "shadow-2xl ring-2 ring-brand-500/50 rotate-2 cursor-grabbing",
+        isDragging && !isOverlay && "opacity-30"
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-sm font-medium text-white truncate pr-2">{task.title}</h4>
-        <button
-          {...attributes}
-          {...listeners}
-          className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100"
-          aria-label="Drag"
-        >
-          <GripVertical size={14} />
-        </button>
+        {!isOverlay && (
+          <button
+            {...attributes}
+            {...listeners}
+            className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100"
+            aria-label="Drag"
+          >
+            <GripVertical size={14} />
+          </button>
+        )}
       </div>
 
       {task.description && (
@@ -144,12 +150,14 @@ function TaskCard({
             <span className={clsx("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border", priorityBadges[task.priority])}>
               {task.priority}
             </span>
-            <TaskAssigneePopover
-              taskId={task.id}
-              currentAssigneeId={task.assigneeId}
-              users={users}
-              size="sm"
-            />
+            {!isOverlay && (
+              <TaskAssigneePopover
+                taskId={task.id}
+                currentAssigneeId={task.assigneeId}
+                users={users}
+                size="sm"
+              />
+            )}
           </div>
 
           {task.dueDate && (
@@ -184,6 +192,7 @@ function Column({
       <div
         ref={setNodeRef}
         className="flex flex-col h-full min-h-[500px]"
+        data-column-key={column.key}
       >
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
@@ -231,6 +240,7 @@ export default function KanbanBoard({
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showNewTask, setShowNewTask] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   // Keyboard shortcuts listener — open add-task form on "todo" column
   useEffect(() => {
@@ -267,13 +277,19 @@ export default function KanbanBoard({
     columnsRef.current = columns;
   }, [columns]);
 
+  const sourceColumnRef = useRef<string | null>(null);
+  const snapshotRef = useRef<Column[] | null>(null);
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = event.active.id as string;
     const currentColumns = columnsRef.current;
     const task = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === taskId);
-    if (task) {
-      event.active.data.current = { task };
-    }
+    if (!task) return;
+    setActiveTask(task);
+    const col = currentColumns.find((c) => c.tasks.some((t) => t.id === taskId));
+    sourceColumnRef.current = col?.key ?? null;
+    snapshotRef.current = JSON.parse(JSON.stringify(currentColumns));
+    event.active.data.current = { task, sourceColumn: col?.key };
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
@@ -286,39 +302,40 @@ export default function KanbanBoard({
     if (activeId === overId) return;
 
     setColumns((prev) => {
-      const activeTask = prev.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-      const overTask = prev.flatMap((c) => c.tasks).find((t) => t.id === overId);
-      if (!activeTask || !overTask) return prev;
-
       const activeColumn = prev.find((c) => c.tasks.some((t) => t.id === activeId));
-      const overColumn = prev.find((c) => c.tasks.some((t) => t.id === overId));
-      if (!activeColumn || !overColumn) return prev;
+      if (!activeColumn) return prev; // task already removed (shouldn't happen with DragOverlay)
+
+      const overColumn = prev.find((c) => c.key === overId || c.tasks.some((t) => t.id === overId));
+      if (!overColumn) return prev;
+
       if (activeColumn.key === overColumn.key) {
+        const overTask = overColumn.tasks.find((t) => t.id === overId);
+        if (!overTask) return prev; // dropped on empty column in same column
         const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
         const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
         if (activeIndex === overIndex) return prev;
         return prev.map((col) => {
           if (col.key === activeColumn.key) {
-            const newTasks = arrayMove(col.tasks, activeIndex, overIndex).map((t, i) =>
-              t.id === activeId || t.id === overId ? { ...t, position: String(i) } : t
-            );
-            return { ...col, tasks: newTasks };
+            return { ...col, tasks: arrayMove(col.tasks, activeIndex, overIndex) };
           }
           return col;
         });
       }
 
-      // Cross-column: only move if task is still in activeColumn
-      if (!activeColumn.tasks.some((t) => t.id === activeId)) return prev;
+      // Cross-column
+      const activeTaskItem = activeColumn.tasks.find((t) => t.id === activeId);
+      if (!activeTaskItem) return prev;
 
-      const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+      const overTask = overColumn.tasks.find((t) => t.id === overId);
+      const overIndex = overTask ? overColumn.tasks.findIndex((t) => t.id === overId) : overColumn.tasks.length;
+
       return prev.map((col) => {
         if (col.key === activeColumn.key) {
           return { ...col, tasks: col.tasks.filter((t) => t.id !== activeId) };
         }
         if (col.key === overColumn.key) {
           const newTasks = [...col.tasks];
-          newTasks.splice(overIndex, 0, { ...activeTask, status: overColumn.key, position: String(overIndex) });
+          newTasks.splice(overIndex, 0, { ...activeTaskItem, status: overColumn.key });
           return { ...col, tasks: newTasks };
         }
         return col;
@@ -327,30 +344,62 @@ export default function KanbanBoard({
   }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    setActiveTask(null);
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      // Drop outside any droppable — revert to snapshot
+      if (snapshotRef.current) setColumns(snapshotRef.current);
+      snapshotRef.current = null;
+      return;
+    }
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
     const currentColumns = columnsRef.current;
-    const activeTask = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === activeId);
-    if (!activeTask) return;
+    const sourceKey = sourceColumnRef.current;
+    if (!sourceKey) {
+      snapshotRef.current = null;
+      return;
+    }
 
-    const activeColumn = currentColumns.find((c) => c.tasks.some((t) => t.id === activeId));
-    const overColumn = currentColumns.find((c) => c.tasks.some((t) => t.id === overId));
+    let targetKey: string;
+    let targetIndex: number;
 
-    if (activeColumn && overColumn) {
-      if (activeColumn.key !== overColumn.key) {
-        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        await updateTask.mutateAsync({ id: activeId, status: overColumn.key, position: String(overIndex) });
-      } else {
-        const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
-        const overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
-        const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex);
-        const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
-        await reorderTasks.mutateAsync(updates);
+    const overColumn = currentColumns.find((c) => c.key === overId);
+    if (overColumn) {
+      targetKey = overColumn.key;
+      targetIndex = 0;
+    } else {
+      const overTask = currentColumns.flatMap((c) => c.tasks).find((t) => t.id === overId);
+      if (!overTask) {
+        if (snapshotRef.current) setColumns(snapshotRef.current);
+        snapshotRef.current = null;
+        return;
       }
+      targetKey = currentColumns.find((c) => c.tasks.some((t) => t.id === overId))?.key ?? overTask.status;
+      targetIndex = currentColumns.find((c) => c.key === targetKey)?.tasks.findIndex((t) => t.id === overId) ?? 0;
+    }
+
+    try {
+      if (sourceKey !== targetKey) {
+        await updateTask.mutateAsync({ id: activeId, status: targetKey, position: String(targetIndex) });
+      } else {
+        const col = currentColumns.find((c) => c.key === sourceKey);
+        if (!col) return;
+        const activeIndex = col.tasks.findIndex((t) => t.id === activeId);
+        const overIndex = col.tasks.findIndex((t) => t.id === overId);
+        if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+          const newTasks = arrayMove(col.tasks, activeIndex, overIndex);
+          const updates = newTasks.map((t, i) => ({ id: t.id, position: String(i) }));
+          await reorderTasks.mutateAsync(updates);
+        }
+      }
+    } catch {
+      // On error, revert columns to snapshot
+      if (snapshotRef.current) setColumns(snapshotRef.current);
+    } finally {
+      snapshotRef.current = null;
     }
   }, [updateTask, reorderTasks]);
 
@@ -519,6 +568,12 @@ export default function KanbanBoard({
           }}
         />
       )}
+
+      <DragOverlay dropAnimation={null}>
+        {activeTask ? (
+          <TaskCard task={activeTask} users={users} isOverlay />
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

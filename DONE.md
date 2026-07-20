@@ -357,18 +357,20 @@ When a task from [TODO.md](TODO.md) is fully completed and merged:
 
 ## Kanban Drag-and-Drop Fix (July 2026)
 
-Fixed critical column-locking bug and DnD performance issues.
+Fixed **regression** where drag-and-drop became completely broken after a previous partial fix — tasks could only be dropped in the `todo` column and then appeared locked. Also restored smooth optimistic-move UX that had been lost.
 
 **Root Causes:**
-1. **Stale closure in `handleDragOver`** — `activeTask`, `overTask`, `activeColumn`, `overColumn` were captured from the outer `columns` scope and used inside a `setColumns` functional updater. During a single drag, `onDragOver` fires multiple times, and each invocation kept referencing the ORIGINAL column. With each successive `onDragOver` event, the functional updater removed the task from the wrong (already-emptied) column and inserted it into the target column, creating duplicate tasks. With duplicate task IDs in the same column, `useSortable` registry broke and tasks appeared "locked."
-2. **No `useDroppable` on column containers** — Dropping into empty space or empty columns never triggered collisions because `closestCenter` only detects center overlaps between sortable items. The column container itself was not a droppable target, so `over` was `null`, the drag snapped back, and users experienced laggy/unresponsive behavior.
+1. **Missing `DragOverlay`** — `handleDragOver` optimistically removed the task from the source column and inserted it into the target column. Without a `DragOverlay`, the original DOM element was unmounted, breaking `useSortable` transform continuity and causing the task to jump/appear locked.
+2. **Stale `handleDragEnd` logic** — `handleDragEnd` used `columnsRef.current`, but `handleDragOver` had already mutated the state, making `activeColumn === overColumn` in every case. It then called `reorderTasks` instead of `updateTask` with a new `status`, so the backend never received the status change.
+3. **No rollback on failure** — When the API call failed, the board stayed in the broken optimistic state.
 
 **Fixes Applied:**
-- `handleDragOver`: All lookups (`activeTask`, `overTask`, `activeColumn`, `overColumn`) now happen inside the `setColumns` functional updater using `prev` state, not the stale outer closure.
-- Added guard to skip cross-column moves when the task has already been moved to the target column.
-- Added `useDroppable` to each `Column` container, allowing drops into empty columns and empty space.
-- Removed stale `onDragStart` prop handler and its unused callback pipeline.
-- Used `useRef` + `useEffect` to sync `columnsRef` for `handleDragStart` and `handleDragEnd` without violating React purity rules.
+- Added `<DragOverlay>` to both `KanbanBoard.tsx` and `KanbanBoardClient.tsx` — renders the dragged task via a portal so the original element can unmount safely.
+- Added `sourceColumnRef` + `snapshotRef` — captures original column key and full board snapshot on drag start.
+- Rewrote `handleDragOver` to safely move tasks between columns using `prev` state lookups only.
+- Rewrote `handleDragEnd` to use `sourceColumnRef` for the *original* column, `columnsRef.current` for the *target*, and `snapshotRef` for instant rollback on error or drop-outside.
+- Handles drops on empty columns (`overId` matches column key).
+- Handles same-column reorder vs cross-column move correctly.
 
 **Files Changed:**
 - `src/app/dashboard/kanban/KanbanBoardClient.tsx`
