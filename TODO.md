@@ -294,6 +294,19 @@
   - Validation: `scripts/db-check.ts` tests connectivity and prints provider info
   - Acceptance criteria: Works on local Postgres (Docker), Neon, and one other provider without code changes, backward compatible
 
+- [ ] **Setup & Update flow** - Improve first-time setup and add runtime migration support
+  > Full plan: [`TODO/setup-and-update.md`](TODO/setup-and-update.md)
+
+  Separate system seeds from demo seeds, enhance the web setup page with `.env` generation, and build an in-app migration flow for shared-hosting users who lack terminal access. Includes an `update.sh` script for server-based installs.
+
+  - Seed: Split `bootstrap.ts` into `system-seed.ts` (feature flags, defaults) and `demo-seed.ts` (demo users, tasks)
+  - Setup: `/setup` page gains optional env var collection + `.env` generation + demo seed checkbox
+  - API: `GET /api/setup/status` — reports `needsMigration`, `dbVersion`, `appVersion`
+  - API: `POST /api/super-admin/migrate` — applies pending migrations in-app (superadmin-only)
+  - UI: Amber migration alert banner in superadmin dashboard when DB is behind
+  - Script: `scripts/update.sh` — pulls latest, runs migrations, restarts for server users
+  - Acceptance criteria: System seeds auto-run on fresh DB, demo seeds are optional, setup writes `.env` when missing, superadmin can run migrations from UI, update.sh works on Ubuntu 22.04+
+
 ## New Features (Ideas)
 
 - [ ] **Time tracking** - Log time on tasks, reports
