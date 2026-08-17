@@ -17,11 +17,11 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getSession();
 
-  const userTeamIds = db
+  const userTeamRows = await db
     .select({ teamId: teamMembers.teamId })
     .from(teamMembers)
-    .where(eq(teamMembers.userId, user!.id))
-    .as("user_team_ids");
+    .where(eq(teamMembers.userId, user!.id));
+  const userTeamIds = userTeamRows.map((r) => r.teamId);
 
   // Stats
   const [projectCount] = await db

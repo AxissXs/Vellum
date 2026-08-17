@@ -25,11 +25,11 @@ export default async function AdminPage() {
     .from(users)
     .orderBy(users.name);
 
-  const userTeamIds = db
+  const userTeamRows = await db
     .select({ teamId: teamMembers.teamId })
     .from(teamMembers)
-    .where(eq(teamMembers.userId, currentUser!.id))
-    .as("user_team_ids");
+    .where(eq(teamMembers.userId, currentUser!.id));
+  const userTeamIds = userTeamRows.map((r) => r.teamId);
 
   const [projectCount] = await db.select({ count: sql<number>`count(*)::int` }).from(projects).where(
     and(

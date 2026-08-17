@@ -8,11 +8,11 @@ export async function GET() {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userTeamIds = db
+  const userTeamRows = await db
     .select({ teamId: teamMembers.teamId })
     .from(teamMembers)
-    .where(eq(teamMembers.userId, user.id))
-    .as("user_team_ids");
+    .where(eq(teamMembers.userId, user.id));
+  const userTeamIds = userTeamRows.map((r) => r.teamId);
 
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })

@@ -95,11 +95,11 @@ export default async function ProjectDetailPage({
     memberMap.set(key, current);
   }
 
-  const userTeamIds = db
+  const userTeamRows = await db
     .select({ teamId: teamMembers.teamId })
     .from(teamMembers)
-    .where(eq(teamMembers.userId, user!.id))
-    .as("user_team_ids");
+    .where(eq(teamMembers.userId, user!.id));
+  const userTeamIds = userTeamRows.map((r) => r.teamId);
 
   const allProjects = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })

@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const archived = url.searchParams.get("archived") === "true";
 
-  const userTeamIds = db
+  const userTeamRows = await db
     .select({ teamId: teamMembers.teamId })
     .from(teamMembers)
-    .where(eq(teamMembers.userId, user.id))
-    .as("user_team_ids");
+    .where(eq(teamMembers.userId, user.id));
+  const userTeamIds = userTeamRows.map((r) => r.teamId);
 
   const rows = await db
     .select()
