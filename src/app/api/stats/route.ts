@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, teams, users, teamMembers } from "@/db/schema";
-import { eq, sql, isNull, and, or, ne, inArray } from "drizzle-orm";
+import { projects, tasks, teams, users, teamMembers, projectTeams } from "@/db/schema";
+import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
 
 export async function GET() {
   const user = await getSession();
@@ -14,6 +14,11 @@ export async function GET() {
     .where(eq(teamMembers.userId, user.id));
   const userTeamIds = userTeamRows.map((r) => r.teamId);
 
+  const teamVisibleRows = userTeamIds.length > 0
+    ? await db.select({ projectId: projectTeams.projectId }).from(projectTeams).where(inArray(projectTeams.teamId, userTeamIds))
+    : [];
+  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projects)
@@ -22,11 +27,11 @@ export async function GET() {
         eq(projects.archived, false),
         isNull(projects.deletedAt),
         or(
-          ne(projects.visibility, "private"),
+          eq(projects.visibility, "company"),
           eq(projects.ownerId, user.id),
           and(
             eq(projects.visibility, "team"),
-            inArray(projects.teamId, userTeamIds)
+            inArray(projects.id, teamVisibleIds)
           )
         )
       )

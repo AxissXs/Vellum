@@ -6,6 +6,7 @@ import {
   boolean,
   pgEnum,
   foreignKey,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", [
@@ -68,7 +69,6 @@ export const projects = pgTable("projects", {
   ownerId: uuid("owner_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  teamId: uuid("team_id").references(() => teams.id, { onDelete: "set null" }),
   archived: boolean("archived").default(false).notNull(),
   deletedAt: timestamp("deleted_at"),
   deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
@@ -103,6 +103,19 @@ export const teamMembers = pgTable("team_members", {
   deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const projectTeams = pgTable(
+  "project_teams",
+  {
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.teamId] })]
+);
 
 export const projectMilestones = pgTable("project_milestones", {
   id: uuid("id").primaryKey().defaultRandom(),

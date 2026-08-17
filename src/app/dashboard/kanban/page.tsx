@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, users, teamMembers } from "@/db/schema";
-import { eq, asc, isNull, and, or, ne, inArray } from "drizzle-orm";
+import { projects, tasks, users, teamMembers, projectTeams } from "@/db/schema";
+import { eq, asc, isNull, and, or, inArray } from "drizzle-orm";
 import KanbanBoardClient from "./KanbanBoardClient";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,11 @@ export default async function KanbanPage() {
     .where(eq(teamMembers.userId, user.id));
   const userTeamIds = userTeamRows.map((r) => r.teamId);
 
+  const teamVisibleRows = userTeamIds.length > 0
+    ? await db.select({ projectId: projectTeams.projectId }).from(projectTeams).where(inArray(projectTeams.teamId, userTeamIds))
+    : [];
+  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+
   const allProjects = await db
     .select()
     .from(projects)
@@ -32,11 +37,11 @@ export default async function KanbanPage() {
         eq(projects.archived, false),
         isNull(projects.deletedAt),
         or(
-          ne(projects.visibility, "private"),
+          eq(projects.visibility, "company"),
           eq(projects.ownerId, user.id),
           and(
             eq(projects.visibility, "team"),
-            inArray(projects.teamId, userTeamIds)
+            inArray(projects.id, teamVisibleIds)
           )
         )
       )
@@ -63,7 +68,6 @@ export default async function KanbanPage() {
       projectColor: projects.color,
       projectVisibility: projects.visibility,
       projectOwnerId: projects.ownerId,
-      projectTeamId: projects.teamId,
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -76,15 +80,13 @@ export default async function KanbanPage() {
     .from(users)
     .orderBy(users.name);
 
-  const userTeamIdSet = new Set(
-    (await db.select({ teamId: teamMembers.teamId }).from(teamMembers).where(eq(teamMembers.userId, user.id))).map((r) => r.teamId)
-  );
+  const teamVisibleIdSet = new Set(teamVisibleIds);
 
   const visibleTasks = taskRows.filter(
     (t) =>
       t.projectOwnerId === user.id ||
-      (t.projectVisibility === "company") ||
-      (t.projectVisibility === "team" && t.projectTeamId && userTeamIdSet.has(t.projectTeamId))
+      t.projectVisibility === "company" ||
+      (t.projectVisibility === "team" && t.projectId && teamVisibleIdSet.has(t.projectId))
   );
 
   const columns = statusColumns.map((col) => ({

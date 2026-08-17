@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, teamMembers } from "@/db/schema";
-import { eq, and, asc, isNull, or, ne, inArray } from "drizzle-orm";
+import { projects, teamMembers, projectTeams } from "@/db/schema";
+import { eq, and, asc, isNull, or, inArray } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
@@ -18,6 +18,14 @@ export async function GET(req: NextRequest) {
     .where(eq(teamMembers.userId, user.id));
   const userTeamIds = userTeamRows.map((r) => r.teamId);
 
+  const teamVisibleRows = userTeamIds.length > 0
+    ? await db
+        .select({ projectId: projectTeams.projectId })
+        .from(projectTeams)
+        .where(inArray(projectTeams.teamId, userTeamIds))
+    : [];
+  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+
   const rows = await db
     .select()
     .from(projects)
@@ -26,11 +34,11 @@ export async function GET(req: NextRequest) {
         eq(projects.archived, archived),
         isNull(projects.deletedAt),
         or(
-          ne(projects.visibility, "private"),
+          eq(projects.visibility, "company"),
           eq(projects.ownerId, user.id),
           and(
             eq(projects.visibility, "team"),
-            inArray(projects.teamId, userTeamIds)
+            inArray(projects.id, teamVisibleIds)
           )
         )
       )
@@ -45,7 +53,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, description, color, icon, visibility, teamId } = body;
+  const { name, description, color, icon, visibility, teamIds } = body;
 
   if (!name) {
     return NextResponse.json({ error: "Project name is required" }, { status: 400 });
@@ -59,10 +67,15 @@ export async function POST(req: NextRequest) {
       color: color || "#6366f1",
       icon: icon || "folder",
       visibility: visibility || "team",
-      teamId: teamId || null,
       ownerId: user.id,
     })
     .returning();
+
+  if (Array.isArray(teamIds) && teamIds.length > 0) {
+    await db.insert(projectTeams).values(
+      teamIds.map((teamId: string) => ({ projectId: project.id, teamId }))
+    );
+  }
 
   await writeActivityLog({
     userId: user.id,

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects } from "@/db/schema";
-import { eq, isNull, and, or, ne } from "drizzle-orm";
+import { projects, projectTeams } from "@/db/schema";
+import { eq, isNull, and } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(
@@ -48,7 +48,7 @@ export async function PATCH(
     status,
     health,
     visibility,
-    teamId,
+    teamIds,
     goal,
     keyResults,
     risks,
@@ -75,7 +75,6 @@ export async function PATCH(
   if (status !== undefined) updateData.status = status;
   if (health !== undefined) updateData.health = health;
   if (visibility !== undefined) updateData.visibility = visibility;
-  if (teamId !== undefined) updateData.teamId = teamId || null;
   if (goal !== undefined) updateData.goal = goal;
   if (keyResults !== undefined) updateData.keyResults = keyResults;
   if (risks !== undefined) updateData.risks = risks;
@@ -90,6 +89,15 @@ export async function PATCH(
 
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  if (Array.isArray(teamIds)) {
+    await db.delete(projectTeams).where(eq(projectTeams.projectId, id));
+    if (teamIds.length > 0) {
+      await db.insert(projectTeams).values(
+        teamIds.map((teamId: string) => ({ projectId: id, teamId }))
+      );
+    }
   }
 
   await writeActivityLog({

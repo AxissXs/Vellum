@@ -14,7 +14,7 @@ type Project = {
   status: string;
   health: string;
   visibility: string;
-  teamId: string | null;
+  teamIds: string[];
   goal: string | null;
   keyResults: string | null;
   risks: string | null;
@@ -76,7 +76,7 @@ export default function ProjectManagementPanel({
   const [status, setStatus] = useState(project.status);
   const [health, setHealth] = useState(project.health);
   const [visibility, setVisibility] = useState(project.visibility);
-  const [teamId, setTeamId] = useState(project.teamId || "");
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>(project.teamIds || []);
   const [goal, setGoal] = useState(project.goal || "");
   const [keyResults, setKeyResults] = useState(project.keyResults || "");
   const [risks, setRisks] = useState(project.risks || "");
@@ -103,7 +103,7 @@ export default function ProjectManagementPanel({
         status,
         health,
         visibility,
-        teamId: teamId || null,
+        teamIds: selectedTeamIds,
         goal: goal.trim() || null,
         keyResults: keyResults.trim() || null,
         risks: risks.trim() || null,
@@ -215,13 +215,28 @@ export default function ProjectManagementPanel({
               </select>
             </label>
             <label className="block">
-              <span className="text-xs text-text-dim">Team</span>
-              <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="mt-1 w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
-                <option value="">No team</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+              <span className="text-xs text-text-dim">Teams</span>
+              <div className="mt-1 max-h-24 overflow-y-auto rounded-lg border border-border-default bg-overlay-5 p-2 space-y-1">
+                {teams.length === 0 ? (
+                  <p className="text-xs text-text-dim px-1">No teams</p>
+                ) : teams.map((t) => (
+                  <label key={t.id} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-overlay-hover cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedTeamIds.includes(t.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTeamIds((prev) => [...prev, t.id]);
+                        } else {
+                          setSelectedTeamIds((prev) => prev.filter((id) => id !== t.id));
+                        }
+                      }}
+                      className="rounded border-border-default text-brand-500 focus:ring-brand-500"
+                    />
+                    <span className="text-sm text-text-primary">{t.name}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </label>
             <label className="block">
               <span className="text-xs text-text-dim">Start date</span>

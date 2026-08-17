@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, users, projectMilestones, teams, teamMembers } from "@/db/schema";
-import { eq, asc, isNull, and, or, ne, inArray } from "drizzle-orm";
+import { projects, tasks, users, projectMilestones, teams, teamMembers, projectTeams } from "@/db/schema";
+import { eq, asc, isNull, and, or, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
@@ -36,11 +36,15 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  if (project.visibility === "team" && project.teamId && user?.id) {
+  if (project.visibility === "team" && user?.id) {
     const [membership] = await db
       .select()
-      .from(teamMembers)
-      .where(and(eq(teamMembers.userId, user.id), eq(teamMembers.teamId, project.teamId)))
+      .from(projectTeams)
+      .innerJoin(teamMembers, and(
+        eq(projectTeams.teamId, teamMembers.teamId),
+        eq(teamMembers.userId, user.id)
+      ))
+      .where(eq(projectTeams.projectId, project.id))
       .limit(1);
     if (!membership) notFound();
   }
@@ -101,6 +105,14 @@ export default async function ProjectDetailPage({
     .where(eq(teamMembers.userId, user!.id));
   const userTeamIds = userTeamRows.map((r) => r.teamId);
 
+  const teamVisibleRows = userTeamIds.length > 0
+    ? await db
+        .select({ projectId: projectTeams.projectId })
+        .from(projectTeams)
+        .where(inArray(projectTeams.teamId, userTeamIds))
+    : [];
+  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+
   const allProjects = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })
     .from(projects)
@@ -109,11 +121,11 @@ export default async function ProjectDetailPage({
         eq(projects.archived, false),
         isNull(projects.deletedAt),
         or(
-          ne(projects.visibility, "private"),
+          eq(projects.visibility, "company"),
           eq(projects.ownerId, user!.id),
           and(
             eq(projects.visibility, "team"),
-            inArray(projects.teamId, userTeamIds)
+            inArray(projects.id, teamVisibleIds)
           )
         )
       )
@@ -124,6 +136,12 @@ export default async function ProjectDetailPage({
     .select({ id: teams.id, name: teams.name })
     .from(teams)
     .orderBy(asc(teams.name));
+
+  const projectTeamRows = await db
+    .select({ teamId: projectTeams.teamId })
+    .from(projectTeams)
+    .where(eq(projectTeams.projectId, id));
+  const projectTeamIds = projectTeamRows.map((r) => r.teamId);
 
   const columns = statusColumns.map((col) => ({
     ...col,
@@ -141,6 +159,7 @@ export default async function ProjectDetailPage({
 
   const serializedProject = {
     ...project,
+    teamIds: projectTeamIds,
     startDate: project.startDate?.toISOString() || null,
     targetDate: project.targetDate?.toISOString() || null,
     createdAt: project.createdAt.toISOString(),

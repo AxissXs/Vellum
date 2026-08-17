@@ -9,7 +9,7 @@ export default function ProjectListClient({ userRole, teams }: { userRole: strin
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#6366f1");
-  const [teamId, setTeamId] = useState("");
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function ProjectListClient({ userRole, teams }: { userRole: strin
     const res = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), description: description.trim() || null, color, teamId: teamId || null }),
+      body: JSON.stringify({ name: name.trim(), description: description.trim() || null, color, teamIds: selectedTeamIds }),
     });
 
     if (!res.ok) {
@@ -42,7 +42,7 @@ export default function ProjectListClient({ userRole, teams }: { userRole: strin
     setName("");
     setDescription("");
     setColor("#6366f1");
-    setTeamId("");
+    setSelectedTeamIds([]);
     router.refresh();
     setLoading(false);
   }
@@ -100,17 +100,28 @@ export default function ProjectListClient({ userRole, teams }: { userRole: strin
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1.5">Team (optional)</label>
-                <select
-                  value={teamId}
-                  onChange={(e) => setTeamId(e.target.value)}
-                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">No team</option>
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Teams (optional)</label>
+                <div className="max-h-32 overflow-y-auto rounded-lg border border-border-default bg-overlay-5 p-2 space-y-1">
+                  {teams.length === 0 ? (
+                    <p className="text-xs text-text-dim px-2">No teams available</p>
+                  ) : teams.map((t) => (
+                    <label key={t.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-overlay-hover cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedTeamIds.includes(t.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTeamIds((prev) => [...prev, t.id]);
+                          } else {
+                            setSelectedTeamIds((prev) => prev.filter((id) => id !== t.id));
+                          }
+                        }}
+                        className="rounded border-border-default text-brand-500 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-text-primary">{t.name}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
 
               <div>

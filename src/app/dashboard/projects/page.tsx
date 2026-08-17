@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, teams, teamMembers } from "@/db/schema";
-import { eq, sql, asc, isNull, and, or, ne, inArray } from "drizzle-orm";
+import { projects, tasks, teams, teamMembers, projectTeams } from "@/db/schema";
+import { eq, sql, asc, isNull, and, or, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { Plus, Archive, FolderKanban } from "lucide-react";
 import { clsx } from "clsx";
@@ -18,6 +18,11 @@ export default async function ProjectsPage() {
     .where(eq(teamMembers.userId, user!.id));
   const userTeamIds = userTeamRows.map((r) => r.teamId);
 
+  const teamVisibleRows = userTeamIds.length > 0
+    ? await db.select({ projectId: projectTeams.projectId }).from(projectTeams).where(inArray(projectTeams.teamId, userTeamIds))
+    : [];
+  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+
   const activeProjects = await db
     .select()
     .from(projects)
@@ -26,11 +31,11 @@ export default async function ProjectsPage() {
         eq(projects.archived, false),
         isNull(projects.deletedAt),
         or(
-          ne(projects.visibility, "private"),
+          eq(projects.visibility, "company"),
           eq(projects.ownerId, user!.id),
           and(
             eq(projects.visibility, "team"),
-            inArray(projects.teamId, userTeamIds)
+            inArray(projects.id, teamVisibleIds)
           )
         )
       )
