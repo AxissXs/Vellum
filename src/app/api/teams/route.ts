@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { teams, teamMembers, users, projects } from "@/db/schema";
+import { teams, teamMembers, users } from "@/db/schema";
 import { eq, asc, isNull, and } from "drizzle-orm";
 
 export async function GET() {
@@ -23,17 +23,12 @@ export async function GET() {
           teamRole: teamMembers.teamRole,
           allocation: teamMembers.allocation,
           responsibilities: teamMembers.responsibilities,
-          projectId: teamMembers.projectId,
-          projectName: projects.name,
         })
         .from(teamMembers)
         .innerJoin(users, eq(teamMembers.userId, users.id))
-        .leftJoin(projects, eq(teamMembers.projectId, projects.id))
         .where(and(eq(teamMembers.teamId, team.id), isNull(teamMembers.deletedAt)));
 
-      const lead = team.leadId
-        ? members.find((member) => member.userId === team.leadId) || null
-        : null;
+      const lead = members.find((member) => member.teamRole === "lead") || null;
 
       return { ...team, lead, members, memberCount: members.length };
     })

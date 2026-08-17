@@ -183,11 +183,11 @@ async function seedIfEmpty() {
   const launchId = projectMap.get("Q4 Launch Campaign")!;
 
   await db.insert(teamMembers).values([
-    { teamId: teamMap.get("Engineering")!, userId: alexId, projectId: platformId },
-    { teamId: teamMap.get("Engineering")!, userId: davidId, projectId: platformId },
-    { teamId: teamMap.get("Design")!, userId: sarahId, projectId: mobileId },
-    { teamId: teamMap.get("Design")!, userId: emilyId, projectId: mobileId },
-    { teamId: teamMap.get("Growth")!, userId: marcusId, projectId: launchId },
+    { teamId: teamMap.get("Engineering")!, userId: alexId, teamRole: "lead" },
+    { teamId: teamMap.get("Engineering")!, userId: davidId },
+    { teamId: teamMap.get("Design")!, userId: sarahId, teamRole: "lead" },
+    { teamId: teamMap.get("Design")!, userId: emilyId },
+    { teamId: teamMap.get("Growth")!, userId: marcusId, teamRole: "lead" },
   ]);
 
   const insertedTasks = await db

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { teamMembers } from "@/db/schema";
+import { teamMembers, teams } from "@/db/schema";
 import { getSession } from "@/lib/auth";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function POST(
@@ -14,7 +14,7 @@ export async function POST(
   if (user.role === "member") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const { userId, projectId, teamRole, allocation, responsibilities } = await req.json();
+  const { userId, teamRole, allocation, responsibilities } = await req.json();
   if (!userId) return NextResponse.json({ error: "userId is required" }, { status: 400 });
 
   const [existing] = await db
@@ -27,13 +27,17 @@ export async function POST(
     const [member] = await db
       .update(teamMembers)
       .set({
-        projectId: projectId || null,
         teamRole: teamRole || existing.teamRole,
         allocation: allocation || existing.allocation,
         responsibilities: responsibilities ?? existing.responsibilities,
       })
       .where(eq(teamMembers.id, existing.id))
       .returning();
+
+    if ((teamRole || existing.teamRole) === "lead") {
+      await db.update(teams).set({ leadId: userId }).where(eq(teams.id, id));
+    }
+
     return NextResponse.json({ member });
   }
 
@@ -42,12 +46,15 @@ export async function POST(
     .values({
       teamId: id,
       userId,
-      projectId: projectId || null,
       teamRole: teamRole || "contributor",
       allocation: allocation || "100",
       responsibilities: responsibilities || null,
     })
     .returning();
+
+  if ((teamRole || "contributor") === "lead") {
+    await db.update(teams).set({ leadId: userId }).where(eq(teams.id, id));
+  }
 
   await writeActivityLog({
     userId: user.id,
@@ -93,6 +100,15 @@ export async function DELETE(
       ipAddress: getClientIP(req),
       snapshots: [{ tableName: "team_members", recordId: existing.id, snapshot: existing, snapshotType: "before" }],
     });
+
+    if (existing.teamRole === "lead") {
+      const [nextLead] = await db
+        .select()
+        .from(teamMembers)
+        .where(and(eq(teamMembers.teamId, id), eq(teamMembers.teamRole, "lead"), isNull(teamMembers.deletedAt), ne(teamMembers.userId, existing.userId)))
+        .limit(1);
+      await db.update(teams).set({ leadId: nextLead?.userId || null }).where(eq(teams.id, id));
+    }
   }
 
   return NextResponse.json({ success: true });

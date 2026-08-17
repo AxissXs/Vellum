@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, teams, users } from "@/db/schema";
-import { eq, sql, isNull, and, or, ne } from "drizzle-orm";
+import { projects, tasks, teams, users, teamMembers } from "@/db/schema";
+import { eq, sql, isNull, and, or, ne, inArray } from "drizzle-orm";
 import {
   FolderKanban,
   CheckSquare,
@@ -17,6 +17,12 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getSession();
 
+  const userTeamIds = db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user!.id))
+    .as("user_team_ids");
+
   // Stats
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -27,7 +33,11 @@ export default async function DashboardPage() {
         isNull(projects.deletedAt),
         or(
           ne(projects.visibility, "private"),
-          eq(projects.ownerId, user!.id)
+          eq(projects.ownerId, user!.id),
+          and(
+            eq(projects.visibility, "team"),
+            inArray(projects.teamId, userTeamIds)
+          )
         )
       )
     );
@@ -75,7 +85,11 @@ export default async function DashboardPage() {
         isNull(projects.deletedAt),
         or(
           ne(projects.visibility, "private"),
-          eq(projects.ownerId, user!.id)
+          eq(projects.ownerId, user!.id),
+          and(
+            eq(projects.visibility, "team"),
+            inArray(projects.teamId, userTeamIds)
+          )
         )
       )
     )

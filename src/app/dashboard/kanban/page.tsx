@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, users } from "@/db/schema";
-import { eq, asc, isNull, and, or, ne } from "drizzle-orm";
+import { projects, tasks, users, teamMembers } from "@/db/schema";
+import { eq, asc, isNull, and, or, ne, inArray } from "drizzle-orm";
 import KanbanBoardClient from "./KanbanBoardClient";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,12 @@ export default async function KanbanPage() {
   const user = await getSession();
   if (!user) return null;
 
+  const userTeamIds = db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user.id))
+    .as("user_team_ids");
+
   const allProjects = await db
     .select()
     .from(projects)
@@ -27,7 +33,11 @@ export default async function KanbanPage() {
         isNull(projects.deletedAt),
         or(
           ne(projects.visibility, "private"),
-          eq(projects.ownerId, user.id)
+          eq(projects.ownerId, user.id),
+          and(
+            eq(projects.visibility, "team"),
+            inArray(projects.teamId, userTeamIds)
+          )
         )
       )
     )
@@ -53,6 +63,7 @@ export default async function KanbanPage() {
       projectColor: projects.color,
       projectVisibility: projects.visibility,
       projectOwnerId: projects.ownerId,
+      projectTeamId: projects.teamId,
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -65,8 +76,15 @@ export default async function KanbanPage() {
     .from(users)
     .orderBy(users.name);
 
+  const userTeamIdSet = new Set(
+    (await db.select({ teamId: teamMembers.teamId }).from(teamMembers).where(eq(teamMembers.userId, user.id))).map((r) => r.teamId)
+  );
+
   const visibleTasks = taskRows.filter(
-    (t) => t.projectVisibility !== "private" || t.projectOwnerId === user.id
+    (t) =>
+      t.projectOwnerId === user.id ||
+      (t.projectVisibility === "company") ||
+      (t.projectVisibility === "team" && t.projectTeamId && userTeamIdSet.has(t.projectTeamId))
   );
 
   const columns = statusColumns.map((col) => ({

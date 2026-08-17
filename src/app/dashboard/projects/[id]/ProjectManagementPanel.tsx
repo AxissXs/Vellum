@@ -14,6 +14,7 @@ type Project = {
   status: string;
   health: string;
   visibility: string;
+  teamId: string | null;
   goal: string | null;
   keyResults: string | null;
   risks: string | null;
@@ -58,12 +59,14 @@ export default function ProjectManagementPanel({
   users,
   members,
   completionRate,
+  teams,
 }: {
   project: Project;
   initialMilestones: Milestone[];
   users: UserOption[];
   members: Member[];
   completionRate: number;
+  teams: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -73,6 +76,7 @@ export default function ProjectManagementPanel({
   const [status, setStatus] = useState(project.status);
   const [health, setHealth] = useState(project.health);
   const [visibility, setVisibility] = useState(project.visibility);
+  const [teamId, setTeamId] = useState(project.teamId || "");
   const [goal, setGoal] = useState(project.goal || "");
   const [keyResults, setKeyResults] = useState(project.keyResults || "");
   const [risks, setRisks] = useState(project.risks || "");
@@ -99,6 +103,7 @@ export default function ProjectManagementPanel({
         status,
         health,
         visibility,
+        teamId: teamId || null,
         goal: goal.trim() || null,
         keyResults: keyResults.trim() || null,
         risks: risks.trim() || null,
@@ -207,6 +212,15 @@ export default function ProjectManagementPanel({
                 <option value="team">Team</option>
                 <option value="company">Company</option>
                 <option value="private">Private</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs text-text-dim">Team</span>
+              <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="mt-1 w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="">No team</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
               </select>
             </label>
             <label className="block">

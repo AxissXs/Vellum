@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks } from "@/db/schema";
-import { eq, sql, asc, isNull, and, or, ne } from "drizzle-orm";
+import { projects, tasks, teams, teamMembers } from "@/db/schema";
+import { eq, sql, asc, isNull, and, or, ne, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { Plus, Archive, FolderKanban } from "lucide-react";
 import { clsx } from "clsx";
@@ -12,6 +12,12 @@ export const dynamic = "force-dynamic";
 export default async function ProjectsPage() {
   const user = await getSession();
 
+  const userTeamIds = db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user!.id))
+    .as("user_team_ids");
+
   const activeProjects = await db
     .select()
     .from(projects)
@@ -21,7 +27,11 @@ export default async function ProjectsPage() {
         isNull(projects.deletedAt),
         or(
           ne(projects.visibility, "private"),
-          eq(projects.ownerId, user!.id)
+          eq(projects.ownerId, user!.id),
+          and(
+            eq(projects.visibility, "team"),
+            inArray(projects.teamId, userTeamIds)
+          )
         )
       )
     )
@@ -44,6 +54,11 @@ export default async function ProjectsPage() {
     taskCount: countMap.get(p.id) || 0,
   }));
 
+  const allTeams = await db
+    .select({ id: teams.id, name: teams.name })
+    .from(teams)
+    .orderBy(asc(teams.name));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -53,7 +68,7 @@ export default async function ProjectsPage() {
             {activeProjects.length} active project{activeProjects.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <ProjectListClient userRole={user?.role || "member"} />
+        <ProjectListClient userRole={user?.role || "member"} teams={allTeams} />
       </div>
 
       {projectsWithCounts.length === 0 ? (

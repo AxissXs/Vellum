@@ -15,6 +15,7 @@ type Project = {
   status: string;
   health: string;
   visibility: string;
+  teamId: string | null;
   goal: string | null;
   keyResults: string | null;
   risks: string | null;
@@ -34,6 +35,7 @@ type ProjectCreateInput = {
   status?: string;
   health?: string;
   visibility?: string;
+  teamId?: string | null;
   goal?: string | null;
   keyResults?: string | null;
   risks?: string | null;
@@ -104,6 +106,7 @@ export function useCreateProject() {
         status: newProject.status || "active",
         health: newProject.health || "on_track",
         visibility: newProject.visibility || "team",
+        teamId: newProject.teamId || null,
         goal: newProject.goal || null,
         keyResults: newProject.keyResults || null,
         risks: newProject.risks || null,

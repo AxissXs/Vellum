@@ -68,6 +68,7 @@ export const projects = pgTable("projects", {
   ownerId: uuid("owner_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
+  teamId: uuid("team_id").references(() => teams.id, { onDelete: "set null" }),
   archived: boolean("archived").default(false).notNull(),
   deletedAt: timestamp("deleted_at"),
   deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
@@ -95,9 +96,6 @@ export const teamMembers = pgTable("team_members", {
   userId: uuid("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  projectId: uuid("project_id").references(() => projects.id, {
-    onDelete: "set null",
-  }),
   teamRole: text("team_role").default("contributor").notNull(),
   allocation: text("allocation").default("100").notNull(),
   responsibilities: text("responsibilities"),

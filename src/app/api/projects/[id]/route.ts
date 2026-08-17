@@ -48,6 +48,7 @@ export async function PATCH(
     status,
     health,
     visibility,
+    teamId,
     goal,
     keyResults,
     risks,
@@ -74,6 +75,7 @@ export async function PATCH(
   if (status !== undefined) updateData.status = status;
   if (health !== undefined) updateData.health = health;
   if (visibility !== undefined) updateData.visibility = visibility;
+  if (teamId !== undefined) updateData.teamId = teamId || null;
   if (goal !== undefined) updateData.goal = goal;
   if (keyResults !== undefined) updateData.keyResults = keyResults;
   if (risks !== undefined) updateData.risks = risks;

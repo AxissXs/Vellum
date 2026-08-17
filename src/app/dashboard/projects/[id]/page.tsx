@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, users, projectMilestones } from "@/db/schema";
-import { eq, asc, isNull, and, or, ne } from "drizzle-orm";
+import { projects, tasks, users, projectMilestones, teams, teamMembers } from "@/db/schema";
+import { eq, asc, isNull, and, or, ne, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
@@ -34,6 +34,15 @@ export default async function ProjectDetailPage({
 
   if (project.visibility === "private" && project.ownerId !== user?.id) {
     notFound();
+  }
+
+  if (project.visibility === "team" && project.teamId && user?.id) {
+    const [membership] = await db
+      .select()
+      .from(teamMembers)
+      .where(and(eq(teamMembers.userId, user.id), eq(teamMembers.teamId, project.teamId)))
+      .limit(1);
+    if (!membership) notFound();
   }
 
   const taskRows = await db
@@ -86,6 +95,12 @@ export default async function ProjectDetailPage({
     memberMap.set(key, current);
   }
 
+  const userTeamIds = db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user!.id))
+    .as("user_team_ids");
+
   const allProjects = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })
     .from(projects)
@@ -95,11 +110,20 @@ export default async function ProjectDetailPage({
         isNull(projects.deletedAt),
         or(
           ne(projects.visibility, "private"),
-          eq(projects.ownerId, user!.id)
+          eq(projects.ownerId, user!.id),
+          and(
+            eq(projects.visibility, "team"),
+            inArray(projects.teamId, userTeamIds)
+          )
         )
       )
     )
     .orderBy(asc(projects.createdAt));
+
+  const allTeams = await db
+    .select({ id: teams.id, name: teams.name })
+    .from(teams)
+    .orderBy(asc(teams.name));
 
   const columns = statusColumns.map((col) => ({
     ...col,
@@ -161,6 +185,7 @@ export default async function ProjectDetailPage({
         users={allUsers}
         members={Array.from(memberMap.values())}
         completionRate={completionRate}
+        teams={allTeams}
       />
 
       <div>

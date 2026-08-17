@@ -4,11 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, X } from "lucide-react";
 
-export default function ProjectListClient({ userRole }: { userRole: string }) {
+export default function ProjectListClient({ userRole, teams }: { userRole: string; teams: { id: string; name: string }[] }) {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#6366f1");
+  const [teamId, setTeamId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function ProjectListClient({ userRole }: { userRole: string }) {
     const res = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), description: description.trim() || null, color }),
+      body: JSON.stringify({ name: name.trim(), description: description.trim() || null, color, teamId: teamId || null }),
     });
 
     if (!res.ok) {
@@ -41,6 +42,7 @@ export default function ProjectListClient({ userRole }: { userRole: string }) {
     setName("");
     setDescription("");
     setColor("#6366f1");
+    setTeamId("");
     router.refresh();
     setLoading(false);
   }
@@ -95,6 +97,20 @@ export default function ProjectListClient({ userRole }: { userRole: string }) {
                   className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   placeholder="Brief description..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Team (optional)</label>
+                <select
+                  value={teamId}
+                  onChange={(e) => setTeamId(e.target.value)}
+                  className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="">No team</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

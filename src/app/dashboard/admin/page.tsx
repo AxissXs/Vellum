@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { users, projects, tasks, teams, activityLogs } from "@/db/schema";
-import { eq, sql, isNull, and, or, ne } from "drizzle-orm";
+import { users, projects, tasks, teams, activityLogs, teamMembers } from "@/db/schema";
+import { eq, sql, isNull, and, or, ne, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import AdminClient from "./AdminClient";
 
@@ -25,12 +25,22 @@ export default async function AdminPage() {
     .from(users)
     .orderBy(users.name);
 
+  const userTeamIds = db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, currentUser!.id))
+    .as("user_team_ids");
+
   const [projectCount] = await db.select({ count: sql<number>`count(*)::int` }).from(projects).where(
     and(
       isNull(projects.deletedAt),
       or(
         ne(projects.visibility, "private"),
-        eq(projects.ownerId, currentUser!.id)
+        eq(projects.ownerId, currentUser!.id),
+        and(
+          eq(projects.visibility, "team"),
+          inArray(projects.teamId, userTeamIds)
+        )
       )
     )
   );

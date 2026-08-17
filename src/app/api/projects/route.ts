@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects } from "@/db/schema";
-import { eq, and, asc, isNull, or, ne } from "drizzle-orm";
+import { projects, teamMembers } from "@/db/schema";
+import { eq, and, asc, isNull, or, ne, inArray } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
@@ -11,6 +11,12 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const archived = url.searchParams.get("archived") === "true";
+
+  const userTeamIds = db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user.id))
+    .as("user_team_ids");
 
   const rows = await db
     .select()
@@ -21,7 +27,11 @@ export async function GET(req: NextRequest) {
         isNull(projects.deletedAt),
         or(
           ne(projects.visibility, "private"),
-          eq(projects.ownerId, user.id)
+          eq(projects.ownerId, user.id),
+          and(
+            eq(projects.visibility, "team"),
+            inArray(projects.teamId, userTeamIds)
+          )
         )
       )
     )
@@ -35,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, description, color, icon, visibility } = body;
+  const { name, description, color, icon, visibility, teamId } = body;
 
   if (!name) {
     return NextResponse.json({ error: "Project name is required" }, { status: 400 });
@@ -49,6 +59,7 @@ export async function POST(req: NextRequest) {
       color: color || "#6366f1",
       icon: icon || "folder",
       visibility: visibility || "team",
+      teamId: teamId || null,
       ownerId: user.id,
     })
     .returning();

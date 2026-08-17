@@ -29,7 +29,6 @@ type TeamMember = {
   id: string;
   teamId: string;
   userId: string;
-  projectId: string | null;
   teamRole: string;
   allocation: string;
   responsibilities: string | null;
@@ -45,7 +44,6 @@ type TeamMember = {
 type TeamMemberCreateInput = {
   teamId: string;
   userId: string;
-  projectId?: string | null;
   teamRole?: string;
   allocation?: string;
   responsibilities?: string | null;
@@ -211,7 +209,6 @@ export function useAddTeamMember() {
         id: `temp-${Date.now()}`,
         teamId: newMember.teamId,
         userId: newMember.userId,
-        projectId: newMember.projectId || null,
         teamRole: newMember.teamRole || "contributor",
         allocation: newMember.allocation || "100",
         responsibilities: newMember.responsibilities || null,

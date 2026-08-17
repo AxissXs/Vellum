@@ -6,7 +6,6 @@ import { Loader2, Plus, Save, Trash2, UserPlus, Users, X } from "lucide-react";
 import { clsx } from "clsx";
 
 type UserOption = { id: string; name: string; email?: string; role?: string; avatarUrl: string | null };
-type ProjectOption = { id: string; name: string; color: string | null };
 type TeamMember = {
   membershipId: string;
   userId: string;
@@ -17,15 +16,12 @@ type TeamMember = {
   teamRole: string;
   allocation: string;
   responsibilities: string | null;
-  projectId: string | null;
-  projectName: string | null;
 };
 type Team = {
   id: string;
   name: string;
   description: string | null;
   focus: string | null;
-  leadId: string | null;
   lead?: TeamMember | null;
   members: TeamMember[];
   memberCount: number;
@@ -41,13 +37,11 @@ const roleColors: Record<string, string> = {
 export default function TeamManagementClient({
   initialTeams,
   users,
-  projects,
   canManage,
   canDelete,
 }: {
   initialTeams: Team[];
   users: UserOption[];
-  projects: ProjectOption[];
   canManage: boolean;
   canDelete: boolean;
 }) {
@@ -61,13 +55,11 @@ export default function TeamManagementClient({
   const [teamName, setTeamName] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
   const [teamFocus, setTeamFocus] = useState("");
-  const [teamLeadId, setTeamLeadId] = useState("");
   const [savingTeam, setSavingTeam] = useState(false);
 
   const [memberUserId, setMemberUserId] = useState("");
   const [memberRole, setMemberRole] = useState("contributor");
   const [memberAllocation, setMemberAllocation] = useState("100");
-  const [memberProjectId, setMemberProjectId] = useState("");
   const [memberResponsibilities, setMemberResponsibilities] = useState("");
   const [savingMember, setSavingMember] = useState(false);
 
@@ -86,7 +78,6 @@ export default function TeamManagementClient({
     setTeamName("");
     setTeamDescription("");
     setTeamFocus("");
-    setTeamLeadId("");
     setShowTeamModal(true);
   }
 
@@ -95,7 +86,6 @@ export default function TeamManagementClient({
     setTeamName(team.name);
     setTeamDescription(team.description || "");
     setTeamFocus(team.focus || "");
-    setTeamLeadId(team.leadId || "");
     setShowTeamModal(true);
   }
 
@@ -123,7 +113,6 @@ export default function TeamManagementClient({
         name: teamName.trim(),
         description: teamDescription.trim() || null,
         focus: teamFocus.trim() || null,
-        leadId: teamLeadId || null,
       }),
     });
 
@@ -158,7 +147,6 @@ export default function TeamManagementClient({
         userId: memberUserId,
         teamRole: memberRole,
         allocation: memberAllocation,
-        projectId: memberProjectId || null,
         responsibilities: memberResponsibilities.trim() || null,
       }),
     });
@@ -167,7 +155,6 @@ export default function TeamManagementClient({
       setMemberUserId("");
       setMemberRole("contributor");
       setMemberAllocation("100");
-      setMemberProjectId("");
       setMemberResponsibilities("");
       await reloadTeams();
     }
@@ -282,7 +269,7 @@ export default function TeamManagementClient({
                   <UserPlus size={18} className="text-brand-400" />
                   <h2 className="font-semibold text-text-primary">Add member</h2>
                 </div>
-                <form onSubmit={addMember} className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <form onSubmit={addMember} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <select value={memberUserId} onChange={(e) => setMemberUserId(e.target.value)} className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="">Select user</option>
                     {availableUsers.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
@@ -293,16 +280,12 @@ export default function TeamManagementClient({
                     <option value="contributor">Contributor</option>
                     <option value="reviewer">Reviewer</option>
                   </select>
-                  <select value={memberProjectId} onChange={(e) => setMemberProjectId(e.target.value)} className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="">No project</option>
-                    {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-                  </select>
                   <input value={memberAllocation} onChange={(e) => setMemberAllocation(e.target.value)} placeholder="Allocation %" className="rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
                   <button disabled={savingMember || !memberUserId} className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">
                     {savingMember ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                     Add
                   </button>
-                  <input value={memberResponsibilities} onChange={(e) => setMemberResponsibilities(e.target.value)} placeholder="Responsibilities / ownership" className="md:col-span-5 rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  <input value={memberResponsibilities} onChange={(e) => setMemberResponsibilities(e.target.value)} placeholder="Responsibilities / ownership" className="md:col-span-4 rounded-lg border border-border-default bg-overlay-5 px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </form>
               </section>
             )}
@@ -329,7 +312,6 @@ export default function TeamManagementClient({
                       <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                         <span className={clsx("text-[10px] uppercase tracking-wider rounded border px-2 py-1", roleColors[member.teamRole] || roleColors.contributor)}>{member.teamRole}</span>
                         <span className="rounded bg-surface-strong px-2 py-1 text-xs text-text-dim">{member.allocation}%</span>
-                        {member.projectName && <span className="rounded bg-surface-strong px-2 py-1 text-xs text-text-dim">{member.projectName}</span>}
                         {member.responsibilities && <span className="max-w-xs truncate rounded bg-surface-strong px-2 py-1 text-xs text-text-dim">{member.responsibilities}</span>}
                         {canManage && (
                           <button onClick={() => removeMember(member.membershipId)} className="rounded-lg p-1.5 text-text-dim hover:bg-red-500/10 hover:text-red-400 transition">
@@ -358,10 +340,6 @@ export default function TeamManagementClient({
               <input value={teamName} onChange={(e) => setTeamName(e.target.value)} required placeholder="Team name" className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
               <textarea value={teamDescription} onChange={(e) => setTeamDescription(e.target.value)} rows={2} placeholder="Description" className="w-full resize-none rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
               <input value={teamFocus} onChange={(e) => setTeamFocus(e.target.value)} placeholder="Current focus / mission" className="w-full rounded-lg border border-border-default bg-overlay-5 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <select value={teamLeadId} onChange={(e) => setTeamLeadId(e.target.value)} className="w-full rounded-lg border border-border-default bg-overlay-5 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500">
-                <option value="">No lead</option>
-                {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-              </select>
               <button disabled={savingTeam} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-text-primary hover:bg-brand-600 disabled:opacity-50 transition">
                 {savingTeam ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 {editingTeam ? "Save team" : "Create team"}

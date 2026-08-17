@@ -168,18 +168,18 @@ async function seed() {
 
   // Create team members
   await db.insert(teamMembers).values([
-    { teamId: engTeamId, userId: alexId, projectId: vellumProjectId },
-    { teamId: engTeamId, userId: davidId, projectId: vellumProjectId },
-    { teamId: engTeamId, userId: jamesId, projectId: apiProjectId },
-    { teamId: engTeamId, userId: annaId, projectId: vellumProjectId },
-    { teamId: designTeamId, userId: sarahId, projectId: mobileProjectId },
-    { teamId: designTeamId, userId: emilyId, projectId: mobileProjectId },
-    { teamId: designTeamId, userId: annaId, projectId: mobileProjectId },
-    { teamId: marketingTeamId, userId: lisaId, projectId: marketingProjectId },
-    { teamId: marketingTeamId, userId: marcusId, projectId: marketingProjectId },
-    { teamId: productTeamId, userId: alexId, projectId: vellumProjectId },
-    { teamId: productTeamId, userId: sarahId, projectId: mobileProjectId },
-    { teamId: productTeamId, userId: lisaId, projectId: marketingProjectId },
+    { teamId: engTeamId, userId: alexId, teamRole: "lead" },
+    { teamId: engTeamId, userId: davidId },
+    { teamId: engTeamId, userId: jamesId },
+    { teamId: engTeamId, userId: annaId },
+    { teamId: designTeamId, userId: sarahId, teamRole: "lead" },
+    { teamId: designTeamId, userId: emilyId },
+    { teamId: designTeamId, userId: annaId },
+    { teamId: marketingTeamId, userId: lisaId, teamRole: "lead" },
+    { teamId: marketingTeamId, userId: marcusId },
+    { teamId: productTeamId, userId: alexId },
+    { teamId: productTeamId, userId: sarahId },
+    { teamId: productTeamId, userId: lisaId },
   ]);
 
   // Create tasks
