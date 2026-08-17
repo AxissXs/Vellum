@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { users, projects, tasks, teams, activityLogs } from "@/db/schema";
-import { eq, sql, isNull } from "drizzle-orm";
+import { eq, sql, isNull, and, or, ne } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import AdminClient from "./AdminClient";
 
@@ -25,7 +25,15 @@ export default async function AdminPage() {
     .from(users)
     .orderBy(users.name);
 
-  const [projectCount] = await db.select({ count: sql<number>`count(*)::int` }).from(projects).where(isNull(projects.deletedAt));
+  const [projectCount] = await db.select({ count: sql<number>`count(*)::int` }).from(projects).where(
+    and(
+      isNull(projects.deletedAt),
+      or(
+        ne(projects.visibility, "private"),
+        eq(projects.ownerId, currentUser!.id)
+      )
+    )
+  );
   const [taskCount] = await db.select({ count: sql<number>`count(*)::int` }).from(tasks).where(isNull(tasks.deletedAt));
   const [teamCount] = await db.select({ count: sql<number>`count(*)::int` }).from(teams).where(isNull(teams.deletedAt));
 

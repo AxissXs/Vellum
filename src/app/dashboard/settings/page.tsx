@@ -8,11 +8,11 @@ import {
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTelegramStatus, useGeneratePairingCode, useUnlinkTelegram } from "@/hooks/useTelegram";
 import { useMySessions, useRevokeSession, useRevokeAllOtherSessions, parseUserAgent } from "@/hooks/useSessions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 import { Switch } from "@/components/ui/Switch";
-import { Loader2, Link as LinkIcon, Unlink, Copy, Check, Monitor, Smartphone, LogOut } from "lucide-react";
+import { Loader2, Link as LinkIcon, Unlink, Copy, Check, Monitor, Smartphone, LogOut, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -26,6 +26,7 @@ const eventLabels: Record<string, string> = {
 };
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
   const { data: preferences, isLoading } = useNotificationPreferences();
   const { mutate: updatePref, isPending } = useUpdateNotificationPreference();
   const { isSupported, isSubscribed } = usePushNotifications();
@@ -51,6 +52,28 @@ export default function SettingsPage() {
   const { mutate: revokeAll, isPending: revokingAll } = useRevokeAllOtherSessions();
 
   const botConfigured = !!telegramConfig?.configured;
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async () => {
+      return api.post<{ success: true }>("/api/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Password changed successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to change password");
+    },
+  });
 
   function handleToggle(
     eventType: string,
@@ -181,6 +204,80 @@ export default function SettingsPage() {
           )}
         </div>
       )}
+
+      {/* Change Password Section */}
+      <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <KeyRound size={20} className="text-text-dim" />
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Change Password</h2>
+            <p className="text-sm text-text-dim mt-0.5">
+              Update your account password.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 max-w-md">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
+              Current Password
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-surface-page px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
+              placeholder="••••••••"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
+              New Password
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-surface-page px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
+              placeholder="••••••••"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1.5">
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-surface-page px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            onClick={() => {
+              if (!currentPassword || !newPassword) {
+                toast.error("Please fill in all fields");
+                return;
+              }
+              if (newPassword.length < 8) {
+                toast.error("New password must be at least 8 characters");
+                return;
+              }
+              if (newPassword !== confirmPassword) {
+                toast.error("Passwords do not match");
+                return;
+              }
+              changePasswordMutation.mutate();
+            }}
+            disabled={changePasswordMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
+            className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-text-primary text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+          >
+            {changePasswordMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+            Change Password
+          </button>
+        </div>
+      </div>
 
       {/* Notification Preferences */}
       <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">

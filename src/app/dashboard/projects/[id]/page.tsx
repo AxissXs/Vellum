@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, users, projectMilestones } from "@/db/schema";
-import { eq, asc, isNull, and } from "drizzle-orm";
+import { eq, asc, isNull, and, or, ne } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
@@ -31,6 +31,10 @@ export default async function ProjectDetailPage({
     .limit(1);
 
   if (!project) notFound();
+
+  if (project.visibility === "private" && project.ownerId !== user?.id) {
+    notFound();
+  }
 
   const taskRows = await db
     .select({
@@ -85,7 +89,16 @@ export default async function ProjectDetailPage({
   const allProjects = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })
     .from(projects)
-    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.archived, false),
+        isNull(projects.deletedAt),
+        or(
+          ne(projects.visibility, "private"),
+          eq(projects.ownerId, user!.id)
+        )
+      )
+    )
     .orderBy(asc(projects.createdAt));
 
   const columns = statusColumns.map((col) => ({

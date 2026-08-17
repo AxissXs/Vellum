@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, teams, users } from "@/db/schema";
-import { eq, sql, isNull, and } from "drizzle-orm";
+import { eq, sql, isNull, and, or, ne } from "drizzle-orm";
 
 export async function GET() {
   const user = await getSession();
@@ -11,7 +11,16 @@ export async function GET() {
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projects)
-    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)));
+    .where(
+      and(
+        eq(projects.archived, false),
+        isNull(projects.deletedAt),
+        or(
+          ne(projects.visibility, "private"),
+          eq(projects.ownerId, user.id)
+        )
+      )
+    );
 
   const [taskCount] = await db
     .select({ count: sql<number>`count(*)::int` })

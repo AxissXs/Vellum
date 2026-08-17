@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
-import { eq, isNull, and } from "drizzle-orm";
+import { eq, isNull, and, or, ne } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(
@@ -20,6 +20,10 @@ export async function GET(
     .limit(1);
 
   if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  if (project.visibility === "private" && project.ownerId !== user.id) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -52,6 +56,14 @@ export async function PATCH(
   } = body;
 
   const [before] = await db.select().from(projects).where(and(eq(projects.id, id), isNull(projects.deletedAt))).limit(1);
+
+  if (!before) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  if (before.visibility === "private" && before.ownerId !== user.id) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (name !== undefined) updateData.name = name;
@@ -110,6 +122,10 @@ export async function DELETE(
     .limit(1);
 
   if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  if (project.visibility === "private" && project.ownerId !== user.id) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 

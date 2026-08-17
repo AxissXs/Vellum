@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, teams, users } from "@/db/schema";
-import { eq, sql, isNull, and } from "drizzle-orm";
+import { eq, sql, isNull, and, or, ne } from "drizzle-orm";
 import {
   FolderKanban,
   CheckSquare,
@@ -21,7 +21,16 @@ export default async function DashboardPage() {
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projects)
-    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)));
+    .where(
+      and(
+        eq(projects.archived, false),
+        isNull(projects.deletedAt),
+        or(
+          ne(projects.visibility, "private"),
+          eq(projects.ownerId, user!.id)
+        )
+      )
+    );
 
   const [taskCount] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -60,7 +69,16 @@ export default async function DashboardPage() {
   const recentProjects = await db
     .select()
     .from(projects)
-    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.archived, false),
+        isNull(projects.deletedAt),
+        or(
+          ne(projects.visibility, "private"),
+          eq(projects.ownerId, user!.id)
+        )
+      )
+    )
     .orderBy(projects.createdAt)
     .limit(4);
 

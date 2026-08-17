@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
 import { projects, tasks, users } from "@/db/schema";
-import { eq, asc, isNull, and } from "drizzle-orm";
+import { eq, asc, isNull, and, or, ne } from "drizzle-orm";
 import KanbanBoardClient from "./KanbanBoardClient";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,16 @@ export default async function KanbanPage() {
   const allProjects = await db
     .select()
     .from(projects)
-    .where(and(eq(projects.archived, false), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.archived, false),
+        isNull(projects.deletedAt),
+        or(
+          ne(projects.visibility, "private"),
+          eq(projects.ownerId, user.id)
+        )
+      )
+    )
     .orderBy(asc(projects.createdAt));
 
   const taskRows = await db
@@ -42,6 +51,8 @@ export default async function KanbanPage() {
       assigneeAvatar: users.avatarUrl,
       projectName: projects.name,
       projectColor: projects.color,
+      projectVisibility: projects.visibility,
+      projectOwnerId: projects.ownerId,
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -54,9 +65,13 @@ export default async function KanbanPage() {
     .from(users)
     .orderBy(users.name);
 
+  const visibleTasks = taskRows.filter(
+    (t) => t.projectVisibility !== "private" || t.projectOwnerId === user.id
+  );
+
   const columns = statusColumns.map((col) => ({
     ...col,
-    tasks: taskRows
+    tasks: visibleTasks
       .filter((t) => t.status === col.key)
       .map((t) => ({
         ...t,
