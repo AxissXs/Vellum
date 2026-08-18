@@ -37,7 +37,7 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  if (project.visibility === "team" && user?.id) {
+  if (project.visibility === "team" && user?.id && project.ownerId !== user.id) {
     const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
     if (!teamVisibleIds.has(project.id)) notFound();
   }
