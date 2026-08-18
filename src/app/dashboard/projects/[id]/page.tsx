@@ -1,7 +1,8 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, users, projectMilestones, teams, teamMembers, projectTeams } from "@/db/schema";
-import { eq, asc, isNull, and, or, inArray } from "drizzle-orm";
+import { projects, tasks, users, projectMilestones, teams, projectTeams } from "@/db/schema";
+import { eq, asc, isNull, and } from "drizzle-orm";
+import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 import { notFound } from "next/navigation";
 import KanbanBoard from "./KanbanBoard";
 import ProjectManagementPanel from "./ProjectManagementPanel";
@@ -37,16 +38,8 @@ export default async function ProjectDetailPage({
   }
 
   if (project.visibility === "team" && user?.id) {
-    const [membership] = await db
-      .select()
-      .from(projectTeams)
-      .innerJoin(teamMembers, and(
-        eq(projectTeams.teamId, teamMembers.teamId),
-        eq(teamMembers.userId, user.id)
-      ))
-      .where(eq(projectTeams.projectId, project.id))
-      .limit(1);
-    if (!membership) notFound();
+    const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
+    if (!teamVisibleIds.has(project.id)) notFound();
   }
 
   const taskRows = await db
@@ -99,19 +92,7 @@ export default async function ProjectDetailPage({
     memberMap.set(key, current);
   }
 
-  const userTeamRows = await db
-    .select({ teamId: teamMembers.teamId })
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, user!.id));
-  const userTeamIds = userTeamRows.map((r) => r.teamId);
-
-  const teamVisibleRows = userTeamIds.length > 0
-    ? await db
-        .select({ projectId: projectTeams.projectId })
-        .from(projectTeams)
-        .where(inArray(projectTeams.teamId, userTeamIds))
-    : [];
-  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+  const teamVisibleIds = await getTeamVisibleProjectIds(user!.id);
 
   const allProjects = await db
     .select({ id: projects.id, name: projects.name, color: projects.color })
@@ -120,14 +101,7 @@ export default async function ProjectDetailPage({
       and(
         eq(projects.archived, false),
         isNull(projects.deletedAt),
-        or(
-          eq(projects.visibility, "company"),
-          eq(projects.ownerId, user!.id),
-          and(
-            eq(projects.visibility, "team"),
-            inArray(projects.id, teamVisibleIds)
-          )
-        )
+        buildProjectVisibilityCondition(user!.id, teamVisibleIds)
       )
     )
     .orderBy(asc(projects.createdAt));

@@ -481,6 +481,31 @@ Telegram, push, snapshots, audit) deferred to follow-up work.
 - 38 additional files — bulk replacement of hardcoded `slate`, `white`, `black` color classes via `scripts/apply-theme-tokens.ts`
 - `scripts/apply-theme-tokens.ts` — bulk replacement script (committed as helper)
 
+### Private Project Visibility Enforcement (August 2026)
+> Enforce the `visibility` field on projects so private projects are only visible to their owner.
+
+- **Shared helper** — `src/lib/project-visibility.ts` with `getTeamVisibleProjectIds()` and `buildProjectVisibilityCondition()`
+- **API** — `GET /api/projects` filters by visibility
+- **Server pages** — `projects/page.tsx`, `dashboard/page.tsx`, `kanban/page.tsx`, `projects/[id]/page.tsx` all enforce visibility
+- **Detail page** — returns 404 for non-owners accessing private projects
+- **Global kanban** — excludes tasks from inaccessible projects
+- **Stats** — only counts visible projects
+
+### Self-Service Password Change (August 2026)
+> Users can change their own password from the Settings page.
+
+- **API** — `POST /api/auth/change-password` with current password verification
+- **UI** — "Change Password" section in `/dashboard/settings` with current/new/confirm fields
+- **Validation** — current password correct, new password min 8 chars, passwords match
+- **Audit** — activity logged for security trail
+
+### UI: Searchable Team Multi-Select (August 2026)
+> Replaced checkbox lists with a searchable, multi-select dropdown for team assignment.
+
+- **New component** — `src/components/TeamMultiSelect.tsx` with search, keyboard navigation, tag chips
+- **Create project form** — updated to use `TeamMultiSelect`
+- **Edit project form** — updated to use `TeamMultiSelect`
+
 ---
 
-*Last updated: July 2026*
+*Last updated: August 2026*

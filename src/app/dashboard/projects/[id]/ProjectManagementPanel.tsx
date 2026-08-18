@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Calendar, Flag, Loader2, Plus, Save, ShieldAlert, Target, Trash2, Users } from "lucide-react";
 import { clsx } from "clsx";
 import RichTextEditor, { RichTextPreview } from "@/components/RichTextEditor";
+import TeamMultiSelect from "@/components/TeamMultiSelect";
 
 type Project = {
   id: string;
@@ -216,26 +217,8 @@ export default function ProjectManagementPanel({
             </label>
             <label className="block">
               <span className="text-xs text-text-dim">Teams</span>
-              <div className="mt-1 max-h-24 overflow-y-auto rounded-lg border border-border-default bg-overlay-5 p-2 space-y-1">
-                {teams.length === 0 ? (
-                  <p className="text-xs text-text-dim px-1">No teams</p>
-                ) : teams.map((t) => (
-                  <label key={t.id} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-overlay-hover cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedTeamIds.includes(t.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedTeamIds((prev) => [...prev, t.id]);
-                        } else {
-                          setSelectedTeamIds((prev) => prev.filter((id) => id !== t.id));
-                        }
-                      }}
-                      className="rounded border-border-default text-brand-500 focus:ring-brand-500"
-                    />
-                    <span className="text-sm text-text-primary">{t.name}</span>
-                  </label>
-                ))}
+              <div className="mt-1">
+                <TeamMultiSelect teams={teams} selected={selectedTeamIds} onChange={setSelectedTeamIds} />
               </div>
             </label>
             <label className="block">

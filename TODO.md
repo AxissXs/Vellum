@@ -2,7 +2,7 @@
 
 ## Priority: High
 
-- [ ] **Private project visibility enforcement** - Enforce the `visibility` field on projects so private projects are only visible to their owner
+- [x] **Private project visibility enforcement** - Enforce the `visibility` field on projects so private projects are only visible to their owner
   - The `projects.visibility` field exists (`team`/`company`/`private`) and is editable in `ProjectManagementPanel`, but is never enforced
   - When `visibility === "private"`, only the project creator/owner should see it in listings and be able to access it
   - API: `GET /api/projects` must filter out private projects unless the current user is the owner
@@ -11,7 +11,7 @@
   - Global kanban (`kanban/page.tsx`) must exclude tasks from private projects the user doesn't own
   - Acceptance criteria: Non-owners cannot see private projects in any listing, cannot access them by URL, tasks from private projects don't appear in global views
 
-- [ ] **Self-service password change** - Allow users to change their own password from the Settings page
+- [x] **Self-service password change** - Allow users to change their own password from the Settings page
   - API: `POST /api/auth/change-password` — requires current password verification, sets new password
   - UI: "Change Password" section in `/dashboard/settings` page with current password, new password, confirm password fields
   - Validate: current password correct, new password meets minimum length (8 chars), passwords match

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, teamMembers, projectTeams } from "@/db/schema";
-import { eq, and, asc, isNull, or, inArray } from "drizzle-orm";
+import { projects, projectTeams } from "@/db/schema";
+import { eq, and, asc, isNull } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
+import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 
 export async function GET(req: NextRequest) {
   const user = await getSession();
@@ -12,19 +13,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const archived = url.searchParams.get("archived") === "true";
 
-  const userTeamRows = await db
-    .select({ teamId: teamMembers.teamId })
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, user.id));
-  const userTeamIds = userTeamRows.map((r) => r.teamId);
-
-  const teamVisibleRows = userTeamIds.length > 0
-    ? await db
-        .select({ projectId: projectTeams.projectId })
-        .from(projectTeams)
-        .where(inArray(projectTeams.teamId, userTeamIds))
-    : [];
-  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+  const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
 
   const rows = await db
     .select()
@@ -33,14 +22,7 @@ export async function GET(req: NextRequest) {
       and(
         eq(projects.archived, archived),
         isNull(projects.deletedAt),
-        or(
-          eq(projects.visibility, "company"),
-          eq(projects.ownerId, user.id),
-          and(
-            eq(projects.visibility, "team"),
-            inArray(projects.id, teamVisibleIds)
-          )
-        )
+        buildProjectVisibilityCondition(user.id, teamVisibleIds)
       )
     )
     .orderBy(asc(projects.createdAt));

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, X } from "lucide-react";
+import TeamMultiSelect from "@/components/TeamMultiSelect";
 
 export default function ProjectListClient({ userRole, teams }: { userRole: string; teams: { id: string; name: string }[] }) {
   const [showModal, setShowModal] = useState(false);
@@ -101,27 +102,7 @@ export default function ProjectListClient({ userRole, teams }: { userRole: strin
 
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1.5">Teams (optional)</label>
-                <div className="max-h-32 overflow-y-auto rounded-lg border border-border-default bg-overlay-5 p-2 space-y-1">
-                  {teams.length === 0 ? (
-                    <p className="text-xs text-text-dim px-2">No teams available</p>
-                  ) : teams.map((t) => (
-                    <label key={t.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-overlay-hover cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedTeamIds.includes(t.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTeamIds((prev) => [...prev, t.id]);
-                          } else {
-                            setSelectedTeamIds((prev) => prev.filter((id) => id !== t.id));
-                          }
-                        }}
-                        className="rounded border-border-default text-brand-500 focus:ring-brand-500"
-                      />
-                      <span className="text-sm text-text-primary">{t.name}</span>
-                    </label>
-                  ))}
-                </div>
+                <TeamMultiSelect teams={teams} selected={selectedTeamIds} onChange={setSelectedTeamIds} />
               </div>
 
               <div>

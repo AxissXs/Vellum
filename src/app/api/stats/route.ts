@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, teams, users, teamMembers, projectTeams } from "@/db/schema";
-import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
+import { projects, tasks, teams, users } from "@/db/schema";
+import { eq, sql, isNull, and } from "drizzle-orm";
+import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 
 export async function GET() {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userTeamRows = await db
-    .select({ teamId: teamMembers.teamId })
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, user.id));
-  const userTeamIds = userTeamRows.map((r) => r.teamId);
-
-  const teamVisibleRows = userTeamIds.length > 0
-    ? await db.select({ projectId: projectTeams.projectId }).from(projectTeams).where(inArray(projectTeams.teamId, userTeamIds))
-    : [];
-  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+  const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
 
   const [projectCount] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -26,14 +18,7 @@ export async function GET() {
       and(
         eq(projects.archived, false),
         isNull(projects.deletedAt),
-        or(
-          eq(projects.visibility, "company"),
-          eq(projects.ownerId, user.id),
-          and(
-            eq(projects.visibility, "team"),
-            inArray(projects.id, teamVisibleIds)
-          )
-        )
+        buildProjectVisibilityCondition(user.id, teamVisibleIds)
       )
     );
 

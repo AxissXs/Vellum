@@ -1,7 +1,8 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, users, teamMembers, projectTeams } from "@/db/schema";
-import { eq, asc, isNull, and, or, inArray } from "drizzle-orm";
+import { projects, tasks, users } from "@/db/schema";
+import { eq, asc, isNull, and } from "drizzle-orm";
+import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 import KanbanBoardClient from "./KanbanBoardClient";
 
 export const dynamic = "force-dynamic";
@@ -18,16 +19,7 @@ export default async function KanbanPage() {
   const user = await getSession();
   if (!user) return null;
 
-  const userTeamRows = await db
-    .select({ teamId: teamMembers.teamId })
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, user.id));
-  const userTeamIds = userTeamRows.map((r) => r.teamId);
-
-  const teamVisibleRows = userTeamIds.length > 0
-    ? await db.select({ projectId: projectTeams.projectId }).from(projectTeams).where(inArray(projectTeams.teamId, userTeamIds))
-    : [];
-  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+  const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
 
   const allProjects = await db
     .select()
@@ -36,14 +28,7 @@ export default async function KanbanPage() {
       and(
         eq(projects.archived, false),
         isNull(projects.deletedAt),
-        or(
-          eq(projects.visibility, "company"),
-          eq(projects.ownerId, user.id),
-          and(
-            eq(projects.visibility, "team"),
-            inArray(projects.id, teamVisibleIds)
-          )
-        )
+        buildProjectVisibilityCondition(user.id, teamVisibleIds)
       )
     )
     .orderBy(asc(projects.createdAt));
@@ -80,13 +65,11 @@ export default async function KanbanPage() {
     .from(users)
     .orderBy(users.name);
 
-  const teamVisibleIdSet = new Set(teamVisibleIds);
-
   const visibleTasks = taskRows.filter(
     (t) =>
       t.projectOwnerId === user.id ||
       t.projectVisibility === "company" ||
-      (t.projectVisibility === "team" && t.projectId && teamVisibleIdSet.has(t.projectId))
+      (t.projectVisibility === "team" && t.projectId && teamVisibleIds.has(t.projectId))
   );
 
   const columns = statusColumns.map((col) => ({

@@ -1,7 +1,8 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, tasks, teams, users, teamMembers, projectTeams } from "@/db/schema";
-import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
+import { projects, tasks, teams, users } from "@/db/schema";
+import { eq, sql, isNull, and } from "drizzle-orm";
+import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 import {
   FolderKanban,
   CheckSquare,
@@ -17,16 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getSession();
 
-  const userTeamRows = await db
-    .select({ teamId: teamMembers.teamId })
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, user!.id));
-  const userTeamIds = userTeamRows.map((r) => r.teamId);
-
-  const teamVisibleRows = userTeamIds.length > 0
-    ? await db.select({ projectId: projectTeams.projectId }).from(projectTeams).where(inArray(projectTeams.teamId, userTeamIds))
-    : [];
-  const teamVisibleIds = teamVisibleRows.map((r) => r.projectId);
+  const teamVisibleIds = await getTeamVisibleProjectIds(user!.id);
 
   // Stats
   const [projectCount] = await db
@@ -36,14 +28,7 @@ export default async function DashboardPage() {
       and(
         eq(projects.archived, false),
         isNull(projects.deletedAt),
-        or(
-          eq(projects.visibility, "company"),
-          eq(projects.ownerId, user!.id),
-          and(
-            eq(projects.visibility, "team"),
-            inArray(projects.id, teamVisibleIds)
-          )
-        )
+        buildProjectVisibilityCondition(user!.id, teamVisibleIds)
       )
     );
 
@@ -88,14 +73,7 @@ export default async function DashboardPage() {
       and(
         eq(projects.archived, false),
         isNull(projects.deletedAt),
-        or(
-          eq(projects.visibility, "company"),
-          eq(projects.ownerId, user!.id),
-          and(
-            eq(projects.visibility, "team"),
-            inArray(projects.id, teamVisibleIds)
-          )
-        )
+        buildProjectVisibilityCondition(user!.id, teamVisibleIds)
       )
     )
     .orderBy(projects.createdAt)
