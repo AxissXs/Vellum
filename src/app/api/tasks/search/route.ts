@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { withAuth } from "@/lib/hofs";
 import { db } from "@/db";
 import { tasks, users, projects } from "@/db/schema";
-import { eq, and, asc, isNull } from "drizzle-orm";
+import { eq, and, asc, isNull, or, ilike } from "drizzle-orm";
 import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 
-export async function GET(req: NextRequest) {
-  const user = await getSession(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export const GET = withAuth(async (req, user) => {
   const url = new URL(req.url);
+  const q = url.searchParams.get("q");
   const projectId = url.searchParams.get("projectId");
   const status = url.searchParams.get("status");
-  const assigneeId = url.searchParams.get("assigneeId");
+  const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
 
+  if (!q || q.trim().length < 2) {
+    return NextResponse.json({ error: "Search query must be at least 2 characters" }, { status: 400 });
+  }
+
+  const pattern = `%${q.trim()}%`;
   const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
 
-  let conditions = [
+  const conditions = [
     isNull(tasks.deletedAt),
     buildProjectVisibilityCondition(user.id, teamVisibleIds),
+    or(ilike(tasks.title, pattern), ilike(tasks.description, pattern)),
   ];
+
   if (projectId) conditions.push(eq(tasks.projectId, projectId));
   if (status) conditions.push(eq(tasks.status, status as any));
-  if (assigneeId) conditions.push(eq(tasks.assigneeId, assigneeId));
 
   const rows = await db
     .select({
@@ -46,7 +50,8 @@ export async function GET(req: NextRequest) {
     .leftJoin(users, eq(tasks.assigneeId, users.id))
     .innerJoin(projects, eq(tasks.projectId, projects.id))
     .where(and(...conditions))
-    .orderBy(asc(tasks.position), asc(tasks.createdAt));
+    .orderBy(asc(tasks.position), asc(tasks.createdAt))
+    .limit(limit);
 
   return NextResponse.json({ tasks: rows });
-}
+});

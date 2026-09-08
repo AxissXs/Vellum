@@ -16,6 +16,22 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ---
 
+## API Security & Search
+
+### API Visibility Fixes + Search Endpoints (September 2026)
+> Fixed 7 visibility/security gaps and added search endpoints.
+
+- **Visibility helpers** — `src/lib/project-access.ts` with `canAccessProject()`, `getAccessibleProject()` for single-project access checks
+- **Fixed single-project endpoints** — `GET/PATCH/DELETE /api/projects/[id]` now enforces full company/team/private visibility (was only checking `private`)
+- **Fixed milestones** — `GET/POST /api/projects/[id]/milestones` checks parent project access
+- **Fixed agent endpoints** — `GET /api/agent/projects` and `GET /api/agent/tasks` now filter by project visibility
+- **Fixed agent comments** — `POST /api/agent/tasks/[id]/comment` rejects deleted tasks + checks project access
+- **Fixed task routes** — `GET/PATCH/DELETE /api/tasks` and `/api/tasks/[id]` join projects table and enforce visibility
+- **Search** — `GET /api/tasks/search?q=...` and `GET /api/projects/search?q=...` with visibility-filtered ILIKE search
+- **HOF upgrade** — `withAuth`/`withRole` now use generics to preserve Next.js route params type safety
+
+---
+
 ## Core Platform
 
 ### Optimistic UI Updates (July 2026)

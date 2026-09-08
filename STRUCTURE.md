@@ -1485,6 +1485,22 @@ src/
 - `getTokenUser(req: NextRequest): Promise<{ user: AuthUser; tokenId: string } | null>` - Validates `Authorization: Bearer vellum_...` header, looks up token by prefix, verifies bcrypt hash, checks expiry, throttled `lastUsedAt` update
 - `AuthResult` type - `{ user, authMethod, tokenId? }`
 
+#### `src/lib/project-access.ts`
+
+**Purpose**: Single-project visibility check helpers (complements `project-visibility.ts` for list filtering)
+**Exports**:
+
+- `canAccessProject(userId, project)` - Check if a user can access a project based on company/team/private visibility rules
+- `getAccessibleProject(userId, projectId)` - Fetch project by ID + verify access; returns null if not found or denied
+
+#### `src/lib/project-visibility.ts`
+
+**Purpose**: Project visibility filtering for list queries
+**Exports**:
+
+- `getTeamVisibleProjectIds(userId)` - Returns Set of project IDs visible via team membership
+- `buildProjectVisibilityCondition(userId, teamVisibleIds)` - Builds SQL OR condition for company/team/private visibility
+
 #### `src/lib/openapi.ts`
 
 **Purpose**: OpenAPI 3.0 spec generator

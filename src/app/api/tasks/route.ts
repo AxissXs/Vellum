@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuthMethod } from "@/lib/auth";
 import { db } from "@/db";
-import { tasks, users } from "@/db/schema";
+import { tasks, users, projects } from "@/db/schema";
 import { eq, and, asc, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification, broadcastEvent } from "@/lib/notifications";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
+import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
+import { getAccessibleProject } from "@/lib/project-access";
 
 export async function GET(req: NextRequest) {
   const authResult = await getSessionWithAuthMethod(req);
@@ -17,7 +19,12 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get("status");
   const assigneeId = url.searchParams.get("assigneeId");
 
-  let conditions = [isNull(tasks.deletedAt)];
+  const teamVisibleIds = await getTeamVisibleProjectIds(user.id);
+
+  let conditions = [
+    isNull(tasks.deletedAt),
+    buildProjectVisibilityCondition(user.id, teamVisibleIds),
+  ];
   if (projectId) conditions.push(eq(tasks.projectId, projectId));
   if (status) conditions.push(eq(tasks.status, status as any));
   if (assigneeId) conditions.push(eq(tasks.assigneeId, assigneeId));
@@ -41,6 +48,7 @@ export async function GET(req: NextRequest) {
     })
     .from(tasks)
     .leftJoin(users, eq(tasks.assigneeId, users.id))
+    .innerJoin(projects, eq(tasks.projectId, projects.id))
     .where(and(...conditions))
     .orderBy(asc(tasks.position), asc(tasks.createdAt));
 
@@ -60,6 +68,11 @@ export async function POST(req: NextRequest) {
       { error: "Title and project are required" },
       { status: 400 }
     );
+  }
+
+  const project = await getAccessibleProject(user.id, projectId);
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
   const [task] = await db
@@ -87,7 +100,6 @@ export async function POST(req: NextRequest) {
     snapshots: [{ tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "after" }],
   });
 
-  // Broadcast real-time event
   await broadcastTaskEvent(projectId, {
     type: "created",
     task: {
@@ -102,7 +114,6 @@ export async function POST(req: NextRequest) {
     actorName: user.name || "Someone",
   });
 
-  // Send notification to assignee if different from creator
   if (task.assigneeId && task.assigneeId !== user.id) {
     await sendNotification({
       userId: task.assigneeId,
@@ -121,7 +132,6 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Broadcast to supergroup/channel (public event)
   await broadcastEvent({
     type: "task_assigned",
     title: "New Task Assigned",

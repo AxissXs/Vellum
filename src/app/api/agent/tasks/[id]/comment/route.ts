@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionWithAuthMethod } from "@/lib/auth";
 import { db } from "@/db";
 import { comments, tasks } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 import { broadcastCommentEvent } from "@/lib/pusher-broadcast";
+import { getAccessibleProject } from "@/lib/project-access";
 
 export async function POST(
   req: NextRequest,
@@ -25,10 +26,15 @@ export async function POST(
   const [task] = await db
     .select()
     .from(tasks)
-    .where(eq(tasks.id, taskId))
+    .where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt)))
     .limit(1);
 
   if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  const project = await getAccessibleProject(user.id, task.projectId);
+  if (!project) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 

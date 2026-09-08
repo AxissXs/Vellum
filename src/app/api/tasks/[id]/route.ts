@@ -6,6 +6,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { broadcastTaskEvent } from "@/lib/pusher-broadcast";
 import { sendNotification, broadcastEvent } from "@/lib/notifications";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
+import { getAccessibleProject } from "@/lib/project-access";
 
 export async function PATCH(
   req: NextRequest,
@@ -20,6 +21,15 @@ export async function PATCH(
   const { title, description, status, priority, assigneeId, dueDate, position } = body;
 
   const [before] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt))).limit(1);
+
+  if (!before) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  const project = await getAccessibleProject(user.id, before.projectId);
+  if (!project) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (title !== undefined) updateData.title = title;
@@ -48,14 +58,8 @@ export async function PATCH(
     done: "marked as Done",
   };
 
-  // Determine what actually changed
   const statusChanged = status !== undefined && before && before.status !== status;
   const assigneeChanged = assigneeId !== undefined && before && before.assigneeId !== assigneeId;
-  const hasContentChanges =
-    title !== undefined && before && before.title !== title ||
-    description !== undefined && before && before.description !== description ||
-    priority !== undefined && before && before.priority !== priority ||
-    dueDate !== undefined && before && before.dueDate !== (dueDate ? new Date(dueDate) : null);
 
   const actionDetail =
     statusChanged
@@ -71,12 +75,11 @@ export async function PATCH(
     ipAddress: getClientIP(req),
     actorType: authMethod === "token" ? "agent" : "user",
     snapshots: [
-      ...(before ? [{ tableName: "tasks" as const, recordId: task.id, snapshot: before, snapshotType: "before" as const }] : []),
+      { tableName: "tasks" as const, recordId: task.id, snapshot: before, snapshotType: "before" as const },
       { tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "after" },
     ],
   });
 
-  // Look up assignee info for the broadcast payload
   let assigneeName: string | null = null;
   let assigneeAvatar: string | null = null;
   if (task.assigneeId) {
@@ -103,7 +106,6 @@ export async function PATCH(
     actorName: user.name || "Someone",
   });
 
-  // Send notification for status changes only when status actually changed
   if (statusChanged) {
     const label = statusLabels[status] || "updated";
     const notifyUserId = task.assigneeId ?? task.creatorId;
@@ -125,7 +127,6 @@ export async function PATCH(
       });
     }
 
-    // Broadcast status change to supergroup/channel (public event)
     await broadcastEvent({
       type: "status_changed",
       title: "Task Status Changed",
@@ -134,7 +135,6 @@ export async function PATCH(
     });
   }
 
-  // Send notification for assignee changes only when assignee actually changed
   if (assigneeChanged && assigneeId) {
     await sendNotification({
       userId: assigneeId,
@@ -152,7 +152,6 @@ export async function PATCH(
       url: `/dashboard/projects/${task.projectId}`,
     });
 
-    // Broadcast assignee change to supergroup/channel (public event)
     await broadcastEvent({
       type: "task_assigned",
       title: "Task Assigned",
@@ -176,6 +175,11 @@ export async function DELETE(
 
   const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt))).limit(1);
   if (!task) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  const project = await getAccessibleProject(user.id, task.projectId);
+  if (!project) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 

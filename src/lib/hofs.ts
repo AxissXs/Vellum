@@ -29,20 +29,20 @@ export function clearSessionCookie(response: NextResponse): NextResponse {
 /*  Type-level glue — preserves whatever extra params Next.js passes   */
 /* ------------------------------------------------------------------ */
 
-type RouteHandler = (
+type RouteHandler<TContext = unknown> = (
   req: NextRequest,
-  ...args: unknown[]
+  context: TContext
 ) => Promise<NextResponse> | NextResponse;
 
-type AuthRouteHandler = (
+type AuthRouteHandler<TContext = unknown> = (
   req: NextRequest,
   user: AuthUser,
-  ...args: unknown[]
+  context: TContext
 ) => Promise<NextResponse> | NextResponse;
 
 /**
  * `withAuth(handler)` — validates session, clears cookie on failure,
- * then calls handler with `(req, user, ...)`.
+ * then calls handler with `(req, user, context)`.
  *
  * Usage:
  *   export const GET = withAuth(async (req, user, context) => {
@@ -50,13 +50,15 @@ type AuthRouteHandler = (
  *     …
  *   });
  */
-export function withAuth(handler: AuthRouteHandler): RouteHandler {
-  return async (req, ...args) => {
+export function withAuth<TContext>(
+  handler: AuthRouteHandler<TContext>
+): RouteHandler<TContext> {
+  return async (req, context) => {
     const user = await getSession();
     if (!user) {
       return unauthorizedResponse();
     }
-    return handler(req, user, ...args);
+    return handler(req, user, context);
   };
 }
 
@@ -71,8 +73,8 @@ export function withAuth(handler: AuthRouteHandler): RouteHandler {
 export function withRole(
   allowedRoles: Array<"superadmin" | "admin" | "member">
 ) {
-  return (handler: AuthRouteHandler): RouteHandler => {
-    return async (req, ...args) => {
+  return <TContext>(handler: AuthRouteHandler<TContext>): RouteHandler<TContext> => {
+    return async (req, context) => {
       const user = await getSession();
       if (!user) {
         return unauthorizedResponse();
@@ -82,7 +84,7 @@ export function withRole(
       } catch {
         return forbiddenResponse();
       }
-      return handler(req, user, ...args);
+      return handler(req, user, context);
     };
   };
 }

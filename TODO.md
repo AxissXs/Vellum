@@ -7,6 +7,12 @@
 
 ## Priority: High
 
+- ~~**API visibility fixes + search endpoints**~~ ✅ — Fixed 7 security gaps + added task/project search
+  - Created `src/lib/project-access.ts` with `canAccessProject()`, `getAccessibleProject()`
+  - Fixed all single-project, milestones, agent, and task routes to enforce project visibility
+  - Added `GET /api/tasks/search` and `GET /api/projects/search` with ILIKE + visibility filtering
+  - Upgraded `withAuth`/`withRole` to use generics for Next.js params type safety
+
 - [x] **Private project visibility enforcement** - Enforce the `visibility` field on projects so private projects are only visible to their owner
   - The `projects.visibility` field exists (`team`/`company`/`private`) and is editable in `ProjectManagementPanel`, but is never enforced
   - When `visibility === "private"`, only the project creator/owner should see it in listings and be able to access it
