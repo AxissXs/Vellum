@@ -263,6 +263,171 @@ export function generateOpenAPISpec() {
           },
         },
       },
+      "/tasks/search": {
+        get: {
+          summary: "Search tasks by title or description",
+          tags: ["Tasks"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          parameters: [
+            { name: "q", in: "query", required: true, schema: { type: "string", minLength: 2 }, description: "Search term (min 2 chars)" },
+            { name: "projectId", in: "query", schema: { type: "string", format: "uuid" } },
+            { name: "status", in: "query", schema: { type: "string", enum: ["backlog", "todo", "in_progress", "review", "done"] } },
+            { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 50, default: 20 } },
+          ],
+          responses: {
+            "200": {
+              description: "Matching tasks",
+              content: { "application/json": { schema: { type: "object", properties: { tasks: { type: "array", items: { $ref: "#/components/schemas/Task" } } } } } },
+            },
+          },
+        },
+      },
+      "/projects": {
+        get: {
+          summary: "List projects",
+          tags: ["Projects"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          parameters: [
+            { name: "archived", in: "query", schema: { type: "string", enum: ["true", "false"] } },
+          ],
+          responses: {
+            "200": {
+              description: "List of projects",
+              content: { "application/json": { schema: { type: "object", properties: { projects: { type: "array", items: { $ref: "#/components/schemas/Project" } } } } } },
+            },
+          },
+        },
+        post: {
+          summary: "Create a project",
+          tags: ["Projects"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name"],
+                  properties: {
+                    name: { type: "string" },
+                    description: { type: "string" },
+                    color: { type: "string" },
+                    icon: { type: "string" },
+                    visibility: { type: "string", enum: ["company", "team", "private"], default: "team" },
+                    teamIds: { type: "array", items: { type: "string", format: "uuid" } },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "201": { description: "Project created", content: { "application/json": { schema: { type: "object", properties: { project: { $ref: "#/components/schemas/Project" } } } } } },
+          },
+        },
+      },
+      "/projects/search": {
+        get: {
+          summary: "Search projects by name or description",
+          tags: ["Projects"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          parameters: [
+            { name: "q", in: "query", required: true, schema: { type: "string", minLength: 2 }, description: "Search term (min 2 chars)" },
+            { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 50, default: 20 } },
+          ],
+          responses: {
+            "200": {
+              description: "Matching projects",
+              content: { "application/json": { schema: { type: "object", properties: { projects: { type: "array", items: { $ref: "#/components/schemas/Project" } } } } } },
+            },
+          },
+        },
+      },
+      "/projects/{id}": {
+        get: {
+          summary: "Get a project by ID",
+          tags: ["Projects"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+          responses: {
+            "200": { description: "Project details", content: { "application/json": { schema: { type: "object", properties: { project: { $ref: "#/components/schemas/Project" } } } } } },
+          },
+        },
+        patch: {
+          summary: "Update a project",
+          tags: ["Projects"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    description: { type: "string" },
+                    color: { type: "string" },
+                    icon: { type: "string" },
+                    visibility: { type: "string", enum: ["company", "team", "private"] },
+                    teamIds: { type: "array", items: { type: "string", format: "uuid" } },
+                    archived: { type: "boolean" },
+                    status: { type: "string" },
+                    health: { type: "string" },
+                    goal: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Project updated", content: { "application/json": { schema: { type: "object", properties: { project: { $ref: "#/components/schemas/Project" } } } } } },
+          },
+        },
+        delete: {
+          summary: "Delete a project (soft delete)",
+          tags: ["Projects"],
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+          responses: {
+            "200": { description: "Project deleted" },
+          },
+        },
+      },
+      "/agent/tasks/search": {
+        get: {
+          summary: "Search tasks (agent-optimized)",
+          tags: ["Agent"],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "q", in: "query", required: true, schema: { type: "string", minLength: 2 }, description: "Search term (min 2 chars)" },
+            { name: "projectId", in: "query", schema: { type: "string", format: "uuid" } },
+            { name: "status", in: "query", schema: { type: "string", enum: ["backlog", "todo", "in_progress", "review", "done"] } },
+            { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 50, default: 20 } },
+          ],
+          responses: {
+            "200": {
+              description: "Matching tasks with project info",
+              content: { "application/json": { schema: { type: "object", properties: { tasks: { type: "array", items: { $ref: "#/components/schemas/Task" } } } } } },
+            },
+          },
+        },
+      },
+      "/agent/projects/search": {
+        get: {
+          summary: "Search projects (agent-optimized)",
+          tags: ["Agent"],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "q", in: "query", required: true, schema: { type: "string", minLength: 2 }, description: "Search term (min 2 chars)" },
+            { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 50, default: 20 } },
+          ],
+          responses: {
+            "200": {
+              description: "Matching projects",
+              content: { "application/json": { schema: { type: "object", properties: { projects: { type: "array", items: { $ref: "#/components/schemas/Project" } } } } } },
+            },
+          },
+        },
+      },
       "/tokens": {
         get: {
           summary: "List your API tokens",

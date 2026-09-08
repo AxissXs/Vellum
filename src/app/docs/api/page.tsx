@@ -30,8 +30,9 @@ export default function ApiDocsPage() {
           <section>
             <h2 className="text-xl font-semibold mb-3 text-text-primary">Tasks</h2>
             <div className="space-y-3">
-              <Endpoint method="GET" path="/api/tasks" description="List tasks. Query: projectId, status, assigneeId" token />
-              <Endpoint method="POST" path="/api/tasks" description="Create a task. Body: title (required), projectId (required), description, priority, status, assigneeId, dueDate" token />
+              <Endpoint method="GET" path="/api/tasks" description="List tasks (visibility-filtered). Query: projectId, status, assigneeId" token />
+              <Endpoint method="GET" path="/api/tasks/search?q=..." description="Search tasks by title/description (visibility-filtered). Query: q (min 2 chars), projectId, status, limit" token />
+              <Endpoint method="POST" path="/api/tasks" description="Create a task in a project you have access to. Body: title (required), projectId (required), description, priority, status, assigneeId, dueDate" token />
               <Endpoint method="PATCH" path="/api/tasks/:id" description="Update a task. Body: title, description, status, priority, assigneeId, dueDate" token />
               <Endpoint method="DELETE" path="/api/tasks/:id" description="Soft-delete a task" token />
             </div>
@@ -39,13 +40,15 @@ export default function ApiDocsPage() {
 
           <section>
             <h2 className="text-xl font-semibold mb-3 text-text-primary">Agent Endpoints</h2>
-            <p className="text-sm text-text-dim mb-3">Optimized for programmatic/agent use. Token auth required.</p>
+            <p className="text-sm text-text-dim mb-3">Optimized for programmatic/agent use. Bearer token auth required.</p>
             <div className="space-y-3">
-              <Endpoint method="GET" path="/api/agent/tasks" description="List tasks with project info. Query: projectId, status, assigneeId" token />
+              <Endpoint method="GET" path="/api/agent/tasks" description="List tasks with project info (visibility-filtered). Query: projectId, status, assigneeId" token />
+              <Endpoint method="GET" path="/api/agent/tasks/search?q=..." description="Search tasks by title/description (visibility-filtered). Query: q (min 2 chars), projectId, status, limit" token />
               <Endpoint method="POST" path="/api/agent/tasks/:id/claim" description="Claim a task (assign to self + set in_progress)" token />
               <Endpoint method="POST" path="/api/agent/tasks/:id/status" description="Update task status. Body: status (required)" token />
               <Endpoint method="POST" path="/api/agent/tasks/:id/comment" description="Add a comment. Body: content (required)" token />
-              <Endpoint method="GET" path="/api/agent/projects" description="List accessible projects with task counts" token />
+              <Endpoint method="GET" path="/api/agent/projects" description="List accessible projects with task counts (visibility-filtered)" token />
+              <Endpoint method="GET" path="/api/agent/projects/search?q=..." description="Search projects by name/description (visibility-filtered). Query: q (min 2 chars), limit" token />
             </div>
           </section>
 
@@ -61,10 +64,13 @@ export default function ApiDocsPage() {
           <section>
             <h2 className="text-xl font-semibold mb-3 text-text-primary">Projects</h2>
             <div className="space-y-3">
-              <Endpoint method="GET" path="/api/projects" description="List projects" />
-              <Endpoint method="POST" path="/api/projects" description="Create a project" />
-              <Endpoint method="PATCH" path="/api/projects/:id" description="Update a project" />
-              <Endpoint method="DELETE" path="/api/projects/:id" description="Delete a project" />
+              <Endpoint method="GET" path="/api/projects" description="List projects (visibility-filtered). Query: archived" token />
+              <Endpoint method="GET" path="/api/projects/search?q=..." description="Search projects by name/description (visibility-filtered). Query: q (min 2 chars), limit" token />
+              <Endpoint method="POST" path="/api/projects" description="Create a project. Body: name (required), description, color, icon, visibility, teamIds" token />
+              <Endpoint method="PATCH" path="/api/projects/:id" description="Update a project. Body: name, description, color, icon, visibility, teamIds, archived, status, health, goal" token />
+              <Endpoint method="DELETE" path="/api/projects/:id" description="Soft-delete a project" token />
+              <Endpoint method="GET" path="/api/projects/:id/milestones" description="List milestones for a project" token />
+              <Endpoint method="POST" path="/api/projects/:id/milestones" description="Create a milestone. Body: title (required), description, status, dueDate, ownerId" token />
             </div>
           </section>
 

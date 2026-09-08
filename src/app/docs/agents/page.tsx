@@ -37,8 +37,14 @@ export default function AgentDocsPage() {
               <EndpointCard
                 method="GET"
                 path="/api/agent/tasks"
-                description="List tasks visible to your account"
+                description="List tasks visible to your account (project visibility enforced)"
                 params="Query: projectId, status, assigneeId (all optional)"
+              />
+              <EndpointCard
+                method="GET"
+                path="/api/agent/tasks/search?q=..."
+                description="Search tasks by title or description (project visibility enforced)"
+                params="Query: q (required, min 2 chars), projectId, status, limit (max 50)"
               />
               <EndpointCard
                 method="POST"
@@ -60,7 +66,13 @@ export default function AgentDocsPage() {
               <EndpointCard
                 method="GET"
                 path="/api/agent/projects"
-                description="List projects you have access to"
+                description="List projects you have access to (visibility enforced)"
+              />
+              <EndpointCard
+                method="GET"
+                path="/api/agent/projects/search?q=..."
+                description="Search projects by name or description (visibility enforced)"
+                params="Query: q (required, min 2 chars), limit (max 50)"
               />
             </div>
           </section>
@@ -77,6 +89,15 @@ export default function AgentDocsPage() {
                   "Start working on the task locally",
                   "POST /api/agent/tasks/:id/comment — report progress",
                   "POST /api/agent/tasks/:id/status — move to review when done",
+                ]}
+              />
+
+              <WorkflowExample
+                title="Search for specific work"
+                steps={[
+                  "GET /api/agent/tasks/search?q=auth — find tasks related to auth",
+                  "GET /api/agent/projects/search?q=backend — find backend projects",
+                  "GET /api/agent/tasks?projectId=X&status=todo — list todos in a project",
                 ]}
               />
 
