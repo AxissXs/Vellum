@@ -265,6 +265,11 @@ export default function AuditLogDetailModal({
                     {tagLabels[data.log.tag] || data.log.tag}
                   </span>
                 )}
+                {data.log.actorType === "agent" && (
+                  <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-400 border border-brand-500/20">
+                    Agent
+                  </span>
+                )}
               </div>
               <p className="text-sm text-text-muted">{data.log.details}</p>
               <div className="flex items-center gap-3 mt-2 text-xs text-text-dim">

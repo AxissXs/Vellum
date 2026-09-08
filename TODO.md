@@ -184,21 +184,16 @@
 
 - ~~**Task modal redesign**~~ ✅ — Two-column task detail modal with improved UX, visual selectors, keyboard shortcuts, responsive layout
 
-- [ ] **API tokens** - Per-user API key authentication for external integrations
-  > Full plan: [`TODO/api-tokens.md`](TODO/api-tokens.md)
-
-  Allow all authenticated users to create API tokens that grant the same permissions as their account. Tokens enable integrations with external tools (scripts, CI/CD, bots, third-party apps). Provide API documentation (OpenAPI/Swagger) and exportable Postman collections.
-
-  - DB: `api_tokens` table (userId, name, token hash, prefix, scopes, lastUsedAt, expiresAt, createdAt)
-  - Token format: `vellum_<prefix><random>` — prefix is first 8 chars for identification, full token shown only once on creation
-  - Auth middleware: check `Authorization: Bearer vellum_...` header, load user + permissions from token
-  - API: `GET/POST /api/tokens` — list user's tokens, create new token (returns full token once)
-  - API: `DELETE /api/tokens/[id]` — revoke token
-  - UI: "API Tokens" section in user settings — create, name, revoke, see last used
-  - OpenAPI spec auto-generated from route definitions (Swagger UI at `/api/docs`)
-  - Postman collection export endpoint
-  - Documentation page explaining auth flow, rate limits, example requests
-  - Acceptance criteria: Users can create/revoke tokens, tokens inherit user permissions, Swagger UI works, Postman export available
+- ~~**API tokens**~~ ✅ — Per-user API key auth, agent endpoints, and comprehensive docs
+  - Token auth via `Authorization: Bearer vellum_...` header
+  - `api_tokens` table with bcrypt-hashed tokens, prefix identification, optional expiry
+  - Token CRUD: `GET/POST /api/tokens`, `DELETE /api/tokens/[id]`
+  - Agent endpoints: `/api/agent/tasks`, `/api/agent/tasks/[id]/claim|status|comment`, `/api/agent/projects`
+  - Activity attribution: `actorType: "user" | "agent"` in activity logs
+  - OpenAPI 3.0 spec at `GET /api/docs`, Postman collection at `GET /api/docs/postman`
+  - Human-friendly API reference at `/docs/api`, agent integration guide at `/docs/agents`
+  - UI: ApiTokensSection in Settings — create, list, revoke tokens
+  - Audit UI: agent badge on token-authed activity entries
 
 - [ ] **Caching layer** - Generic Redis/Upstash cache for DB lookups
   > Full plan: [`TODO/caching.md`](TODO/caching.md)
@@ -213,6 +208,19 @@
   - Superadmin: `POST /api/super-admin/cache/flush` endpoint
   - Phase 2: Gate behind `performance.caching` feature flag once feature flags exist
   - Acceptance criteria: Cache works with any Redis provider, passes through when unconfigured, invalidation works, graceful on Redis failure, no stale data
+
+- [ ] **MCP Server / Agent Skill** - Publishable MCP package for AI agent integration
+  > Full plan: [`TODO/mcp-server.md`](TODO/mcp-server.md)
+  > Depends on: API tokens
+
+  Build a standalone MCP server as an npm package (`@vellum/mcp-server`) that exposes Vellum operations as tools for AI agents. Separate repo for independent versioning and publishing. Includes agent integration docs and project-level `opencode.jsonc` config.
+
+  - Separate repo: `vellum-mcp` (published to npm)
+  - Tools: list_tasks, create_task, update_task, claim_task, add_comment, list_projects, get_task
+  - Auth: API token via `VELLUM_API_TOKEN` environment variable
+  - Docs: `docs/agents/` integration guide for connecting agents to Vellum
+  - Config: `opencode.jsonc` project-level MCP server definition
+  - Acceptance criteria: Agents can authenticate, list/claim/update tasks, docs cover full workflow
 
 ## Priority: Low
 

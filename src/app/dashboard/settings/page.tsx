@@ -11,6 +11,7 @@ import { useMySessions, useRevokeSession, useRevokeAllOtherSessions, parseUserAg
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
+import ApiTokensSection from "./ApiTokensSection";
 import { Switch } from "@/components/ui/Switch";
 import { Loader2, Link as LinkIcon, Unlink, Copy, Check, Monitor, Smartphone, LogOut, KeyRound } from "lucide-react";
 import { toast } from "sonner";
@@ -435,6 +436,9 @@ export default function SettingsPage() {
           <p className="text-sm text-text-dim">No active sessions found.</p>
         )}
       </div>
+
+      {/* API Tokens */}
+      <ApiTokensSection />
     </div>
   );
 }

@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
       ipAddress: activityLogs.ipAddress,
       tag: activityLogs.tag,
       severity: activityLogs.severity,
+      actorType: activityLogs.actorType,
       createdAt: activityLogs.createdAt,
     })
     .from(activityLogs)

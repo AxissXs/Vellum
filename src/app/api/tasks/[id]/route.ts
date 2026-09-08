@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSessionWithAuthMethod } from "@/lib/auth";
 import { db } from "@/db";
 import { tasks, users } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
@@ -11,8 +11,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await getSessionWithAuthMethod(req);
+  if (!authResult) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, authMethod } = authResult;
 
   const { id } = await params;
   const body = await req.json();
@@ -68,6 +69,7 @@ export async function PATCH(
     entityId: task.id,
     details: actionDetail,
     ipAddress: getClientIP(req),
+    actorType: authMethod === "token" ? "agent" : "user",
     snapshots: [
       ...(before ? [{ tableName: "tasks" as const, recordId: task.id, snapshot: before, snapshotType: "before" as const }] : []),
       { tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "after" },
@@ -166,8 +168,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await getSessionWithAuthMethod(req);
+  if (!authResult) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, authMethod } = authResult;
 
   const { id } = await params;
 
@@ -190,6 +193,7 @@ export async function DELETE(
     entityId: id,
     details: `Soft-deleted task: ${task.title}`,
     ipAddress: getClientIP(req),
+    actorType: authMethod === "token" ? "agent" : "user",
     snapshots: [{ tableName: "tasks", recordId: task.id, snapshot: task, snapshotType: "before" }],
   });
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSessionWithAuthMethod } from "@/lib/auth";
 import { db } from "@/db";
 import { comments, users, tasks } from "@/db/schema";
 import { eq, asc, isNull, and } from "drizzle-orm";
@@ -8,8 +8,9 @@ import { sendNotification, broadcastEvent } from "@/lib/notifications";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await getSessionWithAuthMethod(req);
+  if (!authResult) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user } = authResult;
 
   const url = new URL(req.url);
   const taskId = url.searchParams.get("taskId");
@@ -38,8 +39,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await getSessionWithAuthMethod(req);
+  if (!authResult) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, authMethod } = authResult;
 
   const { content, taskId, parentId } = await req.json();
   if (!content || !taskId) {
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
       ? `Replied to a comment on task: ${task?.title || taskId}`
       : `Commented on task: ${task?.title || taskId}`,
     ipAddress: getClientIP(req),
+    actorType: authMethod === "token" ? "agent" : "user",
     snapshots: [{ tableName: "comments", recordId: comment.id, snapshot: comment, snapshotType: "after" }],
   });
 

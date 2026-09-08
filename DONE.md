@@ -506,6 +506,23 @@ Telegram, push, snapshots, audit) deferred to follow-up work.
 - **Create project form** — updated to use `TeamMultiSelect`
 - **Edit project form** — updated to use `TeamMultiSelect`
 
+### API Tokens & Agent Endpoints (September 2026)
+> Per-user API token auth, agent-optimized endpoints, activity attribution, OpenAPI docs, and comprehensive documentation.
+
+- **DB**: Added `api_tokens` table (`userId`, `name`, `tokenHash`, `prefix`, `lastUsedAt`, `expiresAt`, `createdAt`) and `actorType` column to `activity_logs`
+- **Auth**: `src/lib/api-auth.ts` — `getTokenUser()` validates Bearer tokens via prefix lookup + bcrypt verify, throttled `lastUsedAt` update
+- **Auth integration**: `getSession()` updated to accept optional `req` and fall back to Bearer token auth; new `getSessionWithAuthMethod()` returns auth method
+- **Token CRUD**: `GET/POST /api/tokens`, `DELETE /api/tokens/[id]` — create named tokens with optional expiry, show full token once, revoke
+- **Agent endpoints**: `GET/POST /api/agent/tasks`, `POST /api/agent/tasks/[id]/claim`, `POST /api/agent/tasks/[id]/status`, `POST /api/agent/tasks/[id]/comment`, `GET /api/agent/projects`
+- **Activity attribution**: All task/comment routes pass `actorType: "user" | "agent"` to `writeActivityLog()` based on auth method
+- **OpenAPI**: `src/lib/openapi.ts` — full OpenAPI 3.0 spec covering all endpoints, served at `GET /api/docs`
+- **Postman**: `src/lib/postman.ts` — Postman Collection v2.1 with pre-configured auth, served at `GET /api/docs/postman`
+- **API docs page**: `/docs/api` — human-friendly API reference with authentication guide, endpoint reference, error codes
+- **Agent docs page**: `/docs/agents` — integration guide with workflow examples, configuration for opencode/Cursor, error handling
+- **UI**: `ApiTokensSection` in Settings — create, list, revoke tokens with reveal-once alert
+- **Audit UI**: Agent badge displayed on activity log entries with `actorType: "agent"` in both list and detail views
+- **Migration**: `drizzle/0016_api_tokens.sql`
+
 ---
 
-*Last updated: August 2026*
+*Last updated: September 2026*

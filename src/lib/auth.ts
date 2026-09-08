@@ -1,10 +1,12 @@
 import { cookies, headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { users, sessions } from "@/db/schema";
 import { eq, gt } from "drizzle-orm";
 import { compareSync } from "bcryptjs";
 import { shouldUpdateLastSeen, updateLastSeen } from "./last-seen";
 import { getClientIPFromHeaders } from "./audit";
+import { getTokenUser } from "./api-auth";
 
 const SESSION_COOKIE = "tf_session";
 const IMPERSONATOR_SESSION_COOKIE = "tf_impersonator";
@@ -19,12 +21,40 @@ export type AuthUser = {
   avatarUrl: string | null;
 };
 
-export async function getSession(): Promise<AuthUser | null> {
+export type SessionAuthResult = {
+  user: AuthUser;
+  authMethod: "cookie" | "token";
+  tokenId?: string;
+};
+
+export async function getSession(req?: NextRequest): Promise<AuthUser | null> {
+  const result = await getSessionWithAuthMethod(req);
+  return result?.user ?? null;
+}
+
+export async function getSessionWithAuthMethod(req?: NextRequest): Promise<SessionAuthResult | null> {
+  // 1. Try cookie auth
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!sessionId) return null;
+  if (sessionId) {
+    const cookieUser = await getCookieUser(sessionId);
+    if (cookieUser) {
+      return { user: cookieUser, authMethod: "cookie" };
+    }
+  }
 
-  // Look up session in database
+  // 2. Try token auth
+  if (req) {
+    const tokenResult = await getTokenUser(req);
+    if (tokenResult) {
+      return { user: tokenResult.user, authMethod: "token", tokenId: tokenResult.tokenId };
+    }
+  }
+
+  return null;
+}
+
+async function getCookieUser(sessionId: string): Promise<AuthUser | null> {
   const [session] = await db
     .select({
       id: sessions.id,
@@ -36,7 +66,6 @@ export async function getSession(): Promise<AuthUser | null> {
     .limit(1);
 
   if (!session || session.expiresAt < new Date()) {
-    // Clean up expired session
     if (session) {
       await db.delete(sessions).where(eq(sessions.id, sessionId));
     }
@@ -61,19 +90,15 @@ export async function getSession(): Promise<AuthUser | null> {
     return null;
   }
 
-  // Banned users are immediately kicked out
   if (user.status === "banned") {
     await db.delete(sessions).where(eq(sessions.id, sessionId));
     return null;
   }
 
-  // Update last seen timestamp (throttled to once per minute per user)
-  // Skip during impersonation so the target user's last-seen is not artificially updated.
   const hdrs = await headers();
   const hasImpersonatorCookie = hdrs.get("cookie")?.includes(`${IMPERSONATOR_SESSION_COOKIE}=`) ?? false;
   if (!hasImpersonatorCookie && shouldUpdateLastSeen(user.id)) {
     const ip = getClientIPFromHeaders(hdrs);
-    // Fire-and-forget: do not block response on DB write
     updateLastSeen(user.id, ip).catch(() => {});
   }
 

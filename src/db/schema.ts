@@ -230,6 +230,7 @@ export const activityLogs = pgTable("activity_logs", {
   ipAddress: text("ip_address"),
   tag: text("tag"),
   severity: text("severity").default("info").notNull(),
+  actorType: text("actor_type").default("user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -320,6 +321,19 @@ export const platformSettings = pgTable("platform_settings", {
   key: text("key").notNull().unique(),
   value: text("value"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const apiTokens = pgTable("api_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  prefix: text("prefix").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const featureFlags = pgTable("feature_flags", {

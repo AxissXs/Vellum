@@ -100,9 +100,10 @@ export async function writeActivityLog(params: {
   entityId: string;
   details: string;
   ipAddress?: string;
+  actorType?: string;
   snapshots?: Snapshot[];
 }) {
-  const { userId, action, entityType, entityId, details, ipAddress, snapshots } = params;
+  const { userId, action, entityType, entityId, details, ipAddress, actorType, snapshots } = params;
 
   const [log] = await db
     .insert(activityLogs)
@@ -115,6 +116,7 @@ export async function writeActivityLog(params: {
       ipAddress: ipAddress || "unknown",
       tag: classifyTag(action),
       severity: classifySeverity(action),
+      actorType: actorType || "user",
     })
     .returning();
 

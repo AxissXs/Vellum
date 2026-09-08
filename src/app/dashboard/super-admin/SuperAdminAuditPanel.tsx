@@ -250,6 +250,11 @@ export default function SuperAdminAuditPanel() {
                               {tagLabels[log.tag] || log.tag}
                             </span>
                           )}
+                          {log.actorType === "agent" && (
+                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-400 border border-brand-500/20">
+                              Agent
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-5 py-3">

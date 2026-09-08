@@ -41,6 +41,9 @@ Vellum/
     ├── 0011_unknown_gertrude_yorkes.sql
     ├── 0012_confused_epoch.sql
     ├── 0013_slim_dark_phoenix.sql
+    ├── 0014_red_doomsday.sql
+    ├── 0015_material_hellion.sql
+    ├── 0016_api_tokens.sql
 └── meta/
     ├── 0000_snapshot.json
     ├── 0001_snapshot.json
@@ -512,13 +515,25 @@ src/
 
 ### `src/app/dashboard/settings/page.tsx`
 
-**Purpose**: Settings page with notification preferences and Telegram linking
+**Purpose**: Settings page with notification preferences, Telegram linking, sessions, and API tokens
 **Exports**: `SettingsPage()` - Server component
 **Features**:
 - Renders `PushNotificationToggle` for browser push notification management
 - Displays and manages per-event notification preferences (Push / In-App / Email / Telegram)
 - Telegram account linking: generate pairing code, copy `/start <code>`, unlink
-- Uses `useNotificationPreferences`, `useTelegramStatus`, `useGeneratePairingCode`, `useUnlinkTelegram`
+- Active session management: list, revoke individual, revoke all others
+- API token management: create, list, revoke tokens (via `ApiTokensSection`)
+- Uses `useNotificationPreferences`, `useTelegramStatus`, `useGeneratePairingCode`, `useUnlinkTelegram`, `useMySessions`, `useRevokeSession`, `useRevokeAllOtherSessions`
+
+### `src/app/dashboard/settings/ApiTokensSection.tsx`
+
+**Purpose**: API token management UI component
+**Exports**: `ApiTokensSection()` - Client component
+**Features**:
+- Create tokens with name and optional expiry (30d, 90d, 1y, never)
+- List tokens with name, prefix, last used, created, expiry
+- Revoke tokens with confirmation
+- Reveal-once alert after creation with copy-to-clipboard
 
 ---
 
@@ -684,6 +699,87 @@ src/
 **Functions**:
 
 - `GET(req)` - List activity (pagination, filters)
+
+#### `src/app/api/tokens/route.ts`
+
+**Methods**: `GET`, `POST`
+**Purpose**: User-facing API token management
+**Functions**:
+
+- `GET()` - List current user's tokens (name, prefix, lastUsedAt, expiresAt)
+- `POST(req)` - Create a new token (body: `name`, `expiresInDays`); returns full token once, bcrypt-hashed
+
+#### `src/app/api/tokens/[id]/route.ts`
+
+**Methods**: `DELETE`
+**Purpose**: Revoke an API token
+**Functions**:
+
+- `DELETE(req, { params })` - Revoke a token (owner-only)
+
+#### `src/app/api/agent/tasks/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Agent-optimized task listing with project info
+**Functions**:
+
+- `GET(req)` - List tasks (filters: `projectId`, `status`, `assigneeId`); includes `projectName`
+
+#### `src/app/api/agent/tasks/[id]/claim/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Claim a task (assign to self + set in_progress)
+**Functions**:
+
+- `POST(req, { params })` - Claim task; activity log with `actorType`
+
+#### `src/app/api/agent/tasks/[id]/status/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Update task status
+**Functions**:
+
+- `POST(req, { params })` - Update status (body: `status`); validates status value
+
+#### `src/app/api/agent/tasks/[id]/comment/route.ts`
+
+**Methods**: `POST`
+**Purpose**: Add a comment to a task
+**Functions**:
+
+- `POST(req, { params })` - Add comment (body: `content`); broadcasts via Pusher
+
+#### `src/app/api/agent/projects/route.ts`
+
+**Methods**: `GET`
+**Purpose**: List accessible projects with task counts
+**Functions**:
+
+- `GET(req)` - List projects; includes `taskCount` via join
+
+#### `src/app/api/docs/route.ts`
+
+**Methods**: `GET`
+**Purpose**: OpenAPI 3.0 spec
+**Functions**:
+
+- `GET()` - Returns OpenAPI 3.0 JSON spec
+
+#### `src/app/api/docs/postman/route.ts`
+
+**Methods**: `GET`
+**Purpose**: Postman collection
+**Functions**:
+
+- `GET()` - Returns Postman Collection v2.1 JSON
+
+#### `src/app/docs/api/page.tsx`
+
+**Purpose**: Human-friendly API reference page with endpoint documentation
+
+#### `src/app/docs/agents/page.tsx`
+
+**Purpose**: Agent integration guide with workflow examples and configuration
 
 #### `src/app/api/stats/route.ts`
 
@@ -1366,7 +1462,29 @@ src/
 
 - `getClientIP(req: NextRequest): string` - Multi-header IP parser (x-forwarded-for, x-real-ip, x-client-ip, cf-connecting-ip); validates format, filters private IPs, falls back to "unknown"
 - `getClientIPFromHeaders(headers)` - Same IP parser for use outside NextRequest (e.g. `headers()` from Next.js server)
-- `writeActivityLog({ db, userId, action, entityType, entityId, details, ipAddress, req, before?, after? })` - Writes activity log entry with auto-classified `tag` (data_change/security/user_action) and `severity` (info/warning/critical), plus before/after snapshots to `activity_log_snapshots`
+- `writeActivityLog({ db, userId, action, entityType, entityId, details, ipAddress, req, actorType?, before?, after? })` - Writes activity log entry with auto-classified `tag` (data_change/security/user_action) and `severity` (info/warning/critical), plus before/after snapshots to `activity_log_snapshots`. `actorType` defaults to `"user"`, set to `"agent"` for token-authed requests.
+
+#### `src/lib/api-auth.ts`
+
+**Purpose**: Bearer token authentication for API consumers (agents, scripts, CI/CD)
+**Exports**:
+
+- `getTokenUser(req: NextRequest): Promise<{ user: AuthUser; tokenId: string } | null>` - Validates `Authorization: Bearer vellum_...` header, looks up token by prefix, verifies bcrypt hash, checks expiry, throttled `lastUsedAt` update
+- `AuthResult` type - `{ user, authMethod, tokenId? }`
+
+#### `src/lib/openapi.ts`
+
+**Purpose**: OpenAPI 3.0 spec generator
+**Exports**:
+
+- `generateOpenAPISpec()` - Returns full OpenAPI 3.0 JSON object covering all API routes
+
+#### `src/lib/postman.ts`
+
+**Purpose**: Postman collection generator
+**Exports**:
+
+- `generatePostmanCollection()` - Returns Postman Collection v2.1 JSON with all endpoints, pre-configured auth
 
 #### `src/lib/pusher.ts`
 
