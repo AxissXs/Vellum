@@ -1331,6 +1331,19 @@ src/
 - `IMPERSONATOR_SESSION_COOKIE` - Impersonator cookie name constant (`tf_impersonator`)
 - `SESSION_MAX_AGE` - Session duration (7 days)
 
+#### `src/lib/hofs.ts`
+
+**Purpose**: Higher-order route handler wrappers for auth and role gating
+**Exports**:
+
+- `withAuth(handler)` - Wraps a Next.js route handler to validate the session first; passes `(req, user, ...args)` to the inner handler
+- `withRole(roles)(handler)` - Wraps a route handler to validate session + role; passes `(req, user, ...args)` to the inner handler
+- `unauthorizedResponse()` - Returns `401` response with both session cookies cleared (tf_session + tf_impersonator)
+- `forbiddenResponse()` - Returns `403` response
+- `clearSessionCookie(response)` - Clears both session cookies on any NextResponse (for logout, stop-impersonation, etc.)
+
+**Future**: Once `TODO/role-permission-manager.md` lands, add `withPermission(permission)` that composes on top of `withAuth` and checks `user.permissions.includes(permission)`.
+
 #### `src/lib/feature-flags.ts`
 
 **Purpose**: Feature flag lookup with 60s in-memory cache

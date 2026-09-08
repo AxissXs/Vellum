@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { withAuth } from "@/lib/hofs";
 import { db } from "@/db";
 import { projects, projectTeams } from "@/db/schema";
 import { eq, and, asc, isNull } from "drizzle-orm";
 import { writeActivityLog, getClientIP } from "@/lib/audit";
 import { getTeamVisibleProjectIds, buildProjectVisibilityCondition } from "@/lib/project-visibility";
 
-export async function GET(req: NextRequest) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export const GET = withAuth(async (req, user) => {
   const url = new URL(req.url);
   const archived = url.searchParams.get("archived") === "true";
 
@@ -28,17 +25,17 @@ export async function GET(req: NextRequest) {
     .orderBy(asc(projects.createdAt));
 
   return NextResponse.json({ projects: rows });
-}
+});
 
-export async function POST(req: NextRequest) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export const POST = withAuth(async (req, user) => {
   const body = await req.json();
   const { name, description, color, icon, visibility, teamIds } = body;
 
   if (!name) {
-    return NextResponse.json({ error: "Project name is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Project name is required" },
+      { status: 400 }
+    );
   }
 
   const [project] = await db
@@ -66,8 +63,15 @@ export async function POST(req: NextRequest) {
     entityId: project.id,
     details: `Created project: ${project.name}`,
     ipAddress: getClientIP(req),
-    snapshots: [{ tableName: "projects", recordId: project.id, snapshot: project, snapshotType: "after" }],
+    snapshots: [
+      {
+        tableName: "projects",
+        recordId: project.id,
+        snapshot: project,
+        snapshotType: "after",
+      },
+    ],
   });
 
   return NextResponse.json({ project }, { status: 201 });
-}
+});

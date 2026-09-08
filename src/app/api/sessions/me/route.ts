@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSession, SESSION_COOKIE } from "@/lib/auth";
+import { withAuth } from "@/lib/hofs";
+import { SESSION_COOKIE } from "@/lib/auth";
 import { db } from "@/db";
 import { sessions, userSessions } from "@/db/schema";
 import { eq, gt, desc, and, sql } from "drizzle-orm";
@@ -7,12 +8,7 @@ import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const currentUser = await getSession();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withAuth(async (_req, user) => {
   const cookieStore = await cookies();
   const currentSessionId = cookieStore.get(SESSION_COOKIE)?.value;
   const now = new Date();
@@ -24,7 +20,7 @@ export async function GET() {
       createdAt: sessions.createdAt,
     })
     .from(sessions)
-    .where(and(eq(sessions.userId, currentUser.id), gt(sessions.expiresAt, now)))
+    .where(and(eq(sessions.userId, user.id), gt(sessions.expiresAt, now)))
     .orderBy(desc(sessions.createdAt));
 
   const loginHistory = await db
@@ -35,7 +31,7 @@ export async function GET() {
     })
     .from(userSessions)
     .where(
-      and(eq(userSessions.userId, currentUser.id), eq(userSessions.success, true))
+      and(eq(userSessions.userId, user.id), eq(userSessions.success, true))
     )
     .orderBy(desc(userSessions.createdAt))
     .limit(50);
@@ -56,19 +52,17 @@ export async function GET() {
   });
 
   return NextResponse.json({ sessions: enriched });
-}
+});
 
-export async function DELETE() {
-  const currentUser = await getSession();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const DELETE = withAuth(async (_req, user) => {
   const cookieStore = await cookies();
   const currentSessionId = cookieStore.get(SESSION_COOKIE)?.value;
 
   if (!currentSessionId) {
-    return NextResponse.json({ error: "No active session" }, { status: 400 });
+    return NextResponse.json(
+      { error: "No active session" },
+      { status: 400 }
+    );
   }
 
   const now = new Date();
@@ -76,11 +70,11 @@ export async function DELETE() {
     .delete(sessions)
     .where(
       and(
-        eq(sessions.userId, currentUser.id),
+        eq(sessions.userId, user.id),
         gt(sessions.expiresAt, now),
         sql`${sessions.id} != ${currentSessionId}`
       )
     );
 
   return NextResponse.json({ success: true });
-}
+});
