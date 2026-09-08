@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { platformSettings, users, notificationPreferences } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
 
@@ -238,6 +239,8 @@ export async function sendTelegramNotification({
   url?: string;
 }) {
   if (!userId) return;
+
+  if (!(await isFeatureEnabled("notifications.telegram"))) return;
 
   const enabled = await isTelegramEnabled(userId, eventType);
   if (!enabled) return;

@@ -11,6 +11,7 @@ Vellum/
 ├── .gitignore              # Git ignore rules
 ├── AGENTS.md               # AI agent instructions
 ├── CONTRIBUTIONS.md        # Contribution guidelines
+├── CHANGELOG.md            # Release changelog (Keep a Changelog format)
 ├── DONE.md                 # Completed features and tasks
 ├── LICENSE                 # MIT License
 ├── README.md               # Project overview
@@ -44,6 +45,8 @@ Vellum/
     ├── 0014_red_doomsday.sql
     ├── 0015_material_hellion.sql
     ├── 0016_api_tokens.sql
+    ├── 0017_loose_talon.sql
+    ├── 0018_thin_ma_gnuci.sql
 └── meta/
     ├── 0000_snapshot.json
     ├── 0001_snapshot.json

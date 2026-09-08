@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { activityLogs, activityLogSnapshots } from "@/db/schema";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export function getClientIPFromHeaders(headersList: { get(name: string): string | null }): string {
   const headersToCheck = [
@@ -103,6 +104,8 @@ export async function writeActivityLog(params: {
   actorType?: string;
   snapshots?: Snapshot[];
 }) {
+  if (!(await isFeatureEnabled("audit.enabled"))) return null;
+
   const { userId, action, entityType, entityId, details, ipAddress, actorType, snapshots } = params;
 
   const [log] = await db
@@ -120,7 +123,7 @@ export async function writeActivityLog(params: {
     })
     .returning();
 
-  if (snapshots && snapshots.length > 0) {
+  if (snapshots && snapshots.length > 0 && (await isFeatureEnabled("tracking.activitySnapshots"))) {
     await db.insert(activityLogSnapshots).values(
       snapshots.map((s) => ({
         logId: log.id,

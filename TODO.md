@@ -97,10 +97,11 @@
   - Timeline/Gantt view
   - Milestone progress tracking
 
-- [ ] **Team management UI** - Complete team CRUD and member management
-  - Invite members via email
-  - Role management (lead, contributor, viewer)
-  - Team settings page
+- ~~**Team management UI**~~ ✅ — Full team CRUD and member management with roles, allocation, and stats
+  - Team directory with create/edit/delete
+  - Member management: add/remove with role select (lead/manager/contributor/reviewer), allocation %, responsibilities
+  - Team stats: member count, team lead, avg allocation
+  - Note: Email invitations not yet implemented (members added from existing users)
 
 - [ ] **Search & filters** - Global search across projects, tasks, users
   - Full-text search (PostgreSQL tsvector or Meilisearch)
@@ -159,7 +160,7 @@
   - [x] API: `GET /api/super-admin/users/[id]` returns `lastSeenAt` and `lastSeenIp`
   - [x] UI: "Last Seen" sortable column added to `SuperAdminUsersPanel`
   - [x] UI: Last seen display added to `UserDetailModal` profile card
-  - [ ] Gate behind feature flag: `tracking.lastSeen` via `isFeatureEnabled()` once feature flags exist
+  - [x] Gate behind feature flag: `tracking.lastSeen` via `isFeatureEnabled()` once feature flags exist
   - Acceptance criteria: Superadmin sees accurate "last seen" per user, DB writes are throttled, feature can be toggled off
 
 - [x] **Feature flags system** - Superadmin-controlled enable/disable for platform features
@@ -176,14 +177,14 @@
   - [x] Seed default flags (push, telegram, email, last seen, snapshots, audit, realtime)
 
   **Phase 2 — Migrate existing features** (one by one):
-  - [ ] Telegram notifications → check `notifications.telegram`
-  - [ ] Push notifications → check `notifications.push`
-  - [ ] Activity snapshots → check `tracking.activitySnapshots`
-  - [ ] Audit log snapshots → check `audit.enabled`
+  - [x] Telegram notifications → check `notifications.telegram`
+  - [x] Push notifications → check `notifications.push`
+  - [x] Activity snapshots → check `tracking.activitySnapshots`
+  - [x] Audit log snapshots → check `audit.enabled`
   - [x] Last seen tracking → check `tracking.lastSeen`
 
   **Phase 3 — Docs & conventions:**
-  - [ ] AGENTS.md: new optional features must include a feature flag
+  - [x] AGENTS.md: new optional features must include a feature flag
   - [ ] STRUCTURE.md updates
 
   - Acceptance criteria: Phase 1 shipped, superadmin can toggle features, cache works, disabled features skip logic, no perf regression

@@ -551,6 +551,30 @@ Telegram, push, snapshots, audit) deferred to follow-up work.
 - **Audit UI**: Agent badge displayed on activity log entries with `actorType: "agent"` in both list and detail views
 - **Migration**: `drizzle/0016_api_tokens.sql`
 
+### Feature Flags Phase 2 — Gating (September 2026)
+> Gated remaining optional features behind feature flags.
+
+- `src/lib/telegram.ts` — `sendTelegramNotification()` checks `notifications.telegram` flag
+- `src/lib/push.ts` — `sendPushNotification()` checks `notifications.push` flag
+- `src/lib/audit.ts` — `writeActivityLog()` checks `audit.enabled` flag; snapshot writes gated by `tracking.activitySnapshots`
+- `src/lib/pusher-broadcast.ts` — both broadcast functions check `realtime.enabled` flag
+- All gates use `isFeatureEnabled()` with 60s cache; disabled features skip all logic, DB writes, and side effects
+
+### Database Indexes (September 2026)
+> Performance indexes for commonly queried columns.
+
+- `tasks` — `project_id`, `status`, `assignee_id`, composite `(project_id, status)`
+- `activity_logs` — `user_id`, composite `(entity_type, entity_id)`, `created_at`
+- `sessions` — `user_id`
+- `notifications` — `user_id`, composite `(user_id, read)`
+- `team_members` — `user_id`, `team_id`
+- `comments` — `task_id`
+- `push_subscriptions` — `user_id`
+- Migration: `drizzle/0018_thin_ma_gnuci.sql`
+
+### Changelog (September 2026)
+> Added `CHANGELOG.md` following Keep a Changelog format.
+
 ---
 
 *Last updated: September 2026*

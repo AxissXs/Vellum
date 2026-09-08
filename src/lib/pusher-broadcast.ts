@@ -1,4 +1,5 @@
 import { pusher } from "@/lib/pusher";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 /**
  * Broadcast a task event to all clients viewing the relevant project
@@ -16,6 +17,7 @@ export async function broadcastTaskEvent(
   }
 ) {
   try {
+    if (!(await isFeatureEnabled("realtime.enabled"))) return;
     await pusher.trigger(
       [`project-${projectId}`, "task-updates"],
       "task-event",
@@ -41,6 +43,7 @@ export async function broadcastCommentEvent(
   }
 ) {
   try {
+    if (!(await isFeatureEnabled("realtime.enabled"))) return;
     await pusher.trigger(`task-${taskId}`, "comment-event", payload);
   } catch (err) {
     console.error("Pusher broadcast failed:", err);

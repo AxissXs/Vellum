@@ -127,6 +127,13 @@
       "when": 1788857531136,
       "tag": "0017_loose_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788876744407,
+      "tag": "0018_thin_ma_gnuci",
+      "breakpoints": true
     }
   ]
 }

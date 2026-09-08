@@ -7,6 +7,7 @@ import {
   pgEnum,
   foreignKey,
   primaryKey,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", [
@@ -88,21 +89,28 @@ export const teams = pgTable("teams", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const teamMembers = pgTable("team_members", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  teamId: uuid("team_id")
-    .references(() => teams.id, { onDelete: "cascade" })
-    .notNull(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  teamRole: text("team_role").default("contributor").notNull(),
-  allocation: text("allocation").default("100").notNull(),
-  responsibilities: text("responsibilities"),
-  deletedAt: timestamp("deleted_at"),
-  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const teamMembers = pgTable(
+  "team_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    teamRole: text("team_role").default("contributor").notNull(),
+    allocation: text("allocation").default("100").notNull(),
+    responsibilities: text("responsibilities"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("team_members_user_id_idx").on(t.userId),
+    index("team_members_team_id_idx").on(t.teamId),
+  ]
+);
 
 export const projectTeams = pgTable(
   "project_teams",
@@ -149,28 +157,37 @@ export const projectNotes = pgTable("project_notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const tasks = pgTable("tasks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  description: text("description"),
-  status: taskStatusEnum("status").notNull().default("todo"),
-  priority: taskPriorityEnum("priority").notNull().default("medium"),
-  projectId: uuid("project_id")
-    .references(() => projects.id, { onDelete: "cascade" })
-    .notNull(),
-  assigneeId: uuid("assignee_id").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  creatorId: uuid("creator_id")
-    .references(() => users.id, { onDelete: "set null" })
-    .notNull(),
-  dueDate: timestamp("due_date"),
-  position: text("position").default("0").notNull(),
-  deletedAt: timestamp("deleted_at"),
-  deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    description: text("description"),
+    status: taskStatusEnum("status").notNull().default("todo"),
+    priority: taskPriorityEnum("priority").notNull().default("medium"),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    assigneeId: uuid("assignee_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    creatorId: uuid("creator_id")
+      .references(() => users.id, { onDelete: "set null" })
+      .notNull(),
+    dueDate: timestamp("due_date"),
+    position: text("position").default("0").notNull(),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("tasks_project_id_idx").on(t.projectId),
+    index("tasks_status_idx").on(t.status),
+    index("tasks_assignee_id_idx").on(t.assigneeId),
+    index("tasks_project_status_idx").on(t.projectId, t.status),
+  ]
+);
 
 export const comments = pgTable(
   "comments",
@@ -195,17 +212,22 @@ export const comments = pgTable(
       foreignColumns: [table.id],
       name: "comments_parent_id_fk",
     }).onDelete("cascade"),
+    index("comments_task_id_idx").on(table.taskId),
   ]
 );
 
-export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("sessions_user_id_idx").on(t.userId)]
+);
 
 export const userSessions = pgTable("user_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -218,21 +240,29 @@ export const userSessions = pgTable("user_sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const activityLogs = pgTable("activity_logs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "set null" })
-    .notNull(),
-  action: text("action").notNull(),
-  entityType: text("entity_type").notNull(),
-  entityId: text("entity_id"),
-  details: text("details"),
-  ipAddress: text("ip_address"),
-  tag: text("tag"),
-  severity: text("severity").default("info").notNull(),
-  actorType: text("actor_type").default("user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const activityLogs = pgTable(
+  "activity_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "set null" })
+      .notNull(),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    details: text("details"),
+    ipAddress: text("ip_address"),
+    tag: text("tag"),
+    severity: text("severity").default("info").notNull(),
+    actorType: text("actor_type").default("user").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("activity_logs_user_id_idx").on(t.userId),
+    index("activity_logs_entity_idx").on(t.entityType, t.entityId),
+    index("activity_logs_created_at_idx").on(t.createdAt),
+  ]
+);
 
 export const activityLogSnapshots = pgTable("activity_log_snapshots", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -255,32 +285,43 @@ export const notificationEventTypeEnum = pgEnum("notification_event_type", [
   "comment_mention",
 ]);
 
-export const pushSubscriptions = pgTable("push_subscriptions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  endpoint: text("endpoint").notNull(),
-  p256dh: text("p256dh").notNull(),
-  auth: text("auth").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("push_subscriptions_user_id_idx").on(t.userId)]
+);
 
-export const notifications = pgTable("notifications", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  type: notificationEventTypeEnum("type").notNull(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  read: boolean("read").default(false).notNull(),
-  entityType: text("entity_type"),
-  entityId: text("entity_id"),
-  url: text("url"),
-  actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    type: notificationEventTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    read: boolean("read").default(false).notNull(),
+    entityType: text("entity_type"),
+    entityId: text("entity_id"),
+    url: text("url"),
+    actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("notifications_user_id_idx").on(t.userId),
+    index("notifications_user_read_idx").on(t.userId, t.read),
+  ]
+);
 
 export const notificationPreferences = pgTable("notification_preferences", {
   id: uuid("id").primaryKey().defaultRandom(),

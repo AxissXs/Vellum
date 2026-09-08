@@ -2,6 +2,7 @@ import webPush from "web-push";
 import { db } from "@/db";
 import { pushSubscriptions, notificationPreferences } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY!;
@@ -18,6 +19,8 @@ export async function sendPushNotification(
   payload: { title: string; body: string; url?: string; tag?: string }
 ) {
   if (typeof window !== "undefined") return;
+
+  if (!(await isFeatureEnabled("notifications.push"))) return;
 
   const subs = await db
     .select()
