@@ -120,6 +120,13 @@
       "when": 1788900000000,
       "tag": "0016_api_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788857531136,
+      "tag": "0017_loose_talon",
+      "breakpoints": true
     }
   ]
 }
