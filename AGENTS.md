@@ -92,8 +92,39 @@ Custom session auth in `src/lib/auth.ts`:
 - Cookie name: `tf_session`, max-age 7 days
 - Get current user: `await getSession()` (server components and API routes)
 - Role gate: `requireRole(user, ['superadmin' | 'admin' | 'member'])`
-- **Banned users are evicted immediately** by `getSession()` (session destroyed, treated as logged out)
+- **Banned users are immediately evicted** by `getSession()` (session destroyed, treated as logged out)
 - `inactive` users are blocked at login with a specific error
+- Revoked sessions → `unauthorizedResponse()` clears both `tf_session` and `tf_impersonator` cookies immediately so the client can't replay them
+
+### API Route Auth (HOF Wrappers)
+
+Use the wrappers in `src/lib/hofs.ts` instead of manual `getSession()` + `if (!user) return 401` boilerplate.
+
+**`withAuth(handler)`** — any authenticated user:
+```ts
+import { withAuth } from "@/lib/hofs";
+import { NextResponse } from "next/server";
+
+export const GET = withAuth(async (req, user) => {
+  return NextResponse.json({ data: "Hello " + user.name });
+});
+```
+
+**`withRole(roles)(handler)`** — role-restricted:
+```ts
+import { withRole } from "@/lib/hofs";
+
+export const GET = withRole(["superadmin"])(async (req, user) => {
+  return NextResponse.json({ secret: 42 });
+});
+```
+
+**Future permission-manager migration** (TODO/role-permission-manager.md):  
+When `requirePermission()` lands, add `withPermission(permission)` that composes on top of `withAuth`. Existing `withAuth`/`withRole` calls stay untouched — migrate gradually.
+
+### Clearing Sessions
+
+Use `clearSessionCookie(response)` from `@/lib/hofs` anywhere you need to destroy the browser's session (logout, stop-impersonation, etc.). It removes both `tf_session` and `tf_impersonator`.
 
 ## Architecture Quirks
 
@@ -285,3 +316,34 @@ The following secrets must be configured in GitHub → Settings → Secrets and 
 | `DATABASE_URL`        | Pooled connection (Neon: `-pooler` suffix). Used by the running app. (Also in Vercel env vars)                                                   |
 
 Do **NOT** commit `.env` files to the repo.
+
+## Changelog
+
+On every version bump commit required by the [workflow rules](#workflow), also update `CHANGELOG.md`:
+
+```bash
+# After bumping version in package.json, before committing:
+# Prepend a new section to CHANGELOG.md with the new version
+```
+
+Format follows [Keep a Changelog](https://keepachangelog.com/):
+
+```markdown
+## [1.2.3] - 2026-07-20
+
+### Added
+- New feature X
+
+### Changed
+- Improved Y behavior
+
+### Fixed
+- Bug in Z (see TODO.md)
+```
+
+- Version number must match `package.json`
+- Date should be the release date
+- Categories: `Added`, `Changed`, `Fixed`, `Deprecated`, `Removed`, `Security`
+- Keep entries concise and meaningful — one line per user-visible change
+- Reference issue/PR numbers when available
+- Add the changelog update to the same commit as the version bump, or as an immediate follow-up commit

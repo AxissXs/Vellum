@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { withAuth } from "@/lib/hofs";
 import { db } from "@/db";
 import { notifications, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
-export async function GET(req: NextRequest) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export const GET = withAuth(async (_req, user) => {
   const rows = await db
     .select({
       id: notifications.id,
@@ -30,4 +27,4 @@ export async function GET(req: NextRequest) {
     .limit(50);
 
   return NextResponse.json({ notifications: rows });
-}
+});

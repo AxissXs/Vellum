@@ -1,19 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSession, requireRole } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import { withRole } from "@/lib/hofs";
 import { db } from "@/db";
 import { users, userSessions } from "@/db/schema";
 import { eq, inArray, and, desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const currentUser = await getSession();
-  try {
-    requireRole(currentUser, ["superadmin"]);
-  } catch {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
+export const GET = withRole(["superadmin"])(async (_req, user) => {
   const userRows = await db
     .select({
       id: users.id,
@@ -71,4 +64,4 @@ export async function GET() {
   }));
 
   return NextResponse.json({ users: merged });
-}
+});

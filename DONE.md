@@ -4,6 +4,18 @@ This document tracks features and tasks that have been fully implemented, tested
 
 ---
 
+## Auth & Security
+
+### Consistent Session Revocation (July 2026)
+> Centralized auth wrappers to fix revoked-sessions still accessing some routes.
+
+- **Problem**: Session revocation via Settings → other browser could still browse projects/tasks because individual API routes repeated `getSession()` boilerplate and stale cookies persisted
+- **Solution**: `src/lib/hofs.ts` with `withAuth()`, `withRole()`, `unauthorizedResponse()`, `clearSessionCookie()`; client `api.ts` redirects on 401
+- **Refactored routes**: `GET /api/notifications`, `GET+POST /api/projects`, `GET /api/super-admin/users`, `GET+DELETE /api/sessions/me`, `POST /api/auth/logout`
+- Acceptance: Revoked sessions get cookies cleared + immediate redirect to login on next request
+
+---
+
 ## Core Platform
 
 ### Optimistic UI Updates (July 2026)

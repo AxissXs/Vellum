@@ -1,5 +1,10 @@
 # TODO - Vellum Project Tasks
 
+- ~~**Bug: Revoked session still has access to some routes**~~ ✅ — Fixed with centralized auth HOF wrappers + cookie clearing + client-side 401 redirect
+  - Root cause: No consistent session invalidation across API routes; stale session cookies persisted on revoked browsers; React Query cache masked the 401s on polls
+  - Fix: Created `src/lib/hofs.ts` with `withAuth()` / `withRole()` / `unauthorizedResponse()` / `clearSessionCookie()`; refactored sample routes (notifications, projects, super-admin/users, sessions/me); client `api.ts` redirects to `/login` on any 401
+  - Remaining routes still use manual `getSession()` + `if (!user) return 401` — Phase 2 will migrate all to HOF wrappers
+
 ## Priority: High
 
 - [x] **Private project visibility enforcement** - Enforce the `visibility` field on projects so private projects are only visible to their owner
@@ -246,6 +251,14 @@
   - Collapsible sidebar on mobile
   - Touch-friendly Kanban
   - PWA support (manifest, service worker)
+
+- [ ] **Changelog generation** - Auto-generate project changelog on releases
+  - Create `CHANGELOG.md` following Keep a Changelog format
+  - On every version bump (see AGENTS.md workflow), append a concise, professional changelog entry with:
+    - Version number and date
+    - Categories: Added, Changed, Fixed, Deprecated, Removed, Security
+    - Links to relevant commits, issues, or PRs where applicable
+  - Acceptance criteria: Each release has a dated entry in CHANGELOG.md, entries are concise and meaningful, format follows Keep a Changelog
 
 - [ ] **Mobile-first limited-feature mode** - Lightweight mobile experience for messages, notifications, stats
   - Mobile-first responsive layout (collapsible nav, stacked cards, touch targets >=44px)
