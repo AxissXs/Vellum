@@ -49,13 +49,13 @@ export default function AgentDocsPage() {
                 method="POST"
                 path="/api/agent/tasks/:id/status"
                 description="Move a task to a different status"
-                body="{ status: \"review\" }"
+                body={'{ "status": "review" }'}
               />
               <EndpointCard
                 method="POST"
                 path="/api/agent/tasks/:id/comment"
                 description="Add a progress comment to a task"
-                body="{ content: \"Fixed the bug, all tests passing\" }"
+                body={'{ "content": "Fixed the bug, all tests passing" }'}
               />
               <EndpointCard
                 method="GET"

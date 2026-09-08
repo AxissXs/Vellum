@@ -26,6 +26,7 @@ type AuditLogItem = {
   ipAddress: string | null;
   tag: string | null;
   severity: string;
+  actorType: string | null;
   createdAt: string;
 };
 
