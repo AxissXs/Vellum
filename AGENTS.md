@@ -126,6 +126,24 @@ When `requirePermission()` lands, add `withPermission(permission)` that composes
 
 Use `clearSessionCookie(response)` from `@/lib/hofs` anywhere you need to destroy the browser's session (logout, stop-impersonation, etc.). It removes both `tf_session` and `tf_impersonator`.
 
+### Bearer Token Auth
+
+Users can create personal API tokens for external integrations (scripts, CI/CD, bots, agents). Tokens are managed from **Settings → API Tokens**.
+
+- Token format: `vellum_<16-char-hex>`
+- Auth header: `Authorization: Bearer vellum_...`
+- Tokens are bcrypt-hashed in `api_tokens` table; only the prefix is stored for lookup
+- `getSession(req?)` in `src/lib/auth.ts` tries cookie auth first, then falls back to Bearer token via `getTokenUser()` in `src/lib/api-auth.ts`
+- `lastUsedAt` is throttled (updates only if >5min since last update)
+- Expired tokens are rejected automatically
+
+To use token auth in an API route, pass `req` to `getSession()`:
+```ts
+const user = await getSession(req); // tries cookie, then Bearer token
+```
+
+Token CRUD: `GET/POST /api/tokens`, `DELETE /api/tokens/[id]` (owner-only revoke).
+
 ## Architecture Quirks
 
 - **Server Components are default.** Add `"use client"` only for interactivity.

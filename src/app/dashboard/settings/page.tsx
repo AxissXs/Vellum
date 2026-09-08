@@ -439,6 +439,46 @@ export default function SettingsPage() {
 
       {/* API Tokens */}
       <ApiTokensSection />
+
+      {/* API Documentation */}
+      <div className="bg-surface-card/50 border border-border-subtle rounded-xl p-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-text-primary">API Documentation</h2>
+          <p className="text-sm text-text-dim mt-1">
+            Reference docs and integration guides for the Vellum API.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <a
+            href="/docs/api"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 bg-surface-strong/50 border border-border-subtle rounded-lg px-4 py-3 hover:bg-overlay-hover transition"
+          >
+            <div className="w-8 h-8 rounded-md bg-blue-500/10 flex items-center justify-center">
+              <LinkIcon size={16} className="text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">API Reference</p>
+              <p className="text-xs text-text-dim">All endpoints, auth, error codes</p>
+            </div>
+          </a>
+          <a
+            href="/docs/agents"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 bg-surface-strong/50 border border-border-subtle rounded-lg px-4 py-3 hover:bg-overlay-hover transition"
+          >
+            <div className="w-8 h-8 rounded-md bg-purple-500/10 flex items-center justify-center">
+              <KeyRound size={16} className="text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">Agent Integration</p>
+              <p className="text-xs text-text-dim">Connect opencode, Cursor, or custom scripts</p>
+            </div>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
