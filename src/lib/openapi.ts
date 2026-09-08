@@ -188,6 +188,72 @@ export function generateOpenAPISpec() {
             },
           },
         },
+        post: {
+          summary: "Create a task (agent)",
+          tags: ["Agent"],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["title", "projectId"],
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    projectId: { type: "string", format: "uuid" },
+                    status: { type: "string", enum: ["backlog", "todo", "in_progress", "review", "done"] },
+                    priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+                    assigneeId: { type: "string", format: "uuid" },
+                    dueDate: { type: "string", format: "date-time" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "201": { description: "Task created", content: { "application/json": { schema: { type: "object", properties: { task: { $ref: "#/components/schemas/Task" } } } } } },
+          },
+        },
+      },
+      "/agent/tasks/{id}": {
+        patch: {
+          summary: "Update a task (agent)",
+          tags: ["Agent"],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    status: { type: "string", enum: ["backlog", "todo", "in_progress", "review", "done"] },
+                    priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+                    assigneeId: { type: "string", format: "uuid" },
+                    dueDate: { type: "string", format: "date-time" },
+                    position: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Task updated", content: { "application/json": { schema: { type: "object", properties: { task: { $ref: "#/components/schemas/Task" } } } } } },
+          },
+        },
+        delete: {
+          summary: "Delete a task (agent, soft delete)",
+          tags: ["Agent"],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+          responses: {
+            "200": { description: "Task deleted" },
+          },
+        },
       },
       "/agent/tasks/{id}/claim": {
         post: {

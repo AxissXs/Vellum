@@ -48,6 +48,23 @@ export default function AgentDocsPage() {
               />
               <EndpointCard
                 method="POST"
+                path="/api/agent/tasks"
+                description="Create a task in a project you have access to"
+                body={'{ "title": "Fix login bug", "projectId": "uuid", "priority": "high" }'}
+              />
+              <EndpointCard
+                method="PATCH"
+                path="/api/agent/tasks/:id"
+                description="Update a task (title, description, status, priority, assigneeId, dueDate)"
+                body={'{ "status": "in_progress", "priority": "high" }'}
+              />
+              <EndpointCard
+                method="DELETE"
+                path="/api/agent/tasks/:id"
+                description="Soft-delete a task"
+              />
+              <EndpointCard
+                method="POST"
                 path="/api/agent/tasks/:id/claim"
                 description="Claim a task — assigns it to you and sets status to In Progress"
               />

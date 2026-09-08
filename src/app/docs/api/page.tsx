@@ -44,6 +44,9 @@ export default function ApiDocsPage() {
             <div className="space-y-3">
               <Endpoint method="GET" path="/api/agent/tasks" description="List tasks with project info (visibility-filtered). Query: projectId, status, assigneeId" token />
               <Endpoint method="GET" path="/api/agent/tasks/search?q=..." description="Search tasks by title/description (visibility-filtered). Query: q (min 2 chars), projectId, status, limit" token />
+              <Endpoint method="POST" path="/api/agent/tasks" description="Create a task in a project you have access to. Body: title (required), projectId (required), description, priority, status, assigneeId, dueDate" token />
+              <Endpoint method="PATCH" path="/api/agent/tasks/:id" description="Update a task. Body: title, description, status, priority, assigneeId, dueDate" token />
+              <Endpoint method="DELETE" path="/api/agent/tasks/:id" description="Soft-delete a task" token />
               <Endpoint method="POST" path="/api/agent/tasks/:id/claim" description="Claim a task (assign to self + set in_progress)" token />
               <Endpoint method="POST" path="/api/agent/tasks/:id/status" description="Update task status. Body: status (required)" token />
               <Endpoint method="POST" path="/api/agent/tasks/:id/comment" description="Add a comment. Body: content (required)" token />
